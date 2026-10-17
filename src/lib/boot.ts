@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 
 import { initAttribution } from '@/lib/analytics';
-import { getSession, initAuth } from '@/lib/auth';
-import { companyLoaded, fetchMembership, getCompany, loadCachedCompany } from '@/lib/company';
+import { clearLocalIdentity, getSession, initAuth } from '@/lib/auth';
+import { companyLoaded, fetchMembership, getCompany, getMember, loadCachedCompany } from '@/lib/company';
 import { meta, ready } from '@/lib/db';
 
 export interface BootState {
@@ -21,6 +21,11 @@ export function boot(): Promise<BootState> {
       await loadCachedCompany();
       initAttribution().catch(() => {});
       const session = getSession();
+      const cachedUser = getMember()?.userId ?? null;
+      if (session && cachedUser && cachedUser !== session.user.id) {
+        // Cache belongs to another account: wipe it before anything renders.
+        await clearLocalIdentity();
+      }
       if (session && !getCompany()) {
         await fetchMembership(session.user.id).catch(() => null);
       }

@@ -28,7 +28,11 @@
       "expo-apple-authentication",
       [
         "expo-splash-screen",
-        { "backgroundColor": "#E9E7E1", "image": "./assets/images/splash-icon.png", "imageWidth": 120 }
+        {
+          "backgroundColor": "#E9E7E1",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 120
+        }
       ],
       [
         "expo-camera",
@@ -45,17 +49,37 @@
       ],
       [
         "expo-media-library",
-        { "savePhotosPermission": "Crew Lens saves photos you export to your photo library." }
+        {
+          "savePhotosPermission": "Crew Lens saves photos you export to your photo library."
+        }
       ],
       [
         "expo-tracking-transparency",
-        { "userTrackingPermission": "Crew Lens uses this to understand which ads bring people to the app. Your photos are never shared." }
+        {
+          "userTrackingPermission": "Crew Lens uses this to understand which ads bring people to the app. Your photos are never shared."
+        }
       ],
-      ["expo-build-properties", { "ios": { "deploymentTarget": "16.4" } }],
-      "react-native-appsflyer"
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "16.4"
+          }
+        }
+      ],
+      "react-native-appsflyer",
+      "expo-asset"
     ],
-    "experiments": { "typedRoutes": true, "reactCompiler": true },
-    "extra": { "router": {}, "eas": { "projectId": "" } },
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": ""
+      }
+    },
     "owner": "ibrahim1774"
   }
 }

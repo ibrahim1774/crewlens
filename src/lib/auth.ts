@@ -2,8 +2,8 @@ import type { Session } from '@supabase/supabase-js';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { useSyncExternalStore } from 'react';
 
-import { clearCompany } from '@/lib/company';
-import { resetLocal } from '@/lib/db';
+import { clearCompany, getMember } from '@/lib/company';
+import { meta, resetLocal } from '@/lib/db';
 import { supabase } from '@/lib/supabase';
 
 let session: Session | null = null;
@@ -17,11 +17,24 @@ export async function initAuth(): Promise<Session | null> {
   session = data.session;
   sessionLoaded = true;
   emit();
-  supabase.auth.onAuthStateChange((_event, s) => {
+  supabase.auth.onAuthStateChange((event, s) => {
+    const previousUser = session?.user.id ?? getMember()?.userId ?? null;
     session = s;
+    // A different account (or a sign-out) must never see the previous account's cached company or photos.
+    if (event === 'SIGNED_OUT' || (s && previousUser && s.user.id !== previousUser)) {
+      void clearLocalIdentity();
+    }
     emit();
   });
   return session;
+}
+
+/** Drops everything cached for the previous account. */
+export async function clearLocalIdentity(): Promise<void> {
+  await clearCompany();
+  await meta.set('pending_name', null);
+  await meta.set('onboarded', null);
+  await resetLocal();
 }
 
 export function getSession(): Session | null {
@@ -65,6 +78,5 @@ export async function verifyEmailCode(email: string, code: string): Promise<void
 
 export async function signOut(): Promise<void> {
   await supabase.auth.signOut();
-  await clearCompany();
-  await resetLocal();
+  await clearLocalIdentity();
 }

@@ -8,13 +8,17 @@ export const TRADES = [
   'Restoration', 'Remodeling', 'Cleaning', 'Inspection', 'Solar', 'Other',
 ] as const;
 
-/** Up to three letters that identify the person on a stamp. */
+/**
+ * Up to three letters that identify the person on a stamp.
+ * One name: first three letters. Two names: first two of the first name plus the last initial ("Jo Smith" → JOS).
+ * Three or more: one initial each.
+ */
 export function initialsFor(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return '???';
   if (parts.length === 1) return parts[0].slice(0, 3).toUpperCase();
-  const third = parts[2]?.[0] ?? parts[1][1] ?? '';
-  return (parts[0][0] + parts[1][0] + third).toUpperCase().slice(0, 3);
+  if (parts.length === 2) return (parts[0].slice(0, 2) + parts[1][0]).toUpperCase();
+  return parts.slice(0, 3).map((p) => p[0]).join('').toUpperCase();
 }
 
 let company: Company | null = null;
@@ -56,22 +60,22 @@ export async function fetchMembership(userId: string): Promise<{ company: Compan
   return result;
 }
 
-/** Creates the company and the owner's membership for a brand-new user. */
+/** Creates the company and the owner's membership for a brand-new user, atomically on the server. */
 export async function createCompany(input: { userId: string; name: string; trade: string; displayName: string }): Promise<{ company: Company; member: Member }> {
+  const initials = initialsFor(input.displayName);
   const { data: c, error } = await supabase
-    .from('companies')
-    .insert({ name: input.name.trim(), trade: input.trade })
-    .select('id, name, trade, tier, seats, created_at')
+    .rpc('create_company_with_owner', {
+      p_name: input.name.trim(),
+      p_trade: input.trade,
+      p_display_name: input.displayName.trim(),
+      p_initials: initials,
+    })
     .single();
   if (error || !c) throw error ?? new Error('company_create_failed');
-  const initials = initialsFor(input.displayName);
-  const { error: mErr } = await supabase.from('members').insert({
-    user_id: input.userId, company_id: c.id, role: 'owner', display_name: input.displayName.trim(), initials,
-  });
-  if (mErr) throw mErr;
+  const row = c as { id: string; name: string; trade: string; tier: Tier; seats: number; created_at: string };
   const result = {
-    company: { id: c.id, name: c.name, trade: c.trade, tier: c.tier as Tier, seats: c.seats, createdAt: c.created_at },
-    member: { userId: input.userId, companyId: c.id, role: 'owner' as const, displayName: input.displayName.trim(), initials },
+    company: { id: row.id, name: row.name, trade: row.trade, tier: row.tier, seats: row.seats, createdAt: row.created_at },
+    member: { userId: input.userId, companyId: row.id, role: 'owner' as const, displayName: input.displayName.trim(), initials },
   };
   await cache(result.company, result.member);
   return result;

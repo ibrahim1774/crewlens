@@ -20,6 +20,7 @@
     "expo": "~55.0.31",
     "expo-apple-authentication": "~55.0.17",
     "expo-application": "~55.0.19",
+    "expo-asset": "~55.0.20",
     "expo-background-task": "~55.0.22",
     "expo-build-properties": "~55.0.18",
     "expo-camera": "~55.0.23",

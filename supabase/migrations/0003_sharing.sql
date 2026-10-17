@@ -8,7 +8,8 @@ create table share_links (
   expires_at timestamptz,
   revoked_at timestamptz,
   frozen_at timestamptz,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  constraint links_project_company foreign key (project_id, company_id) references projects(id, company_id) on delete cascade
 );
 create index share_links_project on share_links(project_id, type);
 
@@ -31,12 +32,13 @@ create or replace function set_link_expiry() returns trigger language plpgsql as
 declare days int;
 begin
   select pl.link_days into days from companies c join plan_limits pl on pl.tier = c.tier where c.id = new.company_id;
-  if days is not null and new.expires_at is null then
-    new.expires_at := now() + make_interval(days => days);
+  if days is not null then
+    -- Solo links can be shortened by the owner but never extended past the plan cap.
+    new.expires_at := least(coalesce(new.expires_at, now() + make_interval(days => days)), now() + make_interval(days => days));
   end if;
   return new;
 end $$;
-create trigger links_expiry before insert on share_links for each row execute function set_link_expiry();
+create trigger links_expiry before insert or update of expires_at on share_links for each row execute function set_link_expiry();
 
 -- Archiving a project freezes its live links: they keep working but stop updating.
 create or replace function freeze_links_on_archive() returns trigger language plpgsql as $$
@@ -59,7 +61,8 @@ begin
   if not found or l.revoked_at is not null or (l.expires_at is not null and l.expires_at < now()) then
     return jsonb_build_object('status', 'expired');
   end if;
-  select * into p from projects where id = l.project_id;
+  select * into p from projects where id = l.project_id and company_id = l.company_id;
+  if not found then return jsonb_build_object('status', 'expired'); end if;
   insert into link_views(link_id, ua_hash) values (l.id, p_ua_hash);
   return jsonb_build_object(
     'status', 'ok',
