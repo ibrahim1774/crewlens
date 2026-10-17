@@ -77,15 +77,15 @@ name: Plans from the You tab, then a job with a sample invoice edited and saved 
 - tapOn:
     id: "tool-check"
 - tapOn:
-    point: "50%,45%"
+    point: "50%,40%"
 - tapOn:
     id: "tool-date"
 - tapOn:
-    point: "30%,60%"
+    point: "30%,52%"
 - assertVisible: ".*UNSAVED.*"
 - takeScreenshot: 15-editor-marked
 - tapOn:
-    id: "doc-save"
+    id: "tool-save"
 - extendedWaitUntil:
     visible: ".*V2.*"
     timeout: 60000
@@ -102,7 +102,7 @@ name: Plans from the You tab, then a job with a sample invoice edited and saved 
     text: "Close"
     optional: true
 - tapOn:
-    id: "doc-close"
+    point: "6%,10%"
 - extendedWaitUntil:
     visible: ".*Sample invoice 0412.*"
     timeout: 10000

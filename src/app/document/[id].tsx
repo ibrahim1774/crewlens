@@ -273,6 +273,10 @@ export default function DocumentEditor() {
         {TOOLS.map((t) => (
           <ToolButton key={t.tool} icon={t.icon} label={t.label} on={tool === t.tool} onPress={() => pick(t.tool)} testID={`tool-${t.tool}`} />
         ))}
+        <Pressable onPress={save} disabled={!dirty || saving} accessibilityRole="button" accessibilityLabel="Save" testID="tool-save" style={({ pressed }) => ({ flex: 1, alignItems: 'center', gap: 3, paddingVertical: Space.sm, borderRadius: Radius.card, backgroundColor: dirty ? Colors.flag : 'transparent', opacity: pressed ? 0.6 : dirty ? 1 : 0.4 })}>
+          {saving ? <ActivityIndicator color={Colors.surface} /> : <SymbolView name="square.and.arrow.down" size={20} tintColor={dirty ? Colors.surface : Colors.ink} />}
+          <Mono size={10} color={dirty ? Colors.surface : Colors.ink2}>SAVE</Mono>
+        </Pressable>
       </View>
 
       <Sheet visible={send} onClose={() => setSend(false)} title="Send to the client">

@@ -37,21 +37,26 @@ Deno.serve(async (req) => {
   }
   const data = body.data ?? {};
   const name = String(body.type ?? data.name ?? '');
-  const userId = String(data.originalAppUserId ?? '');
+  // The SDK identifies with an opaque alias minted by superwall_alias(); raw user ids are never accepted.
+  const alias = String(data.originalAppUserId ?? '');
   const productId = String((name === 'product_change' ? data.newProductId : data.productId) ?? '');
-  if (!userId || userId.startsWith('$SuperwallAlias:')) return Response.json({ ok: true, skipped: 'no_user' });
+  if (!/^cl_[0-9a-f]{36}$/.test(alias)) return Response.json({ ok: true, skipped: 'no_alias' });
   if (data.environment === 'SANDBOX' && Deno.env.get('ALLOW_SANDBOX') !== 'true') return Response.json({ ok: true, skipped: 'sandbox' });
 
   const tier = tierFor(productId);
-  let next: Tier | null = null;
-  if (GRANT.has(name) && tier) next = tier;
-  if (REVOKE.has(name)) next = 'solo';
-  if (!next) return Response.json({ ok: true, skipped: name });
+  if (!tier || (!GRANT.has(name) && !REVOKE.has(name))) return Response.json({ ok: true, skipped: name });
 
   const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
+  const { data: who } = await supabase.from('superwall_aliases').select('user_id').eq('alias', alias).maybeSingle();
+  if (!who) return Response.json({ ok: true, skipped: 'unknown_alias' });
   // The purchaser must own the company; a crew member's purchase never changes someone else's plan.
-  const { data: m } = await supabase.from('members').select('company_id').eq('user_id', userId).eq('role', 'owner').maybeSingle();
+  const { data: m } = await supabase.from('members').select('company_id, companies(tier)').eq('user_id', who.user_id).eq('role', 'owner').maybeSingle();
   if (!m) return Response.json({ ok: true, skipped: 'not_owner' });
+  const current = (m as unknown as { companies: { tier: Tier } | null }).companies?.tier ?? 'solo';
+  let next: Tier;
+  if (GRANT.has(name)) next = tier;
+  else if (current === tier) next = 'solo'; // an expiration only lowers the plan it was for
+  else return Response.json({ ok: true, skipped: 'stale_expiration' });
   const { error } = await supabase.from('companies').update({ tier: next, seats: SEATS[next] }).eq('id', m.company_id);
   if (error) return new Response('db', { status: 500 });
   return Response.json({ ok: true, company: m.company_id, tier: next });

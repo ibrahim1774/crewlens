@@ -5,6 +5,7 @@ import { track, trackConversion } from '@/lib/analytics';
 import { useSession } from '@/lib/auth';
 import { paywallEnabled } from '@/lib/plan';
 import { notify } from '@/lib/store';
+import { supabase } from '@/lib/supabase';
 
 /** Placements configured in the Superwall dashboard (Crew Lens campaign). */
 export type Placement = 'onboarding_complete' | 'subscription_lapsed' | 'upgrade_tapped';
@@ -25,7 +26,13 @@ export function SubscriptionSync() {
 
   useEffect(() => {
     if (!session?.user.id) return;
-    identify(session.user.id).catch(() => {});
+    // Opaque alias from the server, so purchases can only ever be attributed to this account.
+    supabase.rpc('superwall_alias').then(
+      ({ data }) => {
+        if (typeof data === 'string') identify(data).catch(() => {});
+      },
+      () => null,
+    );
   }, [identify, session?.user.id]);
 
   useEffect(() => {
