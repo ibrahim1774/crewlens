@@ -1,0 +1,34 @@
+appId: com.ibrahim1774.crewlens
+name: Create a job, take a photo, see it in the grid
+# Assumes the app is signed in and past onboarding (run once by hand on the device).
+---
+- launchApp
+- extendedWaitUntil:
+    visible:
+      id: "new-job"
+    timeout: 20000
+- tapOn:
+    id: "new-job"
+- tapOn:
+    id: "job-name"
+- inputText: "Maestro House"
+- tapOn: "Create job"
+- extendedWaitUntil:
+    visible: "Maestro House"
+    timeout: 10000
+- takeScreenshot: 03-job-empty
+- tapOn:
+    id: "job-camera"
+- extendedWaitUntil:
+    visible:
+      id: "shutter"
+    timeout: 15000
+- tapOn:
+    id: "shutter"
+- waitForAnimationToEnd
+- tapOn:
+    point: "8%,7%"
+- extendedWaitUntil:
+    visible: "1 PHOTO"
+    timeout: 15000
+- takeScreenshot: 04-job-one-photo

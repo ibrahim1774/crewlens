@@ -1,0 +1,17 @@
+appId: com.ibrahim1774.crewlens
+name: Create a live share link from a job
+# Assumes a job named "Maestro House" exists (run job-and-photo.yaml first).
+---
+- launchApp
+- tapOn: "Maestro House"
+- tapOn:
+    id: "job-share"
+- extendedWaitUntil:
+    visible: "Live link to this job"
+    timeout: 5000
+- takeScreenshot: 05-share-sheet
+- tapOn: "Live link to this job"
+- extendedWaitUntil:
+    visible: "Copied"
+    timeout: 15000
+    optional: true

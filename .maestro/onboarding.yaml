@@ -1,0 +1,18 @@
+appId: com.ibrahim1774.crewlens
+name: Crew Lens onboarding reaches sign-in
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "Get started"
+    timeout: 30000
+- takeScreenshot: 01-welcome
+- tapOn: "Get started"
+- extendedWaitUntil:
+    visible: "Sign in"
+    timeout: 10000
+- tapOn:
+    id: "email"
+- inputText: "maestro@crewlens.test"
+- takeScreenshot: 02-sign-in
+- assertVisible: "Send code"
