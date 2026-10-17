@@ -101,7 +101,7 @@ export async function createCompany(input: { userId: string; name: string; trade
 /** Redeems an invite code for a signed-in user with no company. */
 export async function joinCompany(input: { userId: string; code: string; displayName: string }): Promise<{ company: Company; member: Member }> {
   if (!supabaseConfigured) throw new Error(NOT_CONFIGURED);
-  const { error } = await supabase.rpc('join_company', { p_code: input.code.trim().toUpperCase(), p_display_name: input.displayName, p_initials: initialsFor(input.displayName) });
+  const { error } = await supabase.rpc('join_company', { p_code: input.code.trim().toUpperCase(), p_display_name: input.displayName });
   if (error) throw new Error(error.message.includes('invite_invalid') ? 'invite_invalid' : error.message.includes('limit:seats') ? 'limit:seats' : error.message.includes('already_member') ? 'already_member' : error.message);
   const m = await fetchMembership(input.userId);
   if (!m) throw new Error('join_failed');
