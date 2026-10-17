@@ -7,9 +7,10 @@ import { useSession } from '@/lib/auth';
 import { useCompany } from '@/lib/company';
 
 function icon(name: SFSymbol, active: SFSymbol) {
-  return ({ focused, color }: { focused: boolean; color: string }) => (
-    <SymbolView name={focused ? active : name} size={22} tintColor={color} />
-  );
+  function TabIcon({ focused, color }: { focused: boolean; color: string }) {
+    return <SymbolView name={focused ? active : name} size={22} tintColor={color} />;
+  }
+  return TabIcon;
 }
 
 /** The centre slot: a raised flag-orange circle that opens the camera as a modal. */
