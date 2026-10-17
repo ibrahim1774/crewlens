@@ -10,7 +10,11 @@ create table if not exists meta (key text primary key, value text);
 create table if not exists jobs (
   id text primary key, company_id text not null, name text not null, address text default '', client_name text,
   lat real, lng real, status text not null default 'active', cover_photo_id text,
-  created_at text not null, updated_at text not null, archived_at text, remote integer not null default 0
+  created_at text not null, updated_at text not null, archived_at text, remote integer not null default 0,
+  dirty integer not null default 0, sync_error text
+);
+create table if not exists tombstones (
+  id text primary key, kind text not null, key text, company_id text, created_at text not null
 );
 create table if not exists photos (
   id text primary key, job_id text not null, company_id text not null, taker_id text not null, taker_initials text not null default '',
@@ -32,6 +36,11 @@ select j.*,
            (select local_thumb_uri from photos p where p.job_id = j.id order by taken_at desc limit 1)) as cover_uri
 from jobs j`;
 
+const MIGRATIONS = [
+  'alter table jobs add column dirty integer not null default 0',
+  'alter table jobs add column sync_error text',
+];
+
 let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
 
 export function ready(): Promise<SQLite.SQLiteDatabase> {
@@ -39,6 +48,13 @@ export function ready(): Promise<SQLite.SQLiteDatabase> {
     dbPromise = (async () => {
       const db = await SQLite.openDatabaseAsync('crewlens.db');
       await db.execAsync(SCHEMA);
+      for (const m of MIGRATIONS) {
+        try {
+          await db.execAsync(m);
+        } catch {
+          // column already exists
+        }
+      }
       return db;
     })();
   }
@@ -80,19 +96,40 @@ export const jobs = {
   async upsert(j: Omit<Job, 'lastPhotoAt' | 'photoCount' | 'pendingCount' | 'coverUri'>): Promise<void> {
     const db = await ready();
     await db.runAsync(
-      `insert into jobs(id, company_id, name, address, client_name, lat, lng, status, cover_photo_id, created_at, updated_at, archived_at, remote)
-       values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `insert into jobs(id, company_id, name, address, client_name, lat, lng, status, cover_photo_id, created_at, updated_at, archived_at, remote, dirty, sync_error)
+       values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        on conflict(id) do update set name = excluded.name, address = excluded.address, client_name = excluded.client_name,
          lat = excluded.lat, lng = excluded.lng, status = excluded.status, cover_photo_id = excluded.cover_photo_id,
-         updated_at = excluded.updated_at, archived_at = excluded.archived_at, remote = excluded.remote`,
-      j.id, j.companyId, j.name, j.address, j.clientName, j.lat, j.lng, j.status, j.coverPhotoId, j.createdAt, j.updatedAt, j.archivedAt, j.remote ? 1 : 0
+         updated_at = excluded.updated_at, archived_at = excluded.archived_at, remote = excluded.remote,
+         dirty = excluded.dirty, sync_error = excluded.sync_error`,
+      j.id, j.companyId, j.name, j.address, j.clientName, j.lat, j.lng, j.status, j.coverPhotoId, j.createdAt, j.updatedAt, j.archivedAt, j.remote ? 1 : 0, j.dirty ? 1 : 0, j.syncError
     );
     notify();
+  },
+  async markDirty(id: string): Promise<void> {
+    const db = await ready();
+    await db.runAsync('update jobs set dirty = 1, updated_at = ? where id = ?', new Date().toISOString(), id);
+    notify();
+  },
+  async markSynced(id: string): Promise<void> {
+    const db = await ready();
+    await db.runAsync('update jobs set remote = 1, dirty = 0, sync_error = null where id = ?', id);
+    notify();
+  },
+  async setSyncError(id: string, error: string | null): Promise<void> {
+    const db = await ready();
+    await db.runAsync('update jobs set sync_error = ? where id = ?', error, id);
+    notify();
+  },
+  async listDirty(): Promise<Job[]> {
+    const db = await ready();
+    const rows = await db.getAllAsync<JobRow>(`${JOB_SELECT} where j.dirty = 1 or j.remote = 0 order by j.created_at asc`);
+    return rows.map(mapJobRow);
   },
   async setStatus(id: string, status: JobStatus): Promise<void> {
     const db = await ready();
     const now = new Date().toISOString();
-    await db.runAsync('update jobs set status = ?, archived_at = ?, updated_at = ? where id = ?', status, status === 'archived' ? now : null, now, id);
+    await db.runAsync('update jobs set status = ?, archived_at = ?, updated_at = ?, dirty = 1 where id = ?', status, status === 'archived' ? now : null, now, id);
     notify();
   },
   async setRemote(id: string, remote: boolean): Promise<void> {
@@ -186,9 +223,34 @@ export const photos = {
   },
 };
 
+export interface Tombstone {
+  id: string;
+  kind: 'photo' | 'job';
+  key: string | null;
+  companyId: string | null;
+  createdAt: string;
+}
+
+/** Deletions that still need to reach the server. */
+export const tombstones = {
+  async add(t: Omit<Tombstone, 'createdAt'>): Promise<void> {
+    const db = await ready();
+    await db.runAsync('insert or replace into tombstones(id, kind, key, company_id, created_at) values (?, ?, ?, ?, ?)', t.id, t.kind, t.key, t.companyId, new Date().toISOString());
+  },
+  async list(): Promise<Tombstone[]> {
+    const db = await ready();
+    const rows = await db.getAllAsync<{ id: string; kind: 'photo' | 'job'; key: string | null; company_id: string | null; created_at: string }>('select * from tombstones order by created_at asc');
+    return rows.map((r) => ({ id: r.id, kind: r.kind, key: r.key, companyId: r.company_id, createdAt: r.created_at }));
+  },
+  async remove(id: string): Promise<void> {
+    const db = await ready();
+    await db.runAsync('delete from tombstones where id = ?', id);
+  },
+};
+
 /** Wipes everything local. Used on sign out. */
 export async function resetLocal(): Promise<void> {
   const db = await ready();
-  await db.execAsync('delete from photos; delete from jobs; delete from meta;');
+  await db.execAsync('delete from photos; delete from jobs; delete from meta; delete from tombstones;');
   notify();
 }

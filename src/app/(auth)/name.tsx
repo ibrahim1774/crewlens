@@ -9,11 +9,16 @@ import { Stamp } from '@/components/stamp';
 import { Body, Heading, Mono } from '@/components/text';
 import { Colors, Space } from '@/constants/theme';
 import { track } from '@/lib/analytics';
-import { initialsFor } from '@/lib/company';
+import { initialsFor, useCompany } from '@/lib/company';
 import { meta } from '@/lib/db';
 
 export default function Name() {
   const [name, setName] = useState('');
+  const company = useCompany();
+  useEffect(() => {
+    // A slow membership lookup resolved after the gate: this user already has a company.
+    if (company) router.replace('/(tabs)');
+  }, [company]);
   useEffect(() => {
     track('onboarding_step', { step: 'name' });
     meta.get('pending_name').then((n) => n && setName(n));

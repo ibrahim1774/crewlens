@@ -32,6 +32,8 @@ create trigger projects_limit before insert or update of status on projects
 create or replace function enforce_photo_limit() returns trigger language plpgsql as $$
 declare lim int; cnt int;
 begin
+  -- A retried upload of a photo that already landed must not count against the cap.
+  if exists (select 1 from photos where id = new.id) then return new; end if;
   select case when new.kind = 'video' then pl.videos_per_project else pl.photos_per_project end into lim
     from companies c join plan_limits pl on pl.tier = c.tier where c.id = new.company_id;
   select count(*) into cnt from photos where project_id = new.project_id and kind = new.kind;

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 
 import { initAttribution } from '@/lib/analytics';
-import { clearLocalIdentity, getSession, initAuth } from '@/lib/auth';
-import { companyLoaded, fetchMembership, getCompany, getMember, loadCachedCompany } from '@/lib/company';
+import { clearLocalIdentity, ensureMembershipChecked, getSession, initAuth } from '@/lib/auth';
+import { companyLoaded, getCompany, getMember, loadCachedCompany, setMembershipChecked } from '@/lib/company';
 import { meta, ready } from '@/lib/db';
 
 export interface BootState {
@@ -27,7 +27,9 @@ export function boot(): Promise<BootState> {
         await clearLocalIdentity();
       }
       if (session && !getCompany()) {
-        await fetchMembership(session.user.id).catch(() => null);
+        await ensureMembershipChecked(session.user.id);
+      } else if (!session) {
+        setMembershipChecked(false);
       }
       const onboarded = (await meta.get('onboarded')) === '1';
       return { done: true, onboarded };

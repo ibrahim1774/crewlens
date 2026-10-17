@@ -1,6 +1,9 @@
 -- Crew Lens core schema. Applied through the Supabase MCP / CLI; kept here as the record.
 create extension if not exists pgcrypto;
 
+-- New functions must not be callable by API roles unless granted explicitly.
+alter default privileges in schema public revoke execute on functions from public, anon, authenticated;
+
 create table companies (
   id uuid primary key default gen_random_uuid(),
   name text not null,
@@ -65,6 +68,7 @@ create index photos_project on photos(project_id, taken_at desc);
 create or replace function my_company_ids() returns setof uuid
 language sql stable security definer set search_path = public as
 $$ select company_id from members where user_id = auth.uid() $$;
+grant execute on function my_company_ids() to authenticated;
 
 alter table companies enable row level security;
 alter table members enable row level security;
@@ -75,6 +79,7 @@ alter table photos enable row level security;
 create or replace function my_owned_company_ids() returns setof uuid
 language sql stable security definer set search_path = public as
 $$ select company_id from members where user_id = auth.uid() and role = 'owner' $$;
+grant execute on function my_owned_company_ids() to authenticated;
 
 -- Companies are created only through create_company_with_owner(); no direct insert.
 create policy companies_select on companies for select to authenticated using (id in (select my_company_ids()));
@@ -85,7 +90,8 @@ create policy companies_update on companies for update to authenticated
 create or replace function protect_billing_columns() returns trigger language plpgsql as $$
 begin
   if (new.tier is distinct from old.tier or new.seats is distinct from old.seats)
-     and coalesce(auth.jwt() ->> 'role', current_setting('role', true)) <> 'service_role' then
+     and coalesce(auth.jwt() ->> 'role', current_setting('role', true)) <> 'service_role'
+     and session_user <> 'postgres' then
     raise exception 'billing_columns_readonly' using errcode = '42501';
   end if;
   return new;
@@ -99,8 +105,12 @@ create policy members_delete on members for delete to authenticated
   using (company_id in (select my_owned_company_ids()) and user_id <> auth.uid());
 
 -- Never leave a company without an owner.
-create or replace function protect_last_owner() returns trigger language plpgsql as $$
+create or replace function protect_last_owner() returns trigger
+language plpgsql security definer set search_path = public as $$
 begin
+  -- Cascades from a deleted user or company must not be blocked.
+  if not exists (select 1 from auth.users where id = old.user_id) then return old; end if;
+  if not exists (select 1 from companies where id = old.company_id) then return old; end if;
   if old.role = 'owner' and not exists (
     select 1 from members where company_id = old.company_id and role = 'owner' and user_id <> old.user_id
   ) then
@@ -124,7 +134,7 @@ begin
     values (auth.uid(), c.id, 'owner', trim(p_display_name), p_initials);
   return c;
 end $$;
-revoke all on function create_company_with_owner(text, text, text, text) from public;
+revoke all on function create_company_with_owner(text, text, text, text) from public, anon, authenticated;
 grant execute on function create_company_with_owner(text, text, text, text) to authenticated;
 
 create policy projects_rw on projects for all to authenticated

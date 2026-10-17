@@ -24,18 +24,31 @@ export function initialsFor(name: string): string {
 let company: Company | null = null;
 let member: Member | null = null;
 let loaded = false;
+/** True once the server has been asked whether the signed-in user belongs to a company (or we have a cache). */
+let membershipChecked = false;
+
+export function setMembershipChecked(v: boolean) {
+  membershipChecked = v;
+  notify();
+}
+export function useMembershipChecked(): boolean {
+  useVersion();
+  return membershipChecked;
+}
 
 /** Reads the cached company and member from SQLite. Call once at boot. */
 export async function loadCachedCompany(): Promise<void> {
   company = await db.meta.getJSON<Company>('company');
   member = await db.meta.getJSON<Member>('member');
   loaded = true;
+  if (company) membershipChecked = true;
   notify();
 }
 
 async function cache(c: Company | null, m: Member | null) {
   company = c;
   member = m;
+  if (c) membershipChecked = true;
   await db.meta.setJSON('company', c);
   await db.meta.setJSON('member', m);
   notify();
@@ -49,7 +62,9 @@ export async function fetchMembership(userId: string): Promise<{ company: Compan
     .eq('user_id', userId)
     .limit(1)
     .maybeSingle();
-  if (error || !data) return null;
+  if (error) throw error;
+  setMembershipChecked(true);
+  if (!data) return null;
   const c = data.companies as unknown as { id: string; name: string; trade: string; tier: Tier; seats: number; created_at: string } | null;
   if (!c) return null;
   const result = {

@@ -1,0 +1,4 @@
+# Supabase project config kept in the repo so function settings are not CLI flags someone forgets.
+[functions.share]
+# The share page is anonymous. The function validates the share token itself and uses the service role.
+verify_jwt = false

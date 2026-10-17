@@ -1,4 +1,5 @@
 import * as Crypto from 'expo-crypto';
+import { Directory, File, Paths } from 'expo-file-system';
 import * as Location from 'expo-location';
 import { useEffect, useState } from 'react';
 
@@ -9,8 +10,14 @@ import * as db from '@/lib/db';
 import { distanceM, type LatLng } from '@/lib/geo';
 import { effectiveTier, limitsFor } from '@/lib/plan';
 import { useVersion } from '@/lib/store';
+import { runQueue } from '@/lib/uploader';
 import { LimitError, limitErrorFrom, supabase, supabaseConfigured } from '@/lib/supabase';
 import type { Job } from '@/types/models';
+
+/** Server rows never overwrite local rows that still have unpushed changes. */
+export function shouldOverwriteLocal(local: Pick<Job, 'dirty'> | null): boolean {
+  return !local?.dirty;
+}
 
 export interface RankedJobs {
   nearby: Job[];
@@ -168,16 +175,30 @@ export async function createJob(input: NewJob): Promise<Job> {
     updatedAt: now,
     archivedAt: null,
     remote: false,
+    dirty: true,
+    syncError: null,
   };
   await db.jobs.upsert(job);
   track('job_created', { has_location: job.lat != null });
-  await pushJob(job.id).catch(() => {});
+  try {
+    await pushJob(job.id);
+  } catch (e) {
+    if (e instanceof LimitError) {
+      // Brand-new, no photos yet: safe to drop the local row and show the limit sheet.
+      await db.jobs.remove(job.id);
+      throw e;
+    }
+    // Offline or transient: the job stays local and dirty; the uploader pushes it later.
+  }
   const saved = await db.jobs.get(job.id);
-  if (!saved) throw new Error('job_missing');
+  if (!saved) throw new Error('Could not save the job. Try again.');
   return saved;
 }
 
-/** Upserts one local job to Supabase. Deletes the local row and rethrows on a server-side limit error. */
+/**
+ * Upserts one local job to Supabase and clears its dirty flag. On a server-side limit error the job
+ * is kept locally with a sync error (never deleted, it may hold photos) and a LimitError is thrown.
+ */
 export async function pushJob(id: string): Promise<void> {
   if (!supabaseConfigured) return;
   const job = await db.jobs.get(id);
@@ -200,13 +221,25 @@ export async function pushJob(id: string): Promise<void> {
   );
   if (error) {
     const limit = limitErrorFrom(error);
-    if (limit && !job.remote) {
-      await db.jobs.remove(job.id);
+    if (limit) {
+      await db.jobs.setSyncError(job.id, limit.kind);
       throw limit;
     }
     throw error;
   }
-  await db.jobs.setRemote(job.id, true);
+  await db.jobs.markSynced(job.id);
+}
+
+/** Pushes every dirty or never-pushed job. Limit errors are recorded on the job and skipped. */
+export async function pushDirtyJobs(): Promise<void> {
+  if (!supabaseConfigured) return;
+  for (const job of await db.jobs.listDirty()) {
+    try {
+      await pushJob(job.id);
+    } catch (e) {
+      if (!(e instanceof LimitError)) return; // offline: stop, try again next run
+    }
+  }
 }
 
 export async function archiveJob(id: string): Promise<void> {
@@ -227,14 +260,32 @@ export async function unarchiveJob(id: string): Promise<void> {
 export async function updateJob(id: string, patch: Partial<Pick<Job, 'name' | 'address' | 'clientName'>>): Promise<void> {
   const job = await db.jobs.get(id);
   if (!job) return;
-  await db.jobs.upsert({ ...job, ...patch, updatedAt: new Date().toISOString() });
+  await db.jobs.upsert({ ...job, ...patch, updatedAt: new Date().toISOString(), dirty: true });
   await pushJob(id).catch(() => {});
 }
 
+/** Deletes locally (rows and files) and records a tombstone so the server delete is replayed when online. */
 export async function deleteJob(id: string): Promise<void> {
+  const job = await db.jobs.get(id);
+  const photos = await db.photos.listByJob(id);
+  for (const p of photos) {
+    for (const uri of [p.localUri, p.localThumbUri]) {
+      if (!uri) continue;
+      try {
+        new File(uri).delete();
+      } catch {
+        // already gone
+      }
+    }
+  }
+  try {
+    new Directory(Paths.document, 'photos', id).delete();
+  } catch {
+    // never had photos
+  }
   await db.jobs.remove(id);
-  if (!supabaseConfigured) return;
-  await supabase.from('projects').delete().eq('id', id);
+  if (job?.remote) await db.tombstones.add({ id, kind: 'job', key: null, companyId: job.companyId });
+  runQueue().catch(() => {});
 }
 
 /** Pulls the company's jobs from Supabase into SQLite. Local pending rows win. */
@@ -243,7 +294,11 @@ export async function pullJobs(): Promise<void> {
   if (!company || !supabaseConfigured) return;
   const { data, error } = await supabase.from('projects').select('*').eq('company_id', company.id);
   if (error || !data) return;
+  const pending = new Set((await db.tombstones.list()).filter((t) => t.kind === 'job').map((t) => t.id));
   for (const r of data) {
+    if (pending.has(r.id)) continue;
+    const local = await db.jobs.get(r.id);
+    if (!shouldOverwriteLocal(local)) continue;
     await db.jobs.upsert({
       id: r.id,
       companyId: r.company_id,
@@ -258,6 +313,8 @@ export async function pullJobs(): Promise<void> {
       updatedAt: r.updated_at,
       archivedAt: r.archived_at,
       remote: true,
+      dirty: false,
+      syncError: null,
     });
   }
 }

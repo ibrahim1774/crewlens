@@ -65,7 +65,9 @@ export default function JobScreen() {
   }, [copied]);
 
   const sections = useMemo(() => groupByDay(photos).map((g) => ({ key: g.key, title: g.label, data: chunk(g.photos, COLS) })), [photos]);
-  const failed = photos.filter((p) => p.syncState === 'failed').length;
+  const failedPhotos = photos.filter((p) => p.syncState === 'failed');
+  const failed = failedPhotos.length;
+  const capped = failedPhotos.some((p) => p.lastError?.includes('limit_photos_per_project'));
   const cover = photos.find((p) => p.id === job?.coverPhotoId) ?? photos[0];
   const archived = job?.status === 'archived';
 
@@ -130,11 +132,19 @@ export default function JobScreen() {
         <ActionButton name="ellipsis" label="More" onPress={() => setMore(true)} />
       </View>
       {failed > 0 ? (
-        <Pressable onPress={() => retryFailed()} accessibilityRole="button" style={{ flexDirection: 'row', alignItems: 'center', gap: Space.sm, padding: Space.md, backgroundColor: Colors.surface, borderBottomWidth: 1, borderColor: Colors.hairline }}>
+        <Pressable onPress={() => (capped ? router.push({ pathname: '/job/new', params: { returnTo: 'job' } }) : retryFailed())} accessibilityRole="button" style={{ flexDirection: 'row', alignItems: 'center', gap: Space.sm, padding: Space.md, backgroundColor: Colors.surface, borderBottomWidth: 1, borderColor: Colors.hairline }}>
           <SymbolView name="exclamationmark.triangle.fill" size={16} tintColor={Colors.flag} />
-          <Body size={13} style={{ flex: 1 }}>{failed} {failed === 1 ? 'photo' : 'photos'} failed to upload.</Body>
-          <Heading size={14} color={Colors.flag}>Retry</Heading>
+          <Body size={13} style={{ flex: 1 }}>
+            {capped ? `${TIER_LABEL[tier]} allows ${limitsFor(tier).photosPerJob} photos per job. ${failed} did not upload.` : `${failed} ${failed === 1 ? 'photo' : 'photos'} failed to upload.`}
+          </Body>
+          <Heading size={14} color={Colors.flag}>{capped ? 'New job' : 'Retry'}</Heading>
         </Pressable>
+      ) : null}
+      {job.syncError ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: Space.sm, padding: Space.md, backgroundColor: Colors.surface, borderBottomWidth: 1, borderColor: Colors.hairline }}>
+          <SymbolView name="icloud.slash" size={16} tintColor={Colors.flag} />
+          <Body size={13} style={{ flex: 1 }}>This job is over your active-job cap and is not syncing. Archive another job to free a slot.</Body>
+        </View>
       ) : null}
     </View>
   );

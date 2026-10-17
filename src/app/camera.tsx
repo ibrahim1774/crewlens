@@ -1,6 +1,6 @@
 import { CameraView, useCameraPermissions, type CameraType, type FlashMode } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, View } from 'react-native';
@@ -8,15 +8,18 @@ import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
+import { LimitSheet } from '@/components/limit-sheet';
 import { JobChipStrip } from '@/components/job-chip-strip';
 import { Stamp } from '@/components/stamp';
 import { Heading, Mono } from '@/components/text';
 import { Colors, Space } from '@/constants/theme';
 import { useCompany, useMember } from '@/lib/company';
+import { consumeCameraJob } from '@/lib/handoff';
 import { useFix, useJobs } from '@/lib/jobs';
-import { capture } from '@/lib/photos';
+import { atPhotoCap, capture } from '@/lib/photos';
 import { effectiveTier, limitsFor } from '@/lib/plan';
 import { stripOrder } from '@/lib/strip';
+import { LimitError } from '@/lib/supabase';
 import type { Photo } from '@/types/models';
 
 function IconButton({ name, onPress, label }: { name: string; onPress: () => void; label: string }) {
@@ -49,6 +52,15 @@ export default function Camera() {
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [last, setLast] = useState<Photo | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [limit, setLimit] = useState<LimitError | null>(null);
+  const tier = effectiveTier(company?.tier ?? null, true);
+
+  useFocusEffect(
+    useCallback(() => {
+      const handed = consumeCameraJob();
+      if (handed) setManual(handed);
+    }, [])
+  );
 
   const strip = useMemo(() => stripOrder(jobs, fix, manual), [jobs, fix, manual]);
   const selected = strip.selected;
@@ -83,6 +95,11 @@ export default function Camera() {
       router.push({ pathname: '/job/new', params: { returnTo: 'camera' } });
       return;
     }
+    const cap = limitsFor(tier).photosPerJob;
+    if (await atPhotoCap(selected, cap)) {
+      setLimit(new LimitError('photos_per_job', cap));
+      return;
+    }
     setBusy(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     try {
@@ -91,16 +108,15 @@ export default function Camera() {
       setLast(photo);
       setCounts((c) => ({ ...c, [selected]: (c[selected] ?? 0) + 1 }));
     } catch (e) {
-      Alert.alert('Could not save photo', e instanceof Error ? e.message : 'Try again.');
+      Alert.alert('Could not save photo', e instanceof Error && e.message === 'no_company' ? 'Sign in again to keep shooting.' : 'Try again.');
     } finally {
       setBusy(false);
     }
-  }, [ready, busy, selected, fix]);
+  }, [ready, busy, selected, fix, tier]);
 
   const longPress = useCallback(() => {
-    const tier = effectiveTier(company?.tier ?? null, true);
     setToast(limitsFor(tier).videosPerJob === 0 ? 'Video is on Pro and Crew.' : 'Video is coming soon.');
-  }, [company?.tier]);
+  }, [tier]);
 
   if (!permission) return <View style={{ flex: 1, backgroundColor: Colors.camera }} />;
   if (!permission.granted) {
@@ -169,6 +185,7 @@ export default function Camera() {
           </Pressable>
         </View>
       </View>
+      <LimitSheet error={limit} tier={tier} onClose={() => setLimit(null)} />
     </View>
   );
 }

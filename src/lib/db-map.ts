@@ -4,7 +4,7 @@ import type { Job, JobStatus, MediaKind, Photo, SyncState } from '@/types/models
 export interface JobRow {
   id: string; company_id: string; name: string; address: string; client_name: string | null;
   lat: number | null; lng: number | null; status: string; cover_photo_id: string | null;
-  created_at: string; updated_at: string; archived_at: string | null; remote: number;
+  created_at: string; updated_at: string; archived_at: string | null; remote: number; dirty?: number; sync_error?: string | null;
   photo_count: number | null; pending_count: number | null; last_photo_at: string | null; cover_uri?: string | null;
 }
 
@@ -31,6 +31,8 @@ export function mapJobRow(r: JobRow): Job {
     updatedAt: r.updated_at,
     archivedAt: r.archived_at,
     remote: !!r.remote,
+    dirty: !!r.dirty,
+    syncError: r.sync_error ?? null,
     coverUri: r.cover_uri ?? null,
     lastPhotoAt: r.last_photo_at,
     photoCount: r.photo_count ?? 0,

@@ -3,14 +3,15 @@ import * as MediaLibrary from 'expo-media-library';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { captureRef } from 'react-native-view-shot';
 import { Alert, Dimensions, FlatList, Pressable, Share, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { usePhotoUri } from '@/components/photo-tile';
 import { Stamp } from '@/components/stamp';
-import { Heading, Mono } from '@/components/text';
+import { Mono } from '@/components/text';
 import { Colors, Space } from '@/constants/theme';
-import { deletePhoto, useJobPhotos } from '@/lib/photos';
+import { deletePhoto, useJobPhotosState } from '@/lib/photos';
 import type { Photo } from '@/types/models';
 
 const { width: W } = Dimensions.get('window');
@@ -37,31 +38,51 @@ function Action({ name, label, onPress, tint = Colors.onCamera }: { name: string
 export default function PhotoViewer() {
   const insets = useSafeAreaInsets();
   const { id, jobId } = useLocalSearchParams<{ id: string; jobId: string }>();
-  const photos = useJobPhotos(jobId);
+  const { photos, loaded } = useJobPhotosState(jobId);
   const start = useMemo(() => Math.max(0, photos.findIndex((p) => p.id === id)), [photos, id]);
-  const [index, setIndex] = useState(start);
+  const [index, setIndex] = useState<number | null>(null);
   const list = useRef<FlatList<Photo>>(null);
-  const current = photos[index] ?? photos[0];
+  const exportRef = useRef<View>(null);
+  const [exporting, setExporting] = useState<Photo | null>(null);
+  const current = index != null ? photos[index] ?? photos[photos.length - 1] : undefined;
 
   useEffect(() => {
-    if (photos.length === 0) router.back();
-  }, [photos.length]);
+    if (loaded && index == null) setIndex(start);
+  }, [loaded, start, index]);
+  useEffect(() => {
+    // Only leave on a real transition to zero, never on the pre-load empty list.
+    if (loaded && photos.length === 0) router.back();
+  }, [loaded, photos.length]);
+
+  /** Renders the photo with its stamp burned in and returns a file URI. The stored original is untouched. */
+  const stamped = async (p: Photo): Promise<string | null> => {
+    if (!p.localUri) {
+      Alert.alert('Not downloaded', 'This photo lives in the cloud. Share the job link instead.');
+      return null;
+    }
+    setExporting(p);
+    await new Promise((r) => setTimeout(r, 120));
+    try {
+      return await captureRef(exportRef, { format: 'jpg', quality: 0.9, result: 'tmpfile' });
+    } finally {
+      setExporting(null);
+    }
+  };
 
   const share = async () => {
-    const uri = current?.localUri;
-    if (!uri) {
-      Alert.alert('Not downloaded', 'This photo lives in the cloud. Share the job link instead.');
-      return;
-    }
-    await Share.share({ url: uri });
+    if (!current) return;
+    const uri = await stamped(current);
+    if (uri) await Share.share({ url: uri });
   };
 
   const save = async () => {
-    if (!current?.localUri) return;
+    if (!current) return;
     const { status } = await MediaLibrary.requestPermissionsAsync(true);
     if (status !== 'granted') return;
-    await MediaLibrary.createAssetAsync(current.localUri);
-    Alert.alert('Saved to Photos');
+    const uri = await stamped(current);
+    if (!uri) return;
+    await MediaLibrary.createAssetAsync(uri);
+    Alert.alert('Saved to Photos', 'With the stamp burned in.');
   };
 
   const remove = () => {
@@ -72,16 +93,24 @@ export default function PhotoViewer() {
     ]);
   };
 
-  if (!current) return <View style={{ flex: 1, backgroundColor: Colors.camera }} />;
+  if (!current || index == null) return <View style={{ flex: 1, backgroundColor: Colors.camera }} />;
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors.camera }}>
+      {exporting?.localUri ? (
+        <View ref={exportRef} collapsable={false} style={{ position: 'absolute', left: -10000, width: exporting.width || 2048, height: exporting.height || 1536 }}>
+          <Image source={{ uri: exporting.localUri }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+          <View style={{ position: 'absolute', left: 32, bottom: 32, transform: [{ scale: Math.max(2, (exporting.width || 2048) / 700) }], transformOrigin: 'left bottom' }}>
+            <Stamp photo={exporting} initials={exporting.takerInitials} tone="dark" size={13} />
+          </View>
+        </View>
+      ) : null}
       <FlatList
         ref={list}
         data={photos}
         horizontal
         pagingEnabled
-        initialScrollIndex={start}
+        initialScrollIndex={index}
         getItemLayout={(_, i) => ({ length: W, offset: W * i, index: i })}
         keyExtractor={(p) => p.id}
         renderItem={({ item }) => <Page photo={item} />}
@@ -107,7 +136,6 @@ export default function PhotoViewer() {
           <Action name="square.and.arrow.down" label="Save" onPress={save} />
           <Action name="trash" label="Delete" onPress={remove} tint={Colors.flag} />
         </View>
-        <Heading size={13} color={Colors.ink2} style={{ display: 'none' }}>{current.id}</Heading>
       </View>
     </View>
   );

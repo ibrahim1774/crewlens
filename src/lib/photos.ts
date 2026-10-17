@@ -144,27 +144,37 @@ export async function capture(input: CaptureInput): Promise<Photo> {
   const job = await db.jobs.get(input.jobId);
   if (job && !job.coverPhotoId) await db.jobs.setCover(input.jobId, id);
 
-  track('photo_captured', { has_gps: photo.lat != null });
+  track('photo_captured', { has_gps: photo.lat != null, offline: !supabaseConfigured });
   runQueue().catch(() => {});
   return photo;
 }
 
-/** Live list of a job's photos. */
-export function useJobPhotos(jobId: string | undefined): Photo[] {
+/** Live list of a job's photos plus whether the first read has completed. */
+export function useJobPhotosState(jobId: string | undefined): { photos: Photo[]; loaded: boolean } {
   const v = useVersion();
-  const [photos, setPhotos] = useState<Photo[]>([]);
+  const [state, setState] = useState<{ photos: Photo[]; loaded: boolean }>({ photos: [], loaded: false });
   useEffect(() => {
     if (!jobId) return;
     let alive = true;
-    db.photos.listByJob(jobId).then((p) => alive && setPhotos(p));
+    db.photos.listByJob(jobId).then((photos) => alive && setState({ photos, loaded: true }));
     return () => {
       alive = false;
     };
   }, [jobId, v]);
-  return photos;
+  return state;
 }
 
-/** Removes a photo locally and remotely. Storage objects are removed best-effort. */
+/** Live list of a job's photos. */
+export function useJobPhotos(jobId: string | undefined): Photo[] {
+  return useJobPhotosState(jobId).photos;
+}
+
+/** Photos on a job at or over the plan cap? */
+export async function atPhotoCap(jobId: string, cap: number): Promise<boolean> {
+  return (await db.photos.countByJob(jobId, 'photo')) >= cap;
+}
+
+/** Removes a photo locally now and on the server via a tombstone the uploader replays. */
 export async function deletePhoto(p: Photo): Promise<void> {
   for (const uri of [p.localUri, p.localThumbUri]) {
     if (!uri) continue;
@@ -180,10 +190,9 @@ export async function deletePhoto(p: Photo): Promise<void> {
     const rest = await db.photos.listByJob(p.jobId);
     await db.jobs.setCover(p.jobId, rest[0]?.id ?? null);
   }
-  if (!supabaseConfigured || !p.storagePath) return;
-  await supabase.from('photos').delete().eq('id', p.id);
-  await supabase.storage.from('photos').remove([p.storagePath]);
-  if (p.thumbPath) await supabase.storage.from('thumbs').remove([p.thumbPath]);
+  // Always tombstone: an upload may have landed even if the local row never saw the response.
+  await db.tombstones.add({ id: p.id, kind: 'photo', key: storageKey(p.companyId, p.jobId, p.id), companyId: p.companyId });
+  runQueue().catch(() => {});
 }
 
 /** Pulls remote photos for a job into SQLite (metadata only; images stream via signed URLs). */
@@ -191,9 +200,10 @@ export async function pullPhotos(jobId: string): Promise<void> {
   if (!supabaseConfigured) return;
   const { data, error } = await supabase.from('photos').select('*').eq('project_id', jobId);
   if (error || !data) return;
+  const pending = new Set((await db.tombstones.list()).filter((t) => t.kind === 'photo').map((t) => t.id));
   for (const r of data) {
     const existing = await db.photos.get(r.id);
-    if (existing) continue;
+    if (existing || pending.has(r.id)) continue;
     await db.photos.upsert({
       id: r.id,
       jobId: r.project_id,

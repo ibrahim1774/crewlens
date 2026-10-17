@@ -9,7 +9,7 @@ import { Body, Heading, Mono } from '@/components/text';
 import { Colors, Radius, Space } from '@/constants/theme';
 import { track } from '@/lib/analytics';
 import { getSession } from '@/lib/auth';
-import { createCompany, TRADES } from '@/lib/company';
+import { createCompany, fetchMembership, TRADES } from '@/lib/company';
 import { meta } from '@/lib/db';
 
 export default function CompanyScreen() {
@@ -34,7 +34,14 @@ export default function CompanyScreen() {
       track('company_created', { trade: trade.toLowerCase() });
       router.push('/(auth)/permissions');
     } catch (e) {
-      Alert.alert('Could not create company', e instanceof Error ? e.message : 'Try again.');
+      const msg = e instanceof Error ? e.message : '';
+      if (msg.includes('already_member')) {
+        // The account already owns a company; load it instead of failing.
+        await fetchMembership(session.user.id).catch(() => null);
+        router.replace('/');
+        return;
+      }
+      Alert.alert('Could not create company', msg.includes('network') || msg.includes('fetch') ? 'Check your connection and try again.' : 'Try again.');
     } finally {
       setBusy(false);
     }

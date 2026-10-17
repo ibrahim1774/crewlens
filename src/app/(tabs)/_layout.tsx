@@ -4,7 +4,8 @@ import { Pressable, View } from 'react-native';
 
 import { Colors, Fonts } from '@/constants/theme';
 import { useSession } from '@/lib/auth';
-import { useCompany } from '@/lib/company';
+import { useCompany, useMembershipChecked } from '@/lib/company';
+import { routeFor } from '@/lib/gate';
 
 function icon(name: SFSymbol, active: SFSymbol) {
   function TabIcon({ focused, color }: { focused: boolean; color: string }) {
@@ -42,8 +43,9 @@ function CameraButton() {
 export default function TabsLayout() {
   const { session } = useSession();
   const company = useCompany();
-  if (!session) return <Redirect href="/(auth)/welcome" />;
-  if (!company) return <Redirect href="/(auth)/name" />;
+  const checked = useMembershipChecked();
+  const route = routeFor({ session: !!session, membershipChecked: checked, company: !!company });
+  if (route && route !== '/(tabs)') return <Redirect href={route} />;
   return (
     <Tabs
       screenOptions={{

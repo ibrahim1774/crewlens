@@ -83,5 +83,5 @@ begin
     ), '[]'::jsonb)
   );
 end $$;
-revoke all on function get_shared_project(text, text) from public;
+revoke all on function get_shared_project(text, text) from public, anon, authenticated;
 grant execute on function get_shared_project(text, text) to service_role;

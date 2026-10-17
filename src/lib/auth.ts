@@ -2,7 +2,7 @@ import type { Session } from '@supabase/supabase-js';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { useSyncExternalStore } from 'react';
 
-import { clearCompany, getMember } from '@/lib/company';
+import { clearCompany, fetchMembership, getMember, setMembershipChecked } from '@/lib/company';
 import { meta, resetLocal } from '@/lib/db';
 import { supabase } from '@/lib/supabase';
 
@@ -24,13 +24,34 @@ export async function initAuth(): Promise<Session | null> {
     if (event === 'SIGNED_OUT' || (s && previousUser && s.user.id !== previousUser)) {
       void clearLocalIdentity();
     }
+    if (event === 'SIGNED_IN' && s && !getMember()) {
+      // Returning user on a fresh install or after sign-out: find their company before the gate decides.
+      void ensureMembershipChecked(s.user.id);
+    }
     emit();
   });
   return session;
 }
 
+/**
+ * Looks up membership with a timeout so a bad connection never hangs the gate. On failure the gate
+ * still proceeds (membershipChecked = true) and a user with a company will reach the tabs on the
+ * next successful boot; a true first-time user sees the name step either way.
+ */
+export async function ensureMembershipChecked(userId: string, timeoutMs = 6000): Promise<void> {
+  setMembershipChecked(false);
+  try {
+    await Promise.race([fetchMembership(userId), new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), timeoutMs))]);
+  } catch {
+    // offline or slow; fall through
+  } finally {
+    setMembershipChecked(true);
+  }
+}
+
 /** Drops everything cached for the previous account. */
 export async function clearLocalIdentity(): Promise<void> {
+  setMembershipChecked(false);
   await clearCompany();
   await meta.set('pending_name', null);
   await meta.set('onboarded', null);
@@ -61,6 +82,8 @@ export async function signInWithApple(): Promise<{ fullName: string | null }> {
   if (!credential.identityToken) throw new Error('apple_no_token');
   const { error } = await supabase.auth.signInWithIdToken({ provider: 'apple', token: credential.identityToken });
   if (error) throw error;
+  const { data } = await supabase.auth.getUser();
+  if (data.user) await ensureMembershipChecked(data.user.id);
   const n = credential.fullName;
   const fullName = n ? [n.givenName, n.familyName].filter(Boolean).join(' ') : '';
   return { fullName: fullName || null };
@@ -72,8 +95,9 @@ export async function sendEmailCode(email: string): Promise<void> {
 }
 
 export async function verifyEmailCode(email: string, code: string): Promise<void> {
-  const { error } = await supabase.auth.verifyOtp({ email: email.trim().toLowerCase(), token: code.trim(), type: 'email' });
+  const { data, error } = await supabase.auth.verifyOtp({ email: email.trim().toLowerCase(), token: code.trim(), type: 'email' });
   if (error) throw error;
+  if (data.user) await ensureMembershipChecked(data.user.id);
 }
 
 export async function signOut(): Promise<void> {

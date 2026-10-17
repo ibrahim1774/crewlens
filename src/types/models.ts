@@ -40,6 +40,9 @@ export interface Job {
   pendingCount: number;
   /** True once the project row exists in Supabase. */
   remote: boolean;
+  /** Local changes not yet pushed. Server rows never overwrite a dirty job. */
+  dirty: boolean;
+  syncError: string | null;
 }
 
 export interface Photo {

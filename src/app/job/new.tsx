@@ -9,6 +9,7 @@ import { Screen } from '@/components/screen';
 import { Body, Heading, Mono } from '@/components/text';
 import { Colors, Space } from '@/constants/theme';
 import { useCompany } from '@/lib/company';
+import { setCameraJob } from '@/lib/handoff';
 import { formatCoords } from '@/lib/geo';
 import { addressFor, createJob, getLastFix, refreshFix } from '@/lib/jobs';
 import { effectiveTier } from '@/lib/plan';
@@ -48,7 +49,8 @@ export default function NewJob() {
     try {
       const job = await createJob({ name, address, clientName: client, lat: useLocation && fix ? fix.lat : null, lng: useLocation && fix ? fix.lng : null });
       if (params.returnTo === 'camera') {
-        router.replace({ pathname: '/camera', params: { jobId: job.id } });
+        setCameraJob(job.id);
+        router.back();
       } else {
         router.replace({ pathname: '/job/[id]', params: { id: job.id } });
       }

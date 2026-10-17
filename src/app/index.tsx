@@ -1,13 +1,25 @@
 import { Redirect } from 'expo-router';
+import { ActivityIndicator, View } from 'react-native';
 
+import { Mono } from '@/components/text';
+import { Colors, Space } from '@/constants/theme';
 import { useSession } from '@/lib/auth';
-import { useCompany } from '@/lib/company';
+import { useCompany, useMembershipChecked } from '@/lib/company';
+import { routeFor } from '@/lib/gate';
 
-/** Routing gate: no session → welcome; session without company → name; else tabs. */
+/** Routing gate. Waits for the membership check so a returning user is never sent to "create a company". */
 export default function Index() {
   const { session } = useSession();
   const company = useCompany();
-  if (!session) return <Redirect href="/(auth)/welcome" />;
-  if (!company) return <Redirect href="/(auth)/name" />;
-  return <Redirect href="/(tabs)" />;
+  const checked = useMembershipChecked();
+  const route = routeFor({ session: !!session, membershipChecked: checked, company: !!company });
+  if (!route) {
+    return (
+      <View style={{ flex: 1, backgroundColor: Colors.canvas, alignItems: 'center', justifyContent: 'center', gap: Space.sm }}>
+        <ActivityIndicator color={Colors.slate} />
+        <Mono>FINDING YOUR COMPANY</Mono>
+      </View>
+    );
+  }
+  return <Redirect href={route} />;
 }

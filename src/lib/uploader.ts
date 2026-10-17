@@ -3,7 +3,7 @@ import { AppState } from 'react-native';
 
 import { track } from '@/lib/analytics';
 import * as db from '@/lib/db';
-import { pushJob } from '@/lib/jobs';
+import { pushDirtyJobs, pushJob } from '@/lib/jobs';
 import { nextState, pickNext } from '@/lib/queue';
 import { limitErrorFrom, supabase, supabaseConfigured } from '@/lib/supabase';
 import type { Photo } from '@/types/models';
@@ -40,6 +40,10 @@ async function drain() {
   const { data } = await supabase.auth.getSession();
   if (!data.session) return;
 
+  // Replay deletions first so a deleted photo never reappears, then push job edits, then photos.
+  await drainTombstones();
+  await pushDirtyJobs();
+
   // Sweep rows orphaned by a killed app.
   const now = new Date().toISOString();
   for (const p of await db.photos.listUnsynced()) {
@@ -51,6 +55,27 @@ async function drain() {
     const next = pickNext(await db.photos.listUnsynced(), new Date().toISOString());
     if (!next) return;
     await uploadOne(next);
+  }
+}
+
+async function drainTombstones() {
+  for (const t of await db.tombstones.list()) {
+    try {
+      if (t.kind === 'photo') {
+        const { error } = await supabase.from('photos').delete().eq('id', t.id);
+        if (error) throw error;
+        if (t.key) {
+          await supabase.storage.from('photos').remove([t.key]);
+          await supabase.storage.from('thumbs').remove([t.key]);
+        }
+      } else {
+        const { error } = await supabase.from('projects').delete().eq('id', t.id);
+        if (error) throw error;
+      }
+      await db.tombstones.remove(t.id);
+    } catch {
+      return; // offline: keep the tombstone, try again next run
+    }
   }
 }
 
@@ -72,6 +97,12 @@ async function uploadOne(p: Photo) {
     const full = await new File(p.localUri).bytes();
     const f = await supabase.storage.from('photos').upload(key, full, { contentType: 'image/jpeg', upsert: true });
     if (f.error) throw f.error;
+
+    // Deleted while the bytes were in flight: do not create the row; the tombstone removes the objects.
+    if (!(await db.photos.get(p.id))) {
+      await db.tombstones.add({ id: p.id, kind: 'photo', key, companyId: p.companyId });
+      return;
+    }
 
     const { error } = await supabase.from('photos').upsert(
       {
