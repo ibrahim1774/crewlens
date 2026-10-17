@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Crew Lens</title>
+<meta name="robots" content="noindex, nofollow" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/styles.css" />
+<script src="/config.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div id="loading" class="state"><span class="mono">LOADING…</span></div>
+
+  <div id="expired" class="state hidden">
+    <h1>This link has expired.</h1>
+    <p>Ask the contractor for a new one.</p>
+  </div>
+
+  <div id="error" class="state hidden">
+    <h1>Couldn't load this job.</h1>
+    <p>Check your connection and try again.</p>
+    <p><button id="retry" class="heading" style="background:var(--ink);color:var(--surface);border:0;border-radius:6px;padding:12px 20px;font-size:16px;cursor:pointer">Try again</button></p>
+  </div>
+
+  <div id="job" class="hidden">
+    <header>
+      <span id="mode" class="mono live"></span>
+      <h1 id="name"></h1>
+      <p id="address" class="sub"></p>
+    </header>
+    <div id="days"></div>
+    <footer>
+      <span class="mono">SHARED WITH CREW LENS</span>
+      <a class="mono" href="https://apps.apple.com/us/app/id0000000000" rel="noopener">GET THE APP</a>
+    </footer>
+  </div>
+</div>
+
+<dialog id="lightbox" aria-label="Photo">
+  <div class="lb">
+    <img id="lb-img" alt="" />
+    <button id="lb-close" aria-label="Close">×</button>
+    <div class="bar">
+      <div class="stamp dark"><span id="lb-a" class="mono"></span><span id="lb-b" class="mono"></span></div>
+    </div>
+  </div>
+</dialog>
+<script src="/app.js"></script>
+</body>
+</html>

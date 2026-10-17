@@ -6,6 +6,7 @@ import { useFonts } from 'expo-font';
 import { Stack, usePathname } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
+import { SuperwallProvider } from 'expo-superwall';
 import { PostHogProvider } from 'posthog-react-native';
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -13,6 +14,8 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Colors } from '@/constants/theme';
 import { posthog, screen } from '@/lib/analytics';
 import { useBoot } from '@/lib/boot';
+import { SubscriptionSync, SUPERWALL_KEY, superwallActive } from '@/lib/paywall';
+import { startUploader } from '@/lib/uploader';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -52,6 +55,11 @@ export default function RootLayout() {
     if (ready) SplashScreen.hideAsync();
   }, [ready]);
 
+  useEffect(() => {
+    if (!ready) return;
+    return startUploader();
+  }, [ready]);
+
   if (!ready) return null;
 
   const app = (
@@ -73,11 +81,22 @@ export default function RootLayout() {
     </GestureHandlerRootView>
   );
 
-  return posthog ? (
+  const tracked = posthog ? (
     <PostHogProvider client={posthog} autocapture={{ captureScreens: false, captureTouches: true }}>
       {app}
     </PostHogProvider>
   ) : (
     app
+  );
+
+  if (!superwallActive) return tracked;
+  return (
+    <SuperwallProvider
+      apiKeys={{ ios: SUPERWALL_KEY }}
+      options={{ testModeBehavior: __DEV__ ? 'always' : 'never' }}
+      onConfigurationError={(e) => console.warn('Superwall configuration failed', e)}>
+      <SubscriptionSync />
+      {tracked}
+    </SuperwallProvider>
   );
 }

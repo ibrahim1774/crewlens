@@ -8,22 +8,34 @@ import { Body, Heading, Mono } from '@/components/text';
 import { Colors, Space } from '@/constants/theme';
 import { track } from '@/lib/analytics';
 import { meta } from '@/lib/db';
-import { paywallEnabled } from '@/lib/plan';
+import { superwallActive, usePaywall } from '@/lib/paywall';
 
-/**
- * Placeholder until the Superwall paywall is designed. With the flag off this screen
- * just marks onboarding complete. With the flag on, Task 13 wires the placement here.
- */
-export default function PaywallGate() {
+async function finish() {
+  await meta.set('onboarded', '1');
+  router.replace('/(tabs)');
+}
+
+/** With Superwall active this registers the onboarding placement; the feature callback is the gate. */
+function SuperwallGate() {
+  const show = usePaywall();
   useEffect(() => {
-    track('onboarding_step', { step: 'paywall', enabled: paywallEnabled });
-  }, []);
+    show('onboarding_complete', () => {
+      void finish();
+    });
+  }, [show]);
+  return (
+    <Screen footer={<Button title="Show plans" onPress={() => show('onboarding_complete', () => void finish())} />}>
+      <View style={{ flex: 1, justifyContent: 'center', gap: Space.sm }}>
+        <Mono color={Colors.ink2} size={11}>PLANS</Mono>
+        <Heading size={34} bold>Pick a plan to start.</Heading>
+        <Body color={Colors.ink2}>Solo, Pro with a 3-day free trial, or Crew for teams.</Body>
+      </View>
+    </Screen>
+  );
+}
 
-  const finish = async () => {
-    await meta.set('onboarded', '1');
-    router.replace('/(tabs)');
-  };
-
+/** Until the paywall is designed, onboarding ends here on Pro limits. */
+function PlaceholderGate() {
   return (
     <Screen footer={<Button title="Start using Crew Lens" onPress={finish} />}>
       <View style={{ flex: 1, justifyContent: 'center', gap: Space.sm }}>
@@ -33,4 +45,11 @@ export default function PaywallGate() {
       </View>
     </Screen>
   );
+}
+
+export default function PaywallGate() {
+  useEffect(() => {
+    track('onboarding_step', { step: 'paywall', superwall: superwallActive });
+  }, []);
+  return superwallActive ? <SuperwallGate /> : <PlaceholderGate />;
 }
