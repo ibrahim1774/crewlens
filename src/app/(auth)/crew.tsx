@@ -55,7 +55,7 @@ export default function Crew() {
       <View style={{ gap: Space.sm }}>
         <Mono color={Colors.ink2} size={11}>STEP 9 OF 10</Mono>
         <Heading size={34} bold>Who is on the job with you?</Heading>
-        <Body color={Colors.ink2}>Everyone shoots into the same job with their own initials. You see the whole site from the truck, and no photo lives on just one person's phone.</Body>
+        <Body color={Colors.ink2}>Everyone shoots into the same job with their own initials. You see the whole site from the truck, and no photo lives on just one person&apos;s phone.</Body>
       </View>
       <View style={{ borderWidth: 1, borderColor: Colors.hairline, borderRadius: Radius.card, backgroundColor: Colors.surface, padding: Space.md, gap: Space.sm }}>
         <View style={{ flexDirection: 'row', gap: Space.sm }}>

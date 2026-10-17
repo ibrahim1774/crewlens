@@ -95,7 +95,7 @@ export default function CompanyScreen() {
       <View style={{ gap: Space.sm }}>
         <Mono color={Colors.ink2} size={11}>STEP 4 OF 10</Mono>
         <Heading size={34} bold>Your company</Heading>
-        <Body color={Colors.ink2}>Every job, photo and document lives under the company, not on one person's phone. Nothing walks off when someone leaves.</Body>
+        <Body color={Colors.ink2}>Every job, photo and document lives under the company, not on one person&apos;s phone. Nothing walks off when someone leaves.</Body>
       </View>
       {joining ? (
         <Field label="Invite code" value={code} onChangeText={(t) => setCode(t.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))} autoCapitalize="characters" autoCorrect={false} placeholder="ABC234" testID="invite-code" />

@@ -117,7 +117,7 @@ export default function Team() {
         </View>
       ) : null}
       {owner && !invites.length ? (
-        <Body size={13} color={Colors.ink2}>An invite is a six-character code sent by text. The person installs Crew Lens, signs in, and enters it on the "Your company" step.</Body>
+        <Body size={13} color={Colors.ink2}>An invite is a six-character code sent by text. The person installs Crew Lens, signs in, and enters it on the &quot;Your company&quot; step.</Body>
       ) : null}
     </Screen>
   );
