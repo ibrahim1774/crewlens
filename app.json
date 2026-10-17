@@ -51,7 +51,8 @@
       [
         "expo-media-library",
         {
-          "savePhotosPermission": "Crew Lens saves photos you export to your photo library."
+          "savePhotosPermission": "Crew Lens saves photos you export to your photo library.",
+          "photosPermission": "Crew Lens imports photos you already took so they can be filed to a job with a stamp."
         }
       ],
       [

@@ -1,6 +1,7 @@
 import * as Crypto from 'expo-crypto';
 import { Directory, File, Paths } from 'expo-file-system';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
+import * as MediaLibrary from 'expo-media-library';
 import * as VideoThumbnails from 'expo-video-thumbnails';
 import { useEffect, useState } from 'react';
 
@@ -87,6 +88,8 @@ export interface VideoInput {
   uri: string;
   durationS: number;
   fix: Fix | null;
+  /** Library imports must not delete the user's original. */
+  keepSource?: boolean;
 }
 
 /** Files a recorded clip under the job with a still thumbnail; the clip itself is not re-encoded. */
@@ -144,12 +147,31 @@ export function formatDuration(s: number | null): string {
   return `${Math.floor(n / 60)}:${String(n % 60).padStart(2, '0')}`;
 }
 
+/**
+ * Files an existing library photo under a job. The stamp uses the photo's own capture time and
+ * location when the library has them, so an imported before-photo keeps the day it was taken.
+ */
+export async function importFromLibrary(jobId: string, assetId: string, fallbackFix: Fix | null): Promise<Photo> {
+  const info = await MediaLibrary.getAssetInfoAsync(assetId);
+  const uri = info.localUri ?? info.uri;
+  if (!uri) throw new Error('asset_missing');
+  const photo = await capture({ jobId, uri, width: info.width, height: info.height, fix: info.location ? { lat: info.location.latitude, lng: info.location.longitude, accuracyM: null, at: Date.now() } : fallbackFix, keepSource: true });
+  if (info.creationTime) {
+    const takenAt = new Date(info.creationTime).toISOString();
+    await db.photos.upsert({ ...photo, takenAt });
+    return { ...photo, takenAt };
+  }
+  return photo;
+}
+
 export interface CaptureInput {
   jobId: string;
   uri: string;
   width: number;
   height: number;
   fix: Fix | null;
+  /** Library imports must not delete the user's original. */
+  keepSource?: boolean;
 }
 
 /**
@@ -172,10 +194,12 @@ export async function capture(input: CaptureInput): Promise<Photo> {
   const thumbFile = new File(dir, `${id}.thumb.jpg`);
   new File(full.uri).move(fullFile);
   new File(thumb.uri).move(thumbFile);
-  try {
-    new File(input.uri).delete();
-  } catch {
-    // cache file already gone
+  if (!input.keepSource) {
+    try {
+      new File(input.uri).delete();
+    } catch {
+      // cache file already gone
+    }
   }
 
   const photo: Photo = {

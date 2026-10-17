@@ -255,6 +255,7 @@ export default function JobScreen() {
       </Sheet>
 
       <Sheet visible={more} onClose={() => setMore(false)} title={job.name}>
+        {!archived ? <SheetRow title="Import from Photos" subtitle="File photos you already took to this job" onPress={() => { setMore(false); router.push({ pathname: '/job/[id]/import', params: { id: job.id } }); }} testID="job-import" /> : null}
         <SheetRow title="Edit details" onPress={() => { setMore(false); router.push({ pathname: '/job/edit', params: { id: job.id } }); }} />
         <SheetRow title={archived ? 'Unarchive' : 'Archive'} subtitle={archived ? 'Counts toward active jobs again' : 'Keeps every photo, frees an active slot, freezes live links'} onPress={toggleArchive} />
         <SheetRow title="Delete job" subtitle="Removes every photo for everyone" destructive onPress={remove} />
