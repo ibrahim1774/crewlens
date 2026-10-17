@@ -1,0 +1,111 @@
+appId: com.ibrahim1774.crewlens
+name: Plans from the You tab, then a job with a sample invoice edited and saved as a new version
+# Assumes a signed-in account on the Jobs tab.
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "Continue"
+    timeout: 15000
+    optional: true
+- tapOn:
+    text: "Continue"
+    optional: true
+- tapOn:
+    id: "tab-jobs"
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: "new-job"
+    timeout: 30000
+# Plans
+- tapOn:
+    id: "tab-you"
+- extendedWaitUntil:
+    visible: "Plans.*"
+    timeout: 10000
+- tapOn: "Plans.*"
+- extendedWaitUntil:
+    visible: "Upgrade your plan"
+    timeout: 10000
+- assertVisible: ".*Documents & invoices.*"
+- assertVisible: "Start 3-day free trial"
+- tapOn:
+    id: "period-yearly"
+- assertVisible: ".*159\\.99/yr.*"
+- tapOn:
+    id: "plan-crew"
+- assertVisible: "Continue with Crew"
+- tapOn:
+    id: "plan-pro"
+- takeScreenshot: 12-plans
+- tapOn:
+    id: "plan-continue"
+- extendedWaitUntil:
+    visible: "Plans.*"
+    timeout: 10000
+- tapOn:
+    id: "tab-jobs"
+# Job + sample invoice
+- tapOn:
+    id: "new-job"
+- tapOn:
+    id: "job-name"
+- inputText: "Maestro House"
+- tapOn: "Create job"
+- extendedWaitUntil:
+    visible: "Maestro House"
+    timeout: 15000
+- tapOn:
+    id: "job-docs"
+- extendedWaitUntil:
+    visible: "No documents yet."
+    timeout: 10000
+- takeScreenshot: 13-docs-empty
+- tapOn:
+    id: "docs-sample"
+- extendedWaitUntil:
+    visible: ".*Sample invoice 0412.*"
+    timeout: 20000
+- extendedWaitUntil:
+    notVisible: "OPENING"
+    timeout: 30000
+- takeScreenshot: 14-editor
+- tapOn:
+    id: "tool-check"
+- tapOn:
+    point: "50%,45%"
+- tapOn:
+    id: "tool-date"
+- tapOn:
+    point: "30%,60%"
+- assertVisible: ".*UNSAVED.*"
+- takeScreenshot: 15-editor-marked
+- tapOn:
+    id: "doc-save"
+- extendedWaitUntil:
+    visible: ".*V2.*"
+    timeout: 60000
+- takeScreenshot: 16-editor-saved
+- tapOn:
+    id: "doc-send"
+- extendedWaitUntil:
+    visible: "Send to the client"
+    timeout: 5000
+- assertVisible: "Text message.*"
+- assertVisible: "Email.*"
+- takeScreenshot: 17-send-sheet
+- tapOn:
+    text: "Close"
+    optional: true
+- tapOn:
+    id: "doc-close"
+- extendedWaitUntil:
+    visible: ".*Sample invoice 0412.*"
+    timeout: 10000
+- assertVisible: ".*V2.*"
+- takeScreenshot: 18-docs-list
+- tapOn:
+    id: "docs-back"
+- extendedWaitUntil:
+    visible: "Docs · 1"
+    timeout: 10000

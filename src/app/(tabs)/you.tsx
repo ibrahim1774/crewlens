@@ -87,7 +87,8 @@ export default function You() {
             {limits.photosPerJob} PHOTOS PER JOB · {limits.videosPerJob ? `VIDEO ${limits.videoMaxS}S` : 'NO VIDEO'} · LINKS {limits.linkDays ? `${limits.linkDays} DAYS` : 'NEVER EXPIRE'}
           </Mono>
         </View>
-        <Row title="Manage subscription" value={paywallEnabled ? undefined : 'Plans arrive in the next update'} onPress={paywallEnabled ? () => Linking.openURL('itms-apps://apps.apple.com/account/subscriptions') : undefined} icon="arrow.up.right" />
+        <Row title="Plans" value="Solo, Pro with documents, Crew" onPress={() => router.push({ pathname: '/(auth)/paywall', params: { upgrade: '1' } })} icon="chevron.right" />
+        <Row title="Manage subscription" value={paywallEnabled ? undefined : 'Billing arrives with the App Store release'} onPress={paywallEnabled ? () => Linking.openURL('itms-apps://apps.apple.com/account/subscriptions') : undefined} icon="arrow.up.right" />
         <Row title="Sync" value={sync.failed ? `${sync.failed} failed, ${sync.pending} waiting` : sync.pending ? `${sync.pending} waiting to upload` : 'Everything is uploaded'} />
       </Section>
 

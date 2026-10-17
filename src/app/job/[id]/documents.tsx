@@ -12,6 +12,8 @@ import { Colors, Radius, Space } from '@/constants/theme';
 import { track } from '@/lib/analytics';
 import { deleteDocument, docsAllowed, DocumentsNotAllowed, formatSize, pickAndImport, pullDocuments, rename, useDocuments } from '@/lib/documents';
 import { useJob } from '@/lib/jobs';
+import { createSampleInvoice } from '@/lib/sample-invoice';
+import { getCompany } from '@/lib/company';
 import { useVersion } from '@/lib/store';
 import type { Doc } from '@/types/models';
 
@@ -84,6 +86,20 @@ export default function Documents() {
     }
   };
 
+  const sample = async () => {
+    if (!id || !job || busy) return;
+    setBusy(true);
+    try {
+      const doc = await createSampleInvoice(id, getCompany()?.name ?? 'Your company', job.name);
+      track('document_sample_created');
+      router.push({ pathname: '/document/[id]', params: { id: doc.id } });
+    } catch (e) {
+      Alert.alert('Could not create the sample', e instanceof DocumentsNotAllowed ? 'Documents are on Pro.' : 'Try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   useEffect(() => {
     if (pick === '1' && allowed && !autoPicked.current) {
       autoPicked.current = true;
@@ -136,7 +152,13 @@ export default function Documents() {
           keyExtractor={(d) => d.id}
           contentContainerStyle={{ padding: Space.md, gap: Space.sm, flexGrow: 1 }}
           renderItem={({ item }) => <DocRow doc={item} onPress={() => router.push({ pathname: '/document/[id]', params: { id: item.id } })} onMore={() => setMore(item)} />}
-          ListEmptyComponent={<Empty title="No documents yet." body="Upload an invoice, proposal, contract or permit. Edit and sign it here, then send it by text or email." />}
+          ListEmptyComponent={
+            <Empty
+              title="No documents yet."
+              body="Upload an invoice, proposal, contract or permit. Edit and sign it here, then send it by text or email."
+              action={{ title: 'Try with a sample invoice', onPress: sample, testID: 'docs-sample' }}
+            />
+          }
         />
       )}
 

@@ -93,8 +93,8 @@ export default function RootLayout() {
           <Stack.Screen name="(auth)" options={{ gestureEnabled: false }} />
           <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
           <Stack.Screen name="camera" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
-          <Stack.Screen name="job/new" options={{ presentation: 'formSheet', sheetAllowedDetents: [0.7, 1], sheetGrabberVisible: true, sheetCornerRadius: 12 }} />
-          <Stack.Screen name="job/edit" options={{ presentation: 'formSheet', sheetAllowedDetents: [0.7, 1], sheetGrabberVisible: true, sheetCornerRadius: 12 }} />
+          <Stack.Screen name="job/new" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="job/edit" options={{ presentation: 'modal' }} />
           <Stack.Screen name="job/[id]" />
           <Stack.Screen name="photo/[id]" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
         </Stack>

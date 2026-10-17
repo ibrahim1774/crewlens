@@ -56,11 +56,11 @@ export default function TabsLayout() {
         tabBarLabelStyle: { fontFamily: Fonts.heading, fontSize: 12, letterSpacing: 0.2 },
         tabBarStyle: { backgroundColor: Colors.surface, borderTopColor: Colors.hairline, borderTopWidth: 1, height: 84, paddingTop: 6 },
       }}>
-      <Tabs.Screen name="index" options={{ title: 'Jobs', tabBarIcon: icon('briefcase', 'briefcase.fill') }} />
-      <Tabs.Screen name="activity" options={{ title: 'Activity', tabBarIcon: icon('clock', 'clock.fill') }} />
+      <Tabs.Screen name="index" options={{ tabBarButtonTestID: 'tab-jobs', title: 'Jobs', tabBarIcon: icon('briefcase', 'briefcase.fill') }} />
+      <Tabs.Screen name="activity" options={{ tabBarButtonTestID: 'tab-activity', title: 'Activity', tabBarIcon: icon('clock', 'clock.fill') }} />
       <Tabs.Screen name="camera-slot" options={{ title: '', tabBarButton: () => <CameraButton /> }} />
-      <Tabs.Screen name="shared" options={{ title: 'Shared', tabBarIcon: icon('link', 'link') }} />
-      <Tabs.Screen name="you" options={{ title: 'You', tabBarIcon: icon('person', 'person.fill') }} />
+      <Tabs.Screen name="shared" options={{ tabBarButtonTestID: 'tab-shared', title: 'Shared', tabBarIcon: icon('link', 'link') }} />
+      <Tabs.Screen name="you" options={{ tabBarButtonTestID: 'tab-you', title: 'You', tabBarIcon: icon('person', 'person.fill') }} />
     </Tabs>
   );
 }
