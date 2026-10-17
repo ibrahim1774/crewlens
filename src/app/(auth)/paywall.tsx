@@ -1,55 +1,121 @@
 import { router } from 'expo-router';
-import { useEffect } from 'react';
-import { View } from 'react-native';
+import { SymbolView } from 'expo-symbols';
+import { useEffect, useState } from 'react';
+import { Pressable, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Screen } from '@/components/screen';
 import { Body, Heading, Mono } from '@/components/text';
-import { Colors, Space } from '@/constants/theme';
+import { ctaLabel, FEATURES, PLANS, priceLabel, productId, yearlySavingPct, type Period, type Plan } from '@/constants/plans';
+import { Colors, Radius, Space } from '@/constants/theme';
 import { track } from '@/lib/analytics';
 import { meta } from '@/lib/db';
 import { superwallActive, usePaywall } from '@/lib/paywall';
+import type { Tier } from '@/types/models';
 
-async function finish() {
-  await meta.set('onboarded', '1');
-  router.replace('/(tabs)');
+async function finish(tier: Tier, period: Period) {
+  await meta.set('plan_choice', productId(tier, period));
+  router.replace('/(auth)/first-job');
 }
 
-/** With Superwall active this registers the onboarding placement; the feature callback is the gate. */
-function SuperwallGate() {
-  const show = usePaywall();
-  useEffect(() => {
-    show('onboarding_complete', () => {
-      void finish();
-    });
-  }, [show]);
+function PlanCard({ plan, period, selected, onPress }: { plan: Plan; period: Period; selected: boolean; onPress: () => void }) {
+  const i = PLANS.indexOf(plan);
   return (
-    <Screen footer={<Button title="Show plans" onPress={() => show('onboarding_complete', () => void finish())} />}>
-      <View style={{ flex: 1, justifyContent: 'center', gap: Space.sm }}>
-        <Mono color={Colors.ink2} size={11}>PLANS</Mono>
-        <Heading size={34} bold>Pick a plan to start.</Heading>
-        <Body color={Colors.ink2}>Solo, Pro with a 3-day free trial, or Crew for teams.</Body>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="radio"
+      accessibilityState={{ selected }}
+      testID={`plan-${plan.tier}`}
+      style={{
+        borderWidth: selected ? 2 : 1,
+        borderColor: selected ? Colors.flag : plan.highlight ? Colors.ink : Colors.hairline,
+        borderRadius: Radius.card,
+        backgroundColor: Colors.surface,
+        padding: Space.md,
+        gap: Space.sm,
+      }}>
+      {plan.highlight ? (
+        <View style={{ position: 'absolute', top: -11, left: Space.md, backgroundColor: Colors.flag, borderRadius: Radius.chip, paddingHorizontal: 8, paddingVertical: 3 }}>
+          <Mono size={10} color={Colors.onCamera} bold>MOST CONTRACTORS · {plan.trialDays}-DAY FREE TRIAL</Mono>
+        </View>
+      ) : null}
+      <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
+        <Heading size={26} bold>{plan.name}</Heading>
+        <View style={{ alignItems: 'flex-end' }}>
+          <Heading size={22} bold>{priceLabel(plan, period)}</Heading>
+          {period === 'yearly' ? <Mono size={10} color={Colors.ok}>SAVE {yearlySavingPct(plan)}%</Mono> : null}
+        </View>
       </View>
-    </Screen>
-  );
-}
-
-/** Until the paywall is designed, onboarding ends here on Pro limits. */
-function PlaceholderGate() {
-  return (
-    <Screen footer={<Button title="Start using Crew Lens" onPress={finish} />}>
-      <View style={{ flex: 1, justifyContent: 'center', gap: Space.sm }}>
-        <Mono color={Colors.ink2} size={11}>PLANS</Mono>
-        <Heading size={34} bold>You are on Pro while we finish plans.</Heading>
-        <Body color={Colors.ink2}>100 active jobs, 250 photos per job, video and live share links. Pricing arrives in the next update.</Body>
+      <Body size={14} color={Colors.ink2}>{plan.blurb}</Body>
+      <View style={{ gap: 6 }}>
+        {FEATURES.map((f) => {
+          const v = f.values[i];
+          const off = v === '—';
+          return (
+            <View key={f.label} style={{ flexDirection: 'row', alignItems: 'center', gap: Space.sm }}>
+              <SymbolView name={off ? 'minus' : 'checkmark'} size={12} tintColor={off ? Colors.hairline : f.flagship && !off ? Colors.flag : Colors.ok} />
+              <Body size={13} color={off ? Colors.ink2 : Colors.ink} style={{ flex: 1, opacity: off ? 0.6 : 1 }} bold={f.flagship && !off}>
+                {f.label}
+              </Body>
+              <Mono size={11} color={off ? Colors.ink2 : f.flagship ? Colors.flag : Colors.slate} bold={f.flagship && !off}>{v.toUpperCase()}</Mono>
+            </View>
+          );
+        })}
       </View>
-    </Screen>
+    </Pressable>
   );
 }
 
 export default function PaywallGate() {
+  const [period, setPeriod] = useState<Period>('monthly');
+  const [tier, setTier] = useState<Tier>('pro');
+  const show = usePaywall();
+  const plan = PLANS.find((p) => p.tier === tier) ?? PLANS[1];
+
   useEffect(() => {
-    track('onboarding_step', { step: 'paywall', superwall: superwallActive });
+    track('onboarding_step', { step: 'plan', superwall: superwallActive });
   }, []);
-  return superwallActive ? <SuperwallGate /> : <PlaceholderGate />;
+
+  const choose = () => {
+    track('plan_selected', { tier, period, product: productId(tier, period) });
+    if (superwallActive) {
+      void show('onboarding_complete', () => void finish(tier, period));
+      return;
+    }
+    void finish(tier, period);
+  };
+
+  return (
+    <Screen
+      footer={
+        <>
+          <Button title={ctaLabel(plan)} onPress={choose} testID="plan-continue" />
+          <Body size={12} color={Colors.ink2} style={{ textAlign: 'center' }}>
+            {plan.trialDays > 0 ? `Free for ${plan.trialDays} days, then ${priceLabel(plan, period)}. ` : `${priceLabel(plan, period)}. `}
+            Cancel any time in the App Store. No free version.
+          </Body>
+        </>
+      }>
+      <View style={{ gap: Space.sm }}>
+        <Mono color={Colors.ink2} size={11}>STEP 7 OF 10</Mono>
+        <Heading size={34} bold>Pick your plan</Heading>
+        <Body color={Colors.ink2}>Every plan stamps and files every photo. Pro adds the paperwork: upload an invoice or contract, edit and sign it on the phone, text it to the client.</Body>
+      </View>
+      <View style={{ flexDirection: 'row', alignSelf: 'flex-start', borderWidth: 1, borderColor: Colors.hairline, borderRadius: Radius.card, overflow: 'hidden' }}>
+        {(['monthly', 'yearly'] as Period[]).map((p) => {
+          const on = p === period;
+          return (
+            <Pressable key={p} onPress={() => setPeriod(p)} accessibilityRole="button" accessibilityState={{ selected: on }} testID={`period-${p}`} style={{ paddingHorizontal: Space.md, height: 36, justifyContent: 'center', backgroundColor: on ? Colors.ink : Colors.surface }}>
+              <Heading size={14} color={on ? Colors.surface : Colors.ink}>{p === 'monthly' ? 'Monthly' : 'Yearly · save up to 33%'}</Heading>
+            </Pressable>
+          );
+        })}
+      </View>
+      <View style={{ gap: Space.md, paddingTop: Space.xs }}>
+        {[PLANS[1], PLANS[0], PLANS[2]].map((p) => (
+          <PlanCard key={p.tier} plan={p} period={period} selected={p.tier === tier} onPress={() => setTier(p.tier)} />
+        ))}
+      </View>
+    </Screen>
+  );
 }

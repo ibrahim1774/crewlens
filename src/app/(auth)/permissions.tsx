@@ -58,7 +58,7 @@ export default function Permissions() {
   return (
     <Screen footer={<Button title="Continue" onPress={next} disabled={!camera?.granted} />}>
       <View style={{ gap: Space.sm }}>
-        <Mono color={Colors.ink2} size={11}>STEP 4 OF 4</Mono>
+        <Mono color={Colors.ink2} size={11}>STEP 6 OF 10</Mono>
         <Heading size={34} bold>Two permissions</Heading>
         <Body color={Colors.ink2}>Camera is required. Location is what files photos to the right job and stamps where they were taken.</Body>
       </View>

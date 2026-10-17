@@ -25,7 +25,12 @@ env:
 - eraseText
 - inputText: ${EMAIL}
 - hideKeyboard
-- tapOn: "Send code"
+# Dismissing the keyboard can already submit the form on iOS, so only tap if the button is still there.
+- runFlow:
+    when:
+      visible: "Send code"
+    commands:
+      - tapOn: "Send code"
 - extendedWaitUntil:
     visible: "6-digit code"
     timeout: 20000

@@ -5,3 +5,5 @@ export async function requestTrackingThenStart() {}
 export function track(_event: string, _props?: Record<string, unknown>) {}
 export function trackConversion() {}
 export function screen() {}
+
+export function identify(_props?: Record<string, unknown>) {}

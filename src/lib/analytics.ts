@@ -100,6 +100,11 @@ export function trackConversion(kind: 'trial' | 'subscribe', productId: string, 
   }).catch(() => {});
 }
 
+/** Person properties (role, crew size, how they heard of us). Never PII. */
+export function identify(props: Props) {
+  posthog?.capture('$set', { $set: props });
+}
+
 export function screen(name: string, props?: Props) {
   posthog?.screen(name, props);
 }

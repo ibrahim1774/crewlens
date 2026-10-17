@@ -32,7 +32,7 @@ export default function CompanyScreen() {
       await createCompany({ userId: session.user.id, name, trade: trade.toLowerCase(), displayName });
       await meta.set('pending_name', null);
       track('company_created', { trade: trade.toLowerCase() });
-      router.push('/(auth)/permissions');
+      router.push('/(auth)/tailor');
     } catch (e) {
       const msg = e instanceof Error ? e.message : '';
       if (msg.includes('already_member')) {
@@ -50,7 +50,7 @@ export default function CompanyScreen() {
   return (
     <Screen footer={<Button title="Continue" onPress={next} loading={busy} disabled={name.trim().length < 2 || !trade} />}>
       <View style={{ gap: Space.sm }}>
-        <Mono color={Colors.ink2} size={11}>STEP 3 OF 4</Mono>
+        <Mono color={Colors.ink2} size={11}>STEP 4 OF 10</Mono>
         <Heading size={34} bold>Your company</Heading>
         <Body color={Colors.ink2}>Jobs, photos and links belong to the company, so your crew can share them.</Body>
       </View>

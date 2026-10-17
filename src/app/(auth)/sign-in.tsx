@@ -68,7 +68,7 @@ export default function SignIn() {
   return (
     <Screen>
       <View style={{ gap: Space.sm }}>
-        <Mono color={Colors.ink2} size={11}>STEP 1 OF 4</Mono>
+        <Mono color={Colors.ink2} size={11}>STEP 2 OF 10</Mono>
         <Heading size={34} bold>Sign in</Heading>
         <Body color={Colors.ink2}>Your photos sync to your account so the office and your crew see them.</Body>
       </View>

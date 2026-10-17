@@ -17,8 +17,9 @@ test('signed in with a company goes to tabs', () => {
   expect(routeFor({ session: true, membershipChecked: false, company: true })).toBe('/(tabs)');
 });
 
-test('first launch with no session goes to the intro tour', () => {
-  expect(routeFor({ session: false, membershipChecked: false, company: false, introSeen: false })).toBe('/(auth)/intro');
+test('first launch with no session goes to welcome, which offers the tour', () => {
+  expect(routeFor({ session: false, membershipChecked: false, company: false, introSeen: false })).toBe('/(auth)/welcome');
+  expect(routeFor({ session: false, membershipChecked: false, company: false, introSeen: null })).toBe('/(auth)/welcome');
 });
 
 test('no session after the tour was seen goes to welcome', () => {
