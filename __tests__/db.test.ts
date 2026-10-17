@@ -1,3 +1,4 @@
+import { ready, resetLocal } from '@/lib/db';
 import { mapJobRow, mapPhotoRow } from '@/lib/db-map';
 
 test('maps a job row with nulls and derived counts', () => {
@@ -26,4 +27,24 @@ test('maps a photo row', () => {
     uploading_since: null, next_attempt_at: null,
   });
   expect(p).toMatchObject({ id: 'p', jobId: 'j', takerInitials: 'IBR', localUri: 'file:///x.jpg', localThumbUri: null, width: 2048, syncState: 'pending', attempts: 0 });
+});
+
+test('resetLocal wipes photos, jobs and tombstones but keeps the intro-seen flag', async () => {
+  const sql: string[] = [];
+  const db = await ready();
+  const orig = db.execAsync;
+  db.execAsync = async (s: string) => {
+    sql.push(s);
+  };
+  try {
+    await resetLocal();
+  } finally {
+    db.execAsync = orig;
+  }
+  const reset = sql.find((s) => s.includes('delete from meta'));
+  expect(reset).toBeDefined();
+  expect(reset).toContain("delete from meta where key <> 'intro_seen'");
+  expect(reset).toContain('delete from photos');
+  expect(reset).toContain('delete from jobs');
+  expect(reset).toContain('delete from tombstones');
 });

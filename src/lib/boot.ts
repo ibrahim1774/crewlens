@@ -4,6 +4,7 @@ import { initAttribution } from '@/lib/analytics';
 import { clearLocalIdentity, ensureMembershipChecked, getSession, initAuth } from '@/lib/auth';
 import { companyLoaded, getCompany, getMember, loadCachedCompany, setMembershipChecked } from '@/lib/company';
 import { meta, ready } from '@/lib/db';
+import { loadIntroSeen } from '@/lib/intro';
 
 export interface BootState {
   done: boolean;
@@ -17,6 +18,7 @@ export function boot(): Promise<BootState> {
   if (!bootPromise) {
     bootPromise = (async () => {
       await ready();
+      await loadIntroSeen();
       await initAuth();
       await loadCachedCompany();
       initAttribution().catch(() => {});

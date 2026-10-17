@@ -98,6 +98,7 @@ export default function You() {
 
       <Section title="Support">
         <Row title="Email support" value="support@davoxa.com" onPress={() => Linking.openURL('mailto:support@davoxa.com?subject=Crew%20Lens')} icon="arrow.up.right" />
+        <Row title="Watch the intro again" onPress={() => router.push({ pathname: '/(auth)/intro', params: { replay: '1' } })} icon="play" />
         <Row title="Privacy policy" onPress={() => Linking.openURL('https://crewlens-share.vercel.app/privacy')} icon="arrow.up.right" />
         <Row title="Terms of use" onPress={() => Linking.openURL('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')} icon="arrow.up.right" />
         <Row title="Sign out" destructive onPress={confirmSignOut} />

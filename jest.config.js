@@ -9,6 +9,7 @@ module.exports = {
     "^@/lib/analytics$": "<rootDir>/test/mocks/analytics.ts",
     "^expo-location$": "<rootDir>/test/mocks/location.ts",
     "^expo-crypto$": "<rootDir>/test/mocks/crypto.ts",
+    "^@/assets/(.*)$": "<rootDir>/assets/$1",
     "^@/(.*)$": "<rootDir>/src/$1"
   }
 };

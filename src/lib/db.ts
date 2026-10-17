@@ -251,6 +251,6 @@ export const tombstones = {
 /** Wipes everything local. Used on sign out. */
 export async function resetLocal(): Promise<void> {
   const db = await ready();
-  await db.execAsync('delete from photos; delete from jobs; delete from meta; delete from tombstones;');
+  await db.execAsync('delete from photos; delete from jobs; delete from meta where key <> \'intro_seen\'; delete from tombstones;');
   notify();
 }
