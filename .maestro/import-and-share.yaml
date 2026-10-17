@@ -1,0 +1,97 @@
+appId: com.ibrahim1774.crewlens
+name: Import library photos into a job, pick photos for a gallery link, check Activity and Shared
+# Assumes a signed-in account with a job named "Maestro House" and photos in the simulator library.
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "Continue"
+    timeout: 15000
+    optional: true
+- tapOn:
+    text: "Continue"
+    optional: true
+- tapOn:
+    id: "tab-jobs"
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: "new-job"
+    timeout: 30000
+- tapOn: "Maestro House"
+- extendedWaitUntil:
+    visible:
+      id: "job-docs"
+    timeout: 10000
+- tapOn: "More"
+- extendedWaitUntil:
+    visible: "Import from Photos.*"
+    timeout: 5000
+- tapOn: "Import from Photos.*"
+- extendedWaitUntil:
+    visible: "Import photos"
+    timeout: 10000
+- tapOn:
+    text: "Allow photos"
+    optional: true
+- extendedWaitUntil:
+    visible: "Allow Full Access"
+    timeout: 5000
+    optional: true
+- tapOn:
+    text: "Allow Full Access"
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: "import-select-all"
+    timeout: 15000
+- tapOn:
+    id: "import-select-all"
+- takeScreenshot: 19-import
+- tapOn:
+    id: "import-run"
+- extendedWaitUntil:
+    visible:
+      id: "job-share"
+    timeout: 60000
+- extendedWaitUntil:
+    visible: ".*6 PHOTOS.*"
+    timeout: 20000
+- takeScreenshot: 20-job-timeline
+# Gallery link: pick photos, select all.
+- tapOn:
+    id: "job-share"
+- extendedWaitUntil:
+    visible:
+      id: "share-pick"
+    timeout: 5000
+- tapOn:
+    id: "share-pick"
+- extendedWaitUntil:
+    visible:
+      id: "gallery-select-all"
+    timeout: 5000
+- tapOn:
+    id: "gallery-select-all"
+- assertVisible: "6 OF 6 SELECTED"
+- takeScreenshot: 21-gallery-pick
+- tapOn:
+    id: "gallery-cancel"
+# Activity and Shared tabs
+- tapOn:
+    point: "8%,8%"
+- extendedWaitUntil:
+    visible:
+      id: "new-job"
+    timeout: 10000
+- tapOn:
+    id: "tab-activity"
+- extendedWaitUntil:
+    visible: ".*added 6 photos.*"
+    timeout: 10000
+- takeScreenshot: 22-activity
+- tapOn:
+    id: "tab-shared"
+- extendedWaitUntil:
+    visible: "Shared"
+    timeout: 10000
+- takeScreenshot: 23-shared
