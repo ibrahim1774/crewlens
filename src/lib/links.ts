@@ -1,4 +1,5 @@
 import { getCompany } from '@/lib/company';
+import { meta } from '@/lib/db';
 import { supabase, supabaseConfigured } from '@/lib/supabase';
 import type { ShareLink } from '@/types/models';
 
@@ -26,6 +27,7 @@ const COLS = 'id, company_id, project_id, type, token, expires_at, revoked_at, c
 
 /** Reuses the job's unrevoked, unexpired live link or creates one. Requires a connection. */
 export async function getOrCreateLiveLink(jobId: string): Promise<ShareLink> {
+  void meta.set('link_shared', '1');
   const company = getCompany();
   if (!company) throw new Error('no_company');
   if (!supabaseConfigured) throw new Error('Sharing needs the cloud connection, which is not set up yet.');

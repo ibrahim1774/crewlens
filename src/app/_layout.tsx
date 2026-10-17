@@ -3,16 +3,18 @@ import { Inter_400Regular, Inter_500Medium } from '@expo-google-fonts/inter';
 import { JetBrainsMono_400Regular, JetBrainsMono_500Medium } from '@expo-google-fonts/jetbrains-mono';
 import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack, usePathname } from 'expo-router';
+import { Stack, router, usePathname } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { SuperwallProvider } from 'expo-superwall';
 import { PostHogProvider } from 'posthog-react-native';
 import { useEffect } from 'react';
+import { Alert, Linking } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { Colors } from '@/constants/theme';
-import { posthog, screen } from '@/lib/analytics';
+import { posthog, screen, track } from '@/lib/analytics';
+import { handleAuthUrl } from '@/lib/auth';
 import { useBoot } from '@/lib/boot';
 import { SubscriptionSync, SUPERWALL_KEY, superwallActive } from '@/lib/paywall';
 import { startUploader } from '@/lib/uploader';
@@ -53,6 +55,25 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (ready) SplashScreen.hideAsync();
+  }, [ready]);
+
+  // Magic-link sign-in: the email's link opens crewlens://auth/callback with the session tokens.
+  useEffect(() => {
+    if (!ready) return;
+    const handle = (url: string | null) => {
+      if (!url) return;
+      handleAuthUrl(url)
+        .then((signedIn) => {
+          if (signedIn) {
+            track('sign_in', { method: 'magic_link' });
+            router.replace('/');
+          }
+        })
+        .catch((e: unknown) => Alert.alert('Could not sign in', e instanceof Error && e.message !== 'missing_tokens' ? e.message : 'Open the newest email and try the link again.'));
+    };
+    Linking.getInitialURL().then(handle).catch(() => {});
+    const sub = Linking.addEventListener('url', ({ url }) => handle(url));
+    return () => sub.remove();
   }, [ready]);
 
   useEffect(() => {

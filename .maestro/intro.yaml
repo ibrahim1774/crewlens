@@ -17,8 +17,14 @@ env:
     text: "Close"
     optional: true
 - extendedWaitUntil:
-    visible: "Your camera roll is not a job record."
+    visible:
+      id: "welcome-tour"
     timeout: 30000
+- tapOn:
+    id: "welcome-tour"
+- extendedWaitUntil:
+    visible: "Your camera roll is not a job record."
+    timeout: 10000
 - assertVisible: "NO JOB · NO TIME · NO PROOF"
 - takeScreenshot: intro-01
 - tapOn: "Next"
@@ -69,7 +75,7 @@ env:
     visible: "Sign in"
     timeout: 10000
 - takeScreenshot: intro-sign-in
-# A relaunch must not show the tour again.
+# A relaunch lands on welcome, never inside the tour.
 - launchApp
 - extendedWaitUntil:
     visible: "Continue"
@@ -79,6 +85,7 @@ env:
     text: "Continue"
     optional: true
 - extendedWaitUntil:
-    visible: "Get started"
+    visible:
+      id: "welcome-start"
     timeout: 30000
 - assertNotVisible: "Your camera roll is not a job record."

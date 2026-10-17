@@ -5,6 +5,7 @@ import { Pressable, SectionList, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Empty } from '@/components/empty';
+import { StartHereCard } from '@/components/start-here-card';
 import { JobRow } from '@/components/job-row';
 import { Heading, Mono } from '@/components/text';
 import { Colors, Fonts, Radius, Space } from '@/constants/theme';
@@ -76,16 +77,20 @@ export default function Jobs() {
       </View>
 
       {!hasAny ? (
-        <Empty
-          title="No jobs yet."
-          body="Tap the camera to start one where you stand, or add one by address."
-          action={{ title: 'New job', onPress: () => router.push('/job/new') }}
-        />
+        <View style={{ flex: 1, paddingHorizontal: Space.md }}>
+          <StartHereCard />
+          <Empty
+            title="No jobs yet."
+            body="Tap the camera to start one where you stand, or add one by address."
+            action={{ title: 'New job', onPress: () => router.push('/job/new') }}
+          />
+        </View>
       ) : (
         <SectionList
           sections={sections}
           keyExtractor={(j) => j.id}
           stickySectionHeadersEnabled={false}
+          ListHeaderComponent={<StartHereCard />}
           contentContainerStyle={{ paddingHorizontal: Space.md, paddingBottom: 120, gap: Space.sm }}
           renderSectionHeader={({ section }) =>
             section.key === 'archived' ? (

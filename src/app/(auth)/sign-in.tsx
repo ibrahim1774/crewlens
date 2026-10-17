@@ -101,7 +101,13 @@ export default function SignIn() {
         testID="email"
       />
       {sent ? (
-        <Field label="6-digit code" value={code} onChangeText={setCode} keyboardType="number-pad" maxLength={6} placeholder="000000" testID="code" />
+        <View style={{ gap: Space.sm }}>
+          <View style={{ borderWidth: 1, borderColor: Colors.hairline, borderRadius: Radius.card, backgroundColor: Colors.surface, padding: Space.md, gap: 4 }}>
+            <Heading size={18}>Check your email</Heading>
+            <Body size={13} color={Colors.ink2}>Tap the sign-in link in the email from Crew Lens. It opens this app and signs you in. If the email shows a 6-digit code instead, enter it below.</Body>
+          </View>
+          <Field label="6-digit code" value={code} onChangeText={setCode} keyboardType="number-pad" maxLength={6} placeholder="000000" testID="code" />
+        </View>
       ) : null}
       {sent ? (
         <Button title="Verify code" onPress={verify} loading={busy} disabled={code.length < 6} variant="secondary" />

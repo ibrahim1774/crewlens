@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
@@ -13,8 +13,13 @@ import { meta } from '@/lib/db';
 import { superwallActive, usePaywall } from '@/lib/paywall';
 import type { Tier } from '@/types/models';
 
-async function finish(tier: Tier, period: Period) {
+async function finish(tier: Tier, period: Period, upgrade: boolean) {
   await meta.set('plan_choice', productId(tier, period));
+  if (upgrade) {
+    if (router.canGoBack()) router.back();
+    else router.replace('/(tabs)');
+    return;
+  }
   router.replace('/(auth)/first-job');
 }
 
@@ -67,6 +72,8 @@ function PlanCard({ plan, period, selected, onPress }: { plan: Plan; period: Per
 }
 
 export default function PaywallGate() {
+  const { upgrade } = useLocalSearchParams<{ upgrade?: string }>();
+  const fromUpgrade = upgrade === '1';
   const [period, setPeriod] = useState<Period>('monthly');
   const [tier, setTier] = useState<Tier>('pro');
   const show = usePaywall();
@@ -79,10 +86,10 @@ export default function PaywallGate() {
   const choose = () => {
     track('plan_selected', { tier, period, product: productId(tier, period) });
     if (superwallActive) {
-      void show('onboarding_complete', () => void finish(tier, period));
+      void show(fromUpgrade ? 'upgrade_tapped' : 'onboarding_complete', () => void finish(tier, period, fromUpgrade));
       return;
     }
-    void finish(tier, period);
+    void finish(tier, period, fromUpgrade);
   };
 
   return (
@@ -97,8 +104,8 @@ export default function PaywallGate() {
         </>
       }>
       <View style={{ gap: Space.sm }}>
-        <Mono color={Colors.ink2} size={11}>STEP 7 OF 10</Mono>
-        <Heading size={34} bold>Pick your plan</Heading>
+        <Mono color={Colors.ink2} size={11}>{fromUpgrade ? 'PLANS' : 'STEP 7 OF 10'}</Mono>
+        <Heading size={34} bold>{fromUpgrade ? 'Upgrade your plan' : 'Pick your plan'}</Heading>
         <Body color={Colors.ink2}>Every plan stamps and files every photo. Pro adds the paperwork: upload an invoice or contract, edit and sign it on the phone, text it to the client.</Body>
       </View>
       <View style={{ flexDirection: 'row', alignSelf: 'flex-start', borderWidth: 1, borderColor: Colors.hairline, borderRadius: Radius.card, overflow: 'hidden' }}>

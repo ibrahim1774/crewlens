@@ -13,6 +13,13 @@ create table if not exists jobs (
   created_at text not null, updated_at text not null, archived_at text, remote integer not null default 0,
   dirty integer not null default 0, sync_error text
 );
+create table if not exists documents (
+  id text primary key, job_id text not null, company_id text not null, name text not null, kind text not null default 'pdf',
+  local_uri text, storage_path text, size_bytes integer, pages integer, version integer not null default 1,
+  created_by text not null, sent_to text, sent_via text, sent_at text, sync_state text not null default 'pending',
+  created_at text not null, updated_at text not null
+);
+create index if not exists documents_job on documents(job_id, updated_at desc);
 create table if not exists tombstones (
   id text primary key, kind text not null, key text, company_id text, created_at text not null
 );
@@ -251,6 +258,6 @@ export const tombstones = {
 /** Wipes everything local. Used on sign out. */
 export async function resetLocal(): Promise<void> {
   const db = await ready();
-  await db.execAsync('delete from photos; delete from jobs; delete from meta where key <> \'intro_seen\'; delete from tombstones;');
+  await db.execAsync('delete from photos; delete from jobs; delete from documents; delete from meta where key <> \'intro_seen\'; delete from tombstones;');
   notify();
 }

@@ -10,6 +10,7 @@ import { Button } from '@/components/button';
 import { Empty } from '@/components/empty';
 import { PhotoTile, usePhotoUri } from '@/components/photo-tile';
 import { Sheet, SheetRow } from '@/components/sheet';
+import { useDocuments } from '@/lib/documents';
 import { Body, Heading, Mono } from '@/components/text';
 import { TIER_LABEL } from '@/constants/limits';
 import { Colors, Radius, Space } from '@/constants/theme';
@@ -50,6 +51,7 @@ export default function JobScreen() {
   const photos = useJobPhotos(id);
   const company = useCompany();
   const tier = effectiveTier(company?.tier ?? null, true);
+  const docCount = useDocuments(job?.id).length;
   const [share, setShare] = useState(false);
   const [more, setMore] = useState(false);
   const [linking, setLinking] = useState(false);
@@ -129,6 +131,7 @@ export default function JobScreen() {
       <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderColor: Colors.hairline, backgroundColor: Colors.surface }}>
         {!archived ? <ActionButton name="camera.fill" label="Camera" testID="job-camera" onPress={() => router.push({ pathname: '/camera', params: { jobId: job.id } })} /> : null}
         <ActionButton name="link" label={copied ? 'Copied' : 'Share'} testID="job-share" onPress={() => setShare(true)} />
+        <ActionButton name="doc.text" label={docCount ? `Docs · ${docCount}` : 'Docs'} testID="job-docs" onPress={() => router.push({ pathname: '/job/[id]/documents', params: { id: job.id } })} />
         <ActionButton name="ellipsis" label="More" onPress={() => setMore(true)} />
       </View>
       {failed > 0 ? (

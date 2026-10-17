@@ -17,14 +17,14 @@ env:
 - tapOn:
     text: "Close"
     optional: true
-# First launch opens the ten-screen tour; skipping it lands on sign-in.
+# First launch lands on welcome; Get started goes to sign-in.
 - extendedWaitUntil:
     visible:
-      id: "intro-skip"
+      id: "welcome-start"
     timeout: 30000
-- takeScreenshot: 01-intro
+- takeScreenshot: 01-welcome
 - tapOn:
-    id: "intro-skip"
+    id: "welcome-start"
 - extendedWaitUntil:
     visible: "Sign in"
     timeout: 10000

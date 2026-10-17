@@ -80,3 +80,27 @@ export interface ShareLink {
   revokedAt: string | null;
   createdAt: string;
 }
+
+export type DocKind = 'pdf' | 'image';
+export type SentVia = 'text' | 'email' | 'share';
+
+/** A PDF or image kept next to a job's photos: invoice, proposal, contract, permit. Pro and Crew. */
+export interface Doc {
+  id: string;
+  jobId: string;
+  companyId: string;
+  name: string;
+  kind: DocKind;
+  localUri: string | null;
+  storagePath: string | null;
+  sizeBytes: number | null;
+  pages: number | null;
+  version: number;
+  createdBy: string;
+  sentTo: string | null;
+  sentVia: SentVia | null;
+  sentAt: string | null;
+  syncState: 'pending' | 'synced' | 'failed';
+  createdAt: string;
+  updatedAt: string;
+}

@@ -92,10 +92,48 @@ export async function signInWithApple(): Promise<{ fullName: string | null }> {
   return { fullName: fullName || null };
 }
 
+/** Where the email's link lands: the app itself. Must be in the Supabase redirect allow-list. */
+export const AUTH_CALLBACK_URL = 'crewlens://auth/callback';
+
 export async function sendEmailCode(email: string): Promise<void> {
   if (!supabaseConfigured) throw new Error(NOT_CONFIGURED);
-  const { error } = await supabase.auth.signInWithOtp({ email: email.trim().toLowerCase(), options: { shouldCreateUser: true } });
+  const { error } = await supabase.auth.signInWithOtp({
+    email: email.trim().toLowerCase(),
+    options: { shouldCreateUser: true, emailRedirectTo: AUTH_CALLBACK_URL },
+  });
   if (error) throw error;
+}
+
+/** Parses the tokens Supabase appends to the callback URL. Pure, so it is unit-tested. */
+export function parseAuthCallback(url: string): { accessToken: string; refreshToken: string } | { code: string } | { error: string } | null {
+  if (!url.startsWith('crewlens://auth')) return null;
+  const hash = url.includes('#') ? url.slice(url.indexOf('#') + 1) : '';
+  const query = url.includes('?') ? url.slice(url.indexOf('?') + 1).split('#')[0] : '';
+  const params = new URLSearchParams(hash || query);
+  const err = params.get('error_description') ?? params.get('error');
+  if (err) return { error: err };
+  const code = params.get('code');
+  if (code) return { code };
+  const accessToken = params.get('access_token');
+  const refreshToken = params.get('refresh_token');
+  if (accessToken && refreshToken) return { accessToken, refreshToken };
+  return { error: 'missing_tokens' };
+}
+
+/**
+ * Completes sign-in from the magic link in the email. Returns true when a session was set.
+ * The same email also carries a 6-digit code once custom SMTP templates include {{ .Token }}.
+ */
+export async function handleAuthUrl(url: string): Promise<boolean> {
+  const parsed = parseAuthCallback(url);
+  if (!parsed) return false;
+  if ('error' in parsed) throw new Error(parsed.error);
+  const { data, error } = 'code' in parsed
+    ? await supabase.auth.exchangeCodeForSession(parsed.code)
+    : await supabase.auth.setSession({ access_token: parsed.accessToken, refresh_token: parsed.refreshToken });
+  if (error) throw error;
+  if (data.user) await ensureMembershipChecked(data.user.id);
+  return true;
 }
 
 export async function verifyEmailCode(email: string, code: string): Promise<void> {
