@@ -1,0 +1,61 @@
+{
+  "expo": {
+    "name": "Crew Lens",
+    "slug": "crewlens",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "crewlens",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "ios": {
+      "bundleIdentifier": "com.ibrahim1774.crewlens",
+      "supportsTablet": false,
+      "usesAppleSignIn": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSAdvertisingAttributionReportEndpoint": "https://appsflyer-skadnetwork.com/"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-image",
+      "expo-sqlite",
+      "expo-secure-store",
+      "expo-background-task",
+      "expo-web-browser",
+      "expo-apple-authentication",
+      [
+        "expo-splash-screen",
+        { "backgroundColor": "#E9E7E1", "image": "./assets/images/splash-icon.png", "imageWidth": 120 }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Crew Lens uses the camera to take job-site photos.",
+          "microphonePermission": "Crew Lens uses the microphone when you record a video on a job."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Crew Lens uses your location to file photos to the nearest job and to stamp where they were taken."
+        }
+      ],
+      [
+        "expo-media-library",
+        { "savePhotosPermission": "Crew Lens saves photos you export to your photo library." }
+      ],
+      [
+        "expo-tracking-transparency",
+        { "userTrackingPermission": "Crew Lens uses this to understand which ads bring people to the app. Your photos are never shared." }
+      ],
+      ["expo-build-properties", { "ios": { "deploymentTarget": "16.4" } }],
+      "react-native-appsflyer"
+    ],
+    "experiments": { "typedRoutes": true, "reactCompiler": true },
+    "extra": { "router": {}, "eas": { "projectId": "" } },
+    "owner": "ibrahim1774"
+  }
+}
