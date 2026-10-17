@@ -6,6 +6,7 @@ import * as db from '@/lib/db';
 import { pushDirtyJobs, pushJob } from '@/lib/jobs';
 import { nextState, pickNext } from '@/lib/queue';
 import { limitErrorFrom, supabase, supabaseConfigured } from '@/lib/supabase';
+import { onSyncRequest } from '@/lib/sync-bus';
 import type { Photo } from '@/types/models';
 
 /**
@@ -154,6 +155,7 @@ let timer: ReturnType<typeof setInterval> | null = null;
 
 /** Runs the queue on launch, when the app returns to the foreground, and every 30 s while active. */
 export function startUploader(): () => void {
+  onSyncRequest(() => runQueue().catch(() => {}));
   runQueue().catch(() => {});
   const sub = AppState.addEventListener('change', (state) => {
     if (state === 'active') {

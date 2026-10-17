@@ -10,6 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "bundleIdentifier": "com.ibrahim1774.crewlens",
+      "appleTeamId": "Q5U5W6788K",
       "supportsTablet": false,
       "usesAppleSignIn": true,
       "infoPlist": {

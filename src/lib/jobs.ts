@@ -10,7 +10,7 @@ import * as db from '@/lib/db';
 import { distanceM, type LatLng } from '@/lib/geo';
 import { effectiveTier, limitsFor } from '@/lib/plan';
 import { useVersion } from '@/lib/store';
-import { runQueue } from '@/lib/uploader';
+import { requestSync } from '@/lib/sync-bus';
 import { LimitError, limitErrorFrom, supabase, supabaseConfigured } from '@/lib/supabase';
 import type { Job } from '@/types/models';
 
@@ -285,7 +285,7 @@ export async function deleteJob(id: string): Promise<void> {
   }
   await db.jobs.remove(id);
   if (job?.remote) await db.tombstones.add({ id, kind: 'job', key: null, companyId: job.companyId });
-  runQueue().catch(() => {});
+  requestSync();
 }
 
 /** Pulls the company's jobs from Supabase into SQLite. Local pending rows win. */
