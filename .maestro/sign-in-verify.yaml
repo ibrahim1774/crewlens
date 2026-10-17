@@ -9,7 +9,6 @@ env:
 - tapOn:
     id: "code"
 - inputText: ${CODE}
-- hideKeyboard
 - tapOn: "Verify code"
 # New account: name → company → permissions → paywall placeholder → tabs.
 - extendedWaitUntil:
@@ -18,8 +17,8 @@ env:
     timeout: 30000
 - tapOn:
     id: "name"
+- eraseText: 60
 - inputText: ${FULL_NAME}
-- hideKeyboard
 - tapOn: "Continue"
 - extendedWaitUntil:
     visible:
@@ -27,15 +26,17 @@ env:
     timeout: 10000
 - tapOn:
     id: "company"
+- eraseText: 60
 - inputText: ${COMPANY}
-- hideKeyboard
 - tapOn: "Roofing"
 - takeScreenshot: company
 - tapOn: "Continue"
 - extendedWaitUntil:
     visible: "Two permissions"
     timeout: 30000
-- tapOn: "Camera"
+- tapOn:
+    text: ".*Camera.*"
+    optional: true
 - extendedWaitUntil:
     visible: "Allow"
     timeout: 5000
@@ -43,7 +44,9 @@ env:
 - tapOn:
     text: "Allow"
     optional: true
-- tapOn: "Location while using"
+- tapOn:
+    text: ".*Location while using.*"
+    optional: true
 - extendedWaitUntil:
     visible: "Allow While Using App"
     timeout: 5000

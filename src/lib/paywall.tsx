@@ -45,6 +45,20 @@ let lastRequest = 0;
 
 /** Shows the paywall for a placement. `onAccess` runs if the user has (or gets) access. */
 export function usePaywall() {
+  // superwallActive is fixed for the life of the process, so the hook choice never changes between renders.
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  return superwallActive ? useSuperwallPaywall() : useFlagOffPaywall();
+}
+
+/** With the flag off there is no provider and no paywall: every placement grants access. */
+function useFlagOffPaywall() {
+  return async (placement: Placement, onAccess?: () => void) => {
+    track('placement_registered', { placement, paywall: 'off' });
+    onAccess?.();
+  };
+}
+
+function useSuperwallPaywall() {
   const { registerPlacement } = usePlacement({
     onError: (error) => console.warn('Superwall placement error', error),
   });

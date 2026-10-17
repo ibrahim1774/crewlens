@@ -104,20 +104,23 @@ export async function sendEmailCode(email: string): Promise<void> {
   if (error) throw error;
 }
 
-/** Parses the tokens Supabase appends to the callback URL. Pure, so it is unit-tested. */
-export function parseAuthCallback(url: string): { accessToken: string; refreshToken: string } | { code: string } | { error: string } | null {
-  if (!url.startsWith('crewlens://auth')) return null;
-  const hash = url.includes('#') ? url.slice(url.indexOf('#') + 1) : '';
+/**
+ * Parses the PKCE code Supabase appends to the callback URL. Pure, so it is unit-tested.
+ * Only `?code=` is accepted: a code is useless without the verifier this device stored when it
+ * asked for the email, so a crafted link cannot sign a victim into someone else's account.
+ * Raw access/refresh tokens in a URL are rejected for the same reason.
+ */
+export function parseAuthCallback(url: string): { code: string } | { error: string } | null {
+  if (!url.startsWith(`${AUTH_CALLBACK_URL}?`) && !url.startsWith(`${AUTH_CALLBACK_URL}#`) && url !== AUTH_CALLBACK_URL) return null;
   const query = url.includes('?') ? url.slice(url.indexOf('?') + 1).split('#')[0] : '';
-  const params = new URLSearchParams(hash || query);
-  const err = params.get('error_description') ?? params.get('error');
+  const hash = url.includes('#') ? url.slice(url.indexOf('#') + 1) : '';
+  const params = new URLSearchParams(query);
+  const hashParams = new URLSearchParams(hash);
+  const err = params.get('error_description') ?? params.get('error') ?? hashParams.get('error_description') ?? hashParams.get('error');
   if (err) return { error: err };
   const code = params.get('code');
-  if (code) return { code };
-  const accessToken = params.get('access_token');
-  const refreshToken = params.get('refresh_token');
-  if (accessToken && refreshToken) return { accessToken, refreshToken };
-  return { error: 'missing_tokens' };
+  if (code && /^[A-Za-z0-9._~-]{8,256}$/.test(code)) return { code };
+  return { error: 'missing_code' };
 }
 
 /**
@@ -128,9 +131,7 @@ export async function handleAuthUrl(url: string): Promise<boolean> {
   const parsed = parseAuthCallback(url);
   if (!parsed) return false;
   if ('error' in parsed) throw new Error(parsed.error);
-  const { data, error } = 'code' in parsed
-    ? await supabase.auth.exchangeCodeForSession(parsed.code)
-    : await supabase.auth.setSession({ access_token: parsed.accessToken, refresh_token: parsed.refreshToken });
+  const { data, error } = await supabase.auth.exchangeCodeForSession(parsed.code);
   if (error) throw error;
   if (data.user) await ensureMembershipChecked(data.user.id);
   return true;

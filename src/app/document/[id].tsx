@@ -22,14 +22,19 @@ import { buildEditorHtml, type EditorTool } from '@/lib/pdf-editor-html';
 import { stampLines } from '@/lib/stamp';
 import type { Doc, SentVia } from '@/types/models';
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const PDFJS_LIB = require('@/assets/pdfjs/pdf.min.pdfjs');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const PDFJS_WORKER = require('@/assets/pdfjs/pdf.worker.min.pdfjs');
+
 let pdfjsCache: Promise<{ pdfjs: string; worker: string }> | null = null;
 /** pdf.js ships inside the app under a private extension; read once, inlined into the editor page. */
 function loadPdfjs() {
   if (!pdfjsCache) {
     pdfjsCache = (async () => {
       const [a, b] = await Promise.all([
-        Asset.fromModule(require('@/assets/pdfjs/pdf.min.pdfjs')).downloadAsync(),
-        Asset.fromModule(require('@/assets/pdfjs/pdf.worker.min.pdfjs')).downloadAsync(),
+        Asset.fromModule(PDFJS_LIB).downloadAsync(),
+        Asset.fromModule(PDFJS_WORKER).downloadAsync(),
       ]);
       return { pdfjs: await new File(a.localUri!).text(), worker: await new File(b.localUri!).text() };
     })();

@@ -1,8 +1,9 @@
 import { docStorageKey, formatSize, kindFor } from '@/lib/documents';
 
-test('storage keys are company/job/doc with the right extension', () => {
-  expect(docStorageKey('c1', 'j1', 'd1', 'pdf')).toBe('c1/j1/d1.pdf');
-  expect(docStorageKey('c1', 'j1', 'd1', 'image')).toBe('c1/j1/d1.jpg');
+test('storage keys are company/job/doc, one immutable object per version', () => {
+  expect(docStorageKey('c1', 'j1', 'd1', 'pdf')).toBe('c1/j1/d1.v1.pdf');
+  expect(docStorageKey('c1', 'j1', 'd1', 'image')).toBe('c1/j1/d1.v1.jpg');
+  expect(docStorageKey('c1', 'j1', 'd1', 'pdf', 3)).toBe('c1/j1/d1.v3.pdf');
 });
 
 test('kind is read from the mime type, then the file name, else rejected', () => {

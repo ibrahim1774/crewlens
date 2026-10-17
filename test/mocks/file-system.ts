@@ -31,7 +31,7 @@ export class Directory {
     this.uri = parts.map(String).join('/');
   }
   create() {}
-  list(): Array<File | Directory> {
+  list(): (File | Directory)[] {
     return [];
   }
 }

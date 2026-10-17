@@ -24,7 +24,6 @@ env:
     id: "email"
 - eraseText
 - inputText: ${EMAIL}
-- hideKeyboard
 # Dismissing the keyboard can already submit the form on iOS, so only tap if the button is still there.
 - runFlow:
     when:

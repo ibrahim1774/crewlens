@@ -69,7 +69,7 @@ export default function RootLayout() {
             router.replace('/');
           }
         })
-        .catch((e: unknown) => Alert.alert('Could not sign in', e instanceof Error && e.message !== 'missing_tokens' ? e.message : 'Open the newest email and try the link again.'));
+        .catch((e: unknown) => Alert.alert('Could not sign in', e instanceof Error && e.message !== 'missing_code' ? e.message : 'Open the newest email and try the link again.'));
     };
     Linking.getInitialURL().then(handle).catch(() => {});
     const sub = Linking.addEventListener('url', ({ url }) => handle(url));

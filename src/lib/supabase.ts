@@ -16,7 +16,7 @@ const SUPABASE_KEY = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? '';
 export const supabaseConfigured = SUPABASE_URL.length > 0 && SUPABASE_KEY.length > 0;
 
 export const supabase = createClient(SUPABASE_URL || 'https://placeholder.supabase.co', SUPABASE_KEY || 'placeholder', {
-  auth: { storage, autoRefreshToken: true, persistSession: true, detectSessionInUrl: false },
+  auth: { storage, autoRefreshToken: true, persistSession: true, detectSessionInUrl: false, flowType: 'pkce' },
 });
 
 /** Postgres raises these from the plan-limit triggers. */

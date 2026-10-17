@@ -37,8 +37,9 @@ export function docsAllowed(): boolean {
   return documentsIncluded(effectiveTier(company?.tier ?? null, hasEntitlement()));
 }
 
-export function docStorageKey(companyId: string, jobId: string, id: string, kind: DocKind): string {
-  return `${companyId}/${jobId}/${id}.${kind === 'pdf' ? 'pdf' : 'jpg'}`;
+/** One object per version; objects are never overwritten, so a crew member cannot swap another's file. */
+export function docStorageKey(companyId: string, jobId: string, id: string, kind: DocKind, version = 1): string {
+  return `${companyId}/${jobId}/${id}.v${version}.${kind === 'pdf' ? 'pdf' : 'jpg'}`;
 }
 
 export function kindFor(mime: string | null | undefined, name: string): DocKind | null {
@@ -163,8 +164,9 @@ export async function syncDocument(id: string): Promise<void> {
   if (!doc || !doc.localUri || !doc.storagePath) return;
   try {
     const bytes = await new File(doc.localUri).bytes();
-    const up = await supabase.storage.from('documents').upload(doc.storagePath, bytes, { contentType: doc.kind === 'pdf' ? 'application/pdf' : 'image/jpeg', upsert: true });
-    if (up.error) throw up.error;
+    const up = await supabase.storage.from('documents').upload(doc.storagePath, bytes, { contentType: doc.kind === 'pdf' ? 'application/pdf' : 'image/jpeg', upsert: false });
+    // An object that already exists is this version, already uploaded: not an error.
+    if (up.error && !/exists|duplicate|409/i.test(up.error.message)) throw up.error;
     const { error } = await supabase.from('documents').upsert({
       id: doc.id, company_id: doc.companyId, project_id: doc.jobId, name: doc.name, kind: doc.kind, storage_path: doc.storagePath,
       size_bytes: doc.sizeBytes, pages: doc.pages, version: doc.version, created_by: doc.createdBy, sent_to: doc.sentTo, sent_via: doc.sentVia, sent_at: doc.sentAt,
@@ -187,7 +189,7 @@ export async function saveVersion(id: string, newFileUri: string, pages: number 
   if (current.exists) current.move(new File(dir, `${id}.v${doc.version}.pdf`));
   const dest = new File(dir, `${id}.pdf`);
   new File(newFileUri).move(dest);
-  await update(id, { local_uri: dest.uri, kind: 'pdf', storage_path: docStorageKey(doc.companyId, doc.jobId, id, 'pdf'), version: doc.version + 1, pages, size_bytes: dest.size ?? null, sync_state: 'pending' });
+  await update(id, { local_uri: dest.uri, kind: 'pdf', storage_path: docStorageKey(doc.companyId, doc.jobId, id, 'pdf', doc.version + 1), version: doc.version + 1, pages, size_bytes: dest.size ?? null, sync_state: 'pending' });
   void syncDocument(id);
   const fresh = await getDocument(id);
   if (!fresh) throw new Error('missing');
@@ -226,7 +228,10 @@ export async function deleteDocument(id: string): Promise<void> {
   await db.runAsync('delete from documents where id = ?', id);
   notify();
   if (supabaseConfigured && doc.storagePath) {
-    await supabase.storage.from('documents').remove([doc.storagePath]).catch(() => null);
+    const prefix = `${doc.companyId}/${doc.jobId}`;
+    const { data: objects } = await supabase.storage.from('documents').list(prefix, { search: doc.id });
+    const keys = (objects ?? []).map((o) => `${prefix}/${o.name}`);
+    if (keys.length) await supabase.storage.from('documents').remove(keys).catch(() => null);
     await supabase.from('documents').delete().eq('id', id).then(() => null, () => null);
   }
 }
@@ -237,7 +242,7 @@ export async function pullDocuments(jobId: string): Promise<void> {
   const { data } = await supabase.from('documents').select('*').eq('project_id', jobId);
   if (!data) return;
   const db = await ready();
-  for (const r of data as Array<Record<string, string | number | null>>) {
+  for (const r of data as Record<string, string | number | null>[]) {
     const existing = await db.getFirstAsync<{ id: string }>('select id from documents where id = ?', r.id as string);
     if (existing) continue;
     await db.runAsync(

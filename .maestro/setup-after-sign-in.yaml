@@ -1,0 +1,112 @@
+appId: com.ibrahim1774.crewlens
+name: New account setup after sign-in, through to the Jobs tab
+# Starts on the "Your name" screen right after the magic link signed the account in.
+env:
+  FULL_NAME: "Maestro Tester"
+  COMPANY: "Maestro Roofing"
+---
+- extendedWaitUntil:
+    visible:
+      id: "name"
+    timeout: 30000
+- takeScreenshot: 03-name
+- tapOn:
+    id: "name"
+- eraseText: 60
+- inputText: ${FULL_NAME}
+- tapOn: "Continue"
+- extendedWaitUntil:
+    visible:
+      id: "company"
+    timeout: 10000
+- tapOn:
+    id: "company"
+- eraseText: 60
+- inputText: ${COMPANY}
+- tapOn: "Roofing"
+- takeScreenshot: 04-company
+- tapOn: "Continue"
+- extendedWaitUntil:
+    visible: "Tailor Crew Lens"
+    timeout: 30000
+- tapOn:
+    id: "role-owner"
+- tapOn:
+    id: "crew-just-me"
+- tapOn:
+    id: "source-app-store"
+- takeScreenshot: 05-tailor
+- tapOn:
+    id: "tailor-continue"
+- extendedWaitUntil:
+    visible: "Two permissions"
+    timeout: 10000
+- tapOn:
+    text: ".*Camera.*"
+    optional: true
+- extendedWaitUntil:
+    visible: "Allow"
+    timeout: 5000
+    optional: true
+- tapOn:
+    text: "Allow"
+    optional: true
+- tapOn:
+    text: ".*Location while using.*"
+    optional: true
+- extendedWaitUntil:
+    visible: "Allow While Using App"
+    timeout: 5000
+    optional: true
+- tapOn:
+    text: "Allow While Using App"
+    optional: true
+- takeScreenshot: 06-permissions
+- tapOn: "Continue"
+- extendedWaitUntil:
+    visible: "Allow"
+    timeout: 5000
+    optional: true
+- tapOn:
+    text: "Allow"
+    optional: true
+- extendedWaitUntil:
+    visible: "Pick your plan"
+    timeout: 15000
+- assertVisible: "Documents & invoices"
+- assertVisible: "Start 3-day free trial"
+- takeScreenshot: 07-plan
+- tapOn:
+    id: "period-yearly"
+- assertVisible: "$159.99/yr"
+- tapOn:
+    id: "plan-solo"
+- assertVisible: "Continue with Solo"
+- tapOn:
+    id: "plan-pro"
+- tapOn:
+    id: "plan-continue"
+- extendedWaitUntil:
+    visible: "Stamp a photo of the job you are on today."
+    timeout: 15000
+- takeScreenshot: 08-first-job
+- tapOn:
+    id: "first-job-skip"
+- extendedWaitUntil:
+    visible: "Who is working on this job with you?"
+    timeout: 10000
+- takeScreenshot: 09-crew
+- tapOn:
+    id: "crew-skip"
+- extendedWaitUntil:
+    visible: "Send the client one link. Attach the paperwork."
+    timeout: 10000
+- takeScreenshot: 10-share-docs
+- tapOn:
+    id: "onboarding-finish"
+- extendedWaitUntil:
+    visible:
+      id: "new-job"
+    timeout: 20000
+- assertVisible: "Start here"
+- takeScreenshot: 11-jobs
