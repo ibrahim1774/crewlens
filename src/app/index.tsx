@@ -1,13 +1,13 @@
-import { View } from 'react-native';
+import { Redirect } from 'expo-router';
 
-import { Heading, Mono } from '@/components/text';
-import { Colors, Space } from '@/constants/theme';
+import { useSession } from '@/lib/auth';
+import { useCompany } from '@/lib/company';
 
+/** Routing gate: no session → welcome; session without company → name; else tabs. */
 export default function Index() {
-  return (
-    <View style={{ flex: 1, backgroundColor: Colors.canvas, alignItems: 'center', justifyContent: 'center', gap: Space.sm }}>
-      <Heading size={32}>Crew Lens</Heading>
-      <Mono>SCAFFOLD · OCT 17 2026</Mono>
-    </View>
-  );
+  const { session } = useSession();
+  const company = useCompany();
+  if (!session) return <Redirect href="/(auth)/welcome" />;
+  if (!company) return <Redirect href="/(auth)/name" />;
+  return <Redirect href="/(tabs)" />;
 }
