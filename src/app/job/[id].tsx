@@ -1,17 +1,193 @@
+import * as Clipboard from 'expo-clipboard';
+import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
+import { SymbolView } from 'expo-symbols';
+import { useEffect, useMemo, useState } from 'react';
+import { Alert, Dimensions, Pressable, SectionList, Share, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
-import { Screen } from '@/components/screen';
-import { Heading } from '@/components/text';
-import { useJob } from '@/lib/jobs';
+import { Empty } from '@/components/empty';
+import { PhotoTile, usePhotoUri } from '@/components/photo-tile';
+import { Sheet, SheetRow } from '@/components/sheet';
+import { Body, Heading, Mono } from '@/components/text';
+import { TIER_LABEL } from '@/constants/limits';
+import { Colors, Radius, Space } from '@/constants/theme';
+import { track } from '@/lib/analytics';
+import { useCompany } from '@/lib/company';
+import { archiveJob, deleteJob, unarchiveJob, useJob } from '@/lib/jobs';
+import { getOrCreateLiveLink, linkUrl } from '@/lib/links';
+import { groupByDay, pullPhotos, useJobPhotos } from '@/lib/photos';
+import { effectiveTier, limitsFor } from '@/lib/plan';
+import { LimitError } from '@/lib/supabase';
+import { retryFailed } from '@/lib/uploader';
+import type { Photo } from '@/types/models';
 
-/** Replaced in Task 10. */
+const COLS = 3;
+const GAP = 2;
+const { width: W } = Dimensions.get('window');
+const TILE = Math.floor((W - GAP * (COLS - 1)) / COLS);
+
+function chunk<T>(arr: T[], n: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < arr.length; i += n) out.push(arr.slice(i, i + n));
+  return out;
+}
+
+function ActionButton({ name, label, onPress, testID }: { name: string; label: string; onPress: () => void; testID?: string }) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" testID={testID} style={({ pressed }) => ({ flex: 1, alignItems: 'center', gap: 4, paddingVertical: Space.sm, opacity: pressed ? 0.6 : 1 })}>
+      <SymbolView name={name as never} size={22} tintColor={Colors.ink} />
+      <Heading size={13}>{label}</Heading>
+    </Pressable>
+  );
+}
+
 export default function JobScreen() {
+  const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
   const job = useJob(id);
-  return (
-    <Screen footer={<Button title="Back" variant="ghost" onPress={() => router.back()} />}>
-      <Heading size={30}>{job?.name ?? '…'}</Heading>
-    </Screen>
+  const photos = useJobPhotos(id);
+  const company = useCompany();
+  const tier = effectiveTier(company?.tier ?? null, true);
+  const [share, setShare] = useState(false);
+  const [more, setMore] = useState(false);
+  const [linking, setLinking] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (id) pullPhotos(id).catch(() => {});
+  }, [id]);
+  useEffect(() => {
+    if (!copied) return;
+    const t = setTimeout(() => setCopied(false), 1500);
+    return () => clearTimeout(t);
+  }, [copied]);
+
+  const sections = useMemo(() => groupByDay(photos).map((g) => ({ key: g.key, title: g.label, data: chunk(g.photos, COLS) })), [photos]);
+  const failed = photos.filter((p) => p.syncState === 'failed').length;
+  const cover = photos.find((p) => p.id === job?.coverPhotoId) ?? photos[0];
+  const archived = job?.status === 'archived';
+
+  const liveLink = async () => {
+    if (!job) return;
+    setLinking(true);
+    try {
+      const link = await getOrCreateLiveLink(job.id);
+      const url = linkUrl(link.token);
+      await Clipboard.setStringAsync(url);
+      setShare(false);
+      setCopied(true);
+      track('link_created', { type: 'live' });
+      await Share.share({ message: `${job.name} — live photos from ${company?.name ?? 'Crew Lens'}: ${url}`, url });
+    } catch (e) {
+      Alert.alert('Could not create link', e instanceof Error ? e.message : 'Check your connection and try again.');
+    } finally {
+      setLinking(false);
+    }
+  };
+
+  const toggleArchive = async () => {
+    if (!job) return;
+    setMore(false);
+    try {
+      if (archived) await unarchiveJob(job.id);
+      else await archiveJob(job.id);
+    } catch (e) {
+      if (e instanceof LimitError) Alert.alert(`${TIER_LABEL[tier]} allows ${e.limit ?? limitsFor(tier).activeJobs} active jobs`, 'Archive another job first.');
+    }
+  };
+
+  const remove = () => {
+    if (!job) return;
+    setMore(false);
+    Alert.alert('Delete job?', `This deletes ${job.name} and all ${photos.length} photos for everyone. Archive keeps them.`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => deleteJob(job.id).then(() => router.back()) },
+    ]);
+  };
+
+  if (!job) return <View style={{ flex: 1, backgroundColor: Colors.canvas }} />;
+
+  const header = (
+    <View>
+      <View style={{ height: 240, backgroundColor: Colors.ink }}>
+        {cover ? <PhotoCover photo={cover} /> : null}
+        <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: Space.md, paddingTop: 60, backgroundColor: 'rgba(11,11,13,0.45)' }}>
+          <Heading size={30} bold color={Colors.surface} numberOfLines={2}>{job.name}</Heading>
+          <Body size={13} color="rgba(247,246,242,0.8)" numberOfLines={1}>{job.address || 'No address'}</Body>
+          <Mono size={11} color={Colors.onCamera} style={{ marginTop: 4 }}>
+            {photos.length} {photos.length === 1 ? 'PHOTO' : 'PHOTOS'}{archived ? ' · ARCHIVED' : ''}{job.clientName ? ` · ${job.clientName.toUpperCase()}` : ''}
+          </Mono>
+        </View>
+        <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Back" hitSlop={10} style={{ position: 'absolute', top: insets.top, left: Space.sm, width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
+          <SymbolView name="chevron.left" size={22} tintColor={Colors.onCamera} />
+        </Pressable>
+      </View>
+      <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderColor: Colors.hairline, backgroundColor: Colors.surface }}>
+        {!archived ? <ActionButton name="camera.fill" label="Camera" testID="job-camera" onPress={() => router.push({ pathname: '/camera', params: { jobId: job.id } })} /> : null}
+        <ActionButton name="link" label={copied ? 'Copied' : 'Share'} testID="job-share" onPress={() => setShare(true)} />
+        <ActionButton name="ellipsis" label="More" onPress={() => setMore(true)} />
+      </View>
+      {failed > 0 ? (
+        <Pressable onPress={() => retryFailed()} accessibilityRole="button" style={{ flexDirection: 'row', alignItems: 'center', gap: Space.sm, padding: Space.md, backgroundColor: Colors.surface, borderBottomWidth: 1, borderColor: Colors.hairline }}>
+          <SymbolView name="exclamationmark.triangle.fill" size={16} tintColor={Colors.flag} />
+          <Body size={13} style={{ flex: 1 }}>{failed} {failed === 1 ? 'photo' : 'photos'} failed to upload.</Body>
+          <Heading size={14} color={Colors.flag}>Retry</Heading>
+        </Pressable>
+      ) : null}
+    </View>
   );
+
+  return (
+    <View style={{ flex: 1, backgroundColor: Colors.canvas }}>
+      <SectionList
+        sections={sections}
+        keyExtractor={(row) => row.map((p) => p.id).join('|')}
+        ListHeaderComponent={header}
+        stickySectionHeadersEnabled={false}
+        contentContainerStyle={{ paddingBottom: insets.bottom + Space.xl }}
+        renderSectionHeader={({ section }) => (
+          <Mono size={11} color={Colors.ink2} style={{ paddingHorizontal: Space.md, paddingTop: Space.md, paddingBottom: Space.xs }}>{section.title}</Mono>
+        )}
+        renderItem={({ item: row }) => (
+          <View style={{ flexDirection: 'row', gap: GAP, marginBottom: GAP }}>
+            {row.map((p: Photo) => (
+              <PhotoTile key={p.id} photo={p} size={TILE} onPress={() => router.push({ pathname: '/photo/[id]', params: { id: p.id, jobId: job.id } })} onRetry={() => retryFailed()} />
+            ))}
+          </View>
+        )}
+        ListEmptyComponent={
+          <Empty
+            title={archived ? 'No photos on this job.' : 'No photos yet.'}
+            body={archived ? undefined : 'Open the camera and this job is already selected.'}
+            action={archived ? undefined : { title: 'Open camera', onPress: () => router.push({ pathname: '/camera', params: { jobId: job.id } }) }}
+          />
+        }
+      />
+
+      <Sheet visible={share} onClose={() => setShare(false)} title="Share this job">
+        <SheetRow
+          title={linking ? 'Creating link…' : 'Live link to this job'}
+          subtitle={archived ? 'Frozen at archive time; still works' : limitsFor(tier).linkDays ? `Always shows the latest photos · expires in ${limitsFor(tier).linkDays} days` : 'Always shows the latest photos · never expires'}
+          onPress={liveLink}
+          disabled={linking}
+        />
+        <SheetRow title="Pick photos" subtitle="Coming in the next update" disabled />
+        <Button title="Cancel" variant="ghost" onPress={() => setShare(false)} style={{ marginTop: Space.sm }} />
+      </Sheet>
+
+      <Sheet visible={more} onClose={() => setMore(false)} title={job.name}>
+        <SheetRow title="Edit details" onPress={() => { setMore(false); router.push({ pathname: '/job/edit', params: { id: job.id } }); }} />
+        <SheetRow title={archived ? 'Unarchive' : 'Archive'} subtitle={archived ? 'Counts toward active jobs again' : 'Keeps every photo, frees an active slot, freezes live links'} onPress={toggleArchive} />
+        <SheetRow title="Delete job" subtitle="Removes every photo for everyone" destructive onPress={remove} />
+        <Button title="Cancel" variant="ghost" onPress={() => setMore(false)} style={{ marginTop: Space.sm }} />
+      </Sheet>
+    </View>
+  );
+}
+
+function PhotoCover({ photo }: { photo: Photo }) {
+  const uri = usePhotoUri(photo, 'full');
+  return uri ? <Image source={{ uri }} style={{ width: '100%', height: 240, borderRadius: Radius.chip }} contentFit="cover" /> : null;
 }
