@@ -76,8 +76,8 @@ export default function Tailor() {
       }>
       <View style={{ gap: Space.sm }}>
         <Mono color={Colors.ink2} size={11}>STEP 5 OF 10</Mono>
-        <Heading size={34} bold>Tailor Crew Lens</Heading>
-        <Body color={Colors.ink2}>Thirty seconds. We use this to show the right first steps, nothing else.</Body>
+        <Heading size={34} bold>Set it up for how you work</Heading>
+        <Body color={Colors.ink2}>Thirty seconds. Owner alone or a six-truck crew, the first steps change. Nothing here is shared or sold.</Body>
       </View>
       <Chips label="YOUR ROLE" options={ROLES} value={role} onChange={setRole} testPrefix="role" />
       <Chips label="CREW SIZE" options={CREW_SIZES} value={crew} onChange={setCrew} testPrefix="crew" />

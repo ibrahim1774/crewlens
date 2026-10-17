@@ -1,6 +1,7 @@
 import * as Crypto from 'expo-crypto';
 import { Directory, File, Paths } from 'expo-file-system';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
+import * as VideoThumbnails from 'expo-video-thumbnails';
 import { useEffect, useState } from 'react';
 
 import { track } from '@/lib/analytics';
@@ -79,6 +80,68 @@ async function render(uri: string, width: number, height: number, longEdge: numb
   } finally {
     image.release();
   }
+}
+
+export interface VideoInput {
+  jobId: string;
+  uri: string;
+  durationS: number;
+  fix: Fix | null;
+}
+
+/** Files a recorded clip under the job with a still thumbnail; the clip itself is not re-encoded. */
+export async function captureVideo(input: VideoInput): Promise<Photo> {
+  const company = getCompany();
+  const member = getMember();
+  if (!company || !member) throw new Error('no_company');
+  const id = Crypto.randomUUID();
+  const dir = new Directory(Paths.document, 'photos', input.jobId);
+  if (!dir.exists) dir.create({ intermediates: true });
+  const videoFile = new File(dir, `${id}.mp4`);
+  new File(input.uri).move(videoFile);
+  const still = await VideoThumbnails.getThumbnailAsync(videoFile.uri, { time: 400, quality: 0.8 });
+  const thumb = await render(still.uri, still.width, still.height, THUMB_LONG_EDGE, THUMB_QUALITY);
+  const thumbFile = new File(dir, `${id}.thumb.jpg`);
+  new File(thumb.uri).move(thumbFile);
+  try {
+    new File(still.uri).delete();
+  } catch {
+    // cache file already gone
+  }
+  const photo: Photo = {
+    id,
+    jobId: input.jobId,
+    companyId: company.id,
+    takerId: member.userId,
+    takerInitials: member.initials,
+    kind: 'video',
+    localUri: videoFile.uri,
+    localThumbUri: thumbFile.uri,
+    storagePath: null,
+    thumbPath: null,
+    width: still.width,
+    height: still.height,
+    durationS: Math.round(input.durationS * 10) / 10,
+    takenAt: new Date().toISOString(),
+    lat: input.fix?.lat ?? null,
+    lng: input.fix?.lng ?? null,
+    accuracyM: input.fix?.accuracyM ?? null,
+    syncState: 'pending',
+    attempts: 0,
+    lastError: null,
+    uploadingSince: null,
+    nextAttemptAt: null,
+  };
+  await db.photos.upsert(photo);
+  track('video_recorded', { seconds: photo.durationS ?? 0 });
+  void runQueue();
+  return photo;
+}
+
+/** "0:12" for a clip length. */
+export function formatDuration(s: number | null): string {
+  const n = Math.max(0, Math.round(s ?? 0));
+  return `${Math.floor(n / 60)}:${String(n % 60).padStart(2, '0')}`;
 }
 
 export interface CaptureInput {

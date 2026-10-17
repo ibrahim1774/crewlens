@@ -211,6 +211,12 @@ export const photos = {
     const rows = await db.getAllAsync<PhotoRow>("select * from photos where sync_state <> 'synced' order by taken_at asc");
     return rows.map(mapPhotoRow);
   },
+  /** Newest photos across every job, for the Activity feed. */
+  async listRecent(limit = 200): Promise<Photo[]> {
+    const db = await ready();
+    const rows = await db.getAllAsync<PhotoRow>('select * from photos order by taken_at desc limit ?', limit);
+    return rows.map(mapPhotoRow);
+  },
   async countByJob(jobId: string, kind: 'photo' | 'video'): Promise<number> {
     const db = await ready();
     const row = await db.getFirstAsync<{ n: number }>('select count(*) as n from photos where job_id = ? and kind = ?', jobId, kind);

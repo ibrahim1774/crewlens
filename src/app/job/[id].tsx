@@ -17,7 +17,7 @@ import { Colors, Radius, Space } from '@/constants/theme';
 import { track } from '@/lib/analytics';
 import { useCompany } from '@/lib/company';
 import { archiveJob, deleteJob, unarchiveJob, useJob } from '@/lib/jobs';
-import { getOrCreateLiveLink, linkUrl } from '@/lib/links';
+import { createGalleryLink, getOrCreateLiveLink, linkUrl } from '@/lib/links';
 import { groupByDay, pullPhotos, useJobPhotos } from '@/lib/photos';
 import { effectiveTier, limitsFor } from '@/lib/plan';
 import { LimitError } from '@/lib/supabase';
@@ -56,6 +56,8 @@ export default function JobScreen() {
   const [more, setMore] = useState(false);
   const [linking, setLinking] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [selecting, setSelecting] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (id) pullPhotos(id).catch(() => {});
@@ -84,6 +86,42 @@ export default function JobScreen() {
       setCopied(true);
       track('link_created', { type: 'live' });
       await Share.share({ message: `${job.name} — live photos from ${company?.name ?? 'Crew Lens'}: ${url}`, url });
+    } catch (e) {
+      Alert.alert('Could not create link', e instanceof Error ? e.message : 'Check your connection and try again.');
+    } finally {
+      setLinking(false);
+    }
+  };
+
+  const toggleSelect = (pid: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(pid)) next.delete(pid);
+      else next.add(pid);
+      return next;
+    });
+  const selectAll = () => setSelected(new Set(photos.map((p) => p.id)));
+  const startPicking = () => {
+    setShare(false);
+    setSelected(new Set());
+    setSelecting(true);
+    track('gallery_pick_started');
+  };
+  const cancelPicking = () => {
+    setSelecting(false);
+    setSelected(new Set());
+  };
+  const galleryLink = async () => {
+    if (!job || !selected.size) return;
+    setLinking(true);
+    try {
+      const link = await createGalleryLink(job.id, photos.filter((p) => selected.has(p.id)).map((p) => p.id));
+      const url = linkUrl(link.token);
+      await Clipboard.setStringAsync(url);
+      setCopied(true);
+      track('link_created', { type: 'gallery', photos: selected.size });
+      cancelPicking();
+      await Share.share({ message: `${job.name} — ${selected.size} photos from ${company?.name ?? 'Crew Lens'}: ${url}`, url });
     } catch (e) {
       Alert.alert('Could not create link', e instanceof Error ? e.message : 'Check your connection and try again.');
     } finally {
@@ -134,6 +172,17 @@ export default function JobScreen() {
         <ActionButton name="doc.text" label={docCount ? `Docs · ${docCount}` : 'Docs'} testID="job-docs" onPress={() => router.push({ pathname: '/job/[id]/documents', params: { id: job.id } })} />
         <ActionButton name="ellipsis" label="More" onPress={() => setMore(true)} />
       </View>
+      {selecting ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: Space.sm, padding: Space.sm, paddingHorizontal: Space.md, backgroundColor: Colors.ink }} testID="gallery-bar">
+          <Pressable onPress={cancelPicking} accessibilityRole="button" hitSlop={8} testID="gallery-cancel">
+            <Mono size={12} color={Colors.onCamera} bold>CANCEL</Mono>
+          </Pressable>
+          <Mono size={12} color={Colors.onCamera} style={{ flex: 1, textAlign: 'center' }}>{selected.size} OF {photos.length} SELECTED</Mono>
+          <Pressable onPress={selected.size === photos.length ? () => setSelected(new Set()) : selectAll} accessibilityRole="button" hitSlop={8} testID="gallery-select-all">
+            <Mono size={12} color={Colors.onCamera} bold>{selected.size === photos.length ? 'NONE' : 'SELECT ALL'}</Mono>
+          </Pressable>
+        </View>
+      ) : null}
       {failed > 0 ? (
         <Pressable onPress={() => (capped ? router.push({ pathname: '/job/new', params: { returnTo: 'job' } }) : retryFailed())} accessibilityRole="button" style={{ flexDirection: 'row', alignItems: 'center', gap: Space.sm, padding: Space.md, backgroundColor: Colors.surface, borderBottomWidth: 1, borderColor: Colors.hairline }}>
           <SymbolView name="exclamationmark.triangle.fill" size={16} tintColor={Colors.flag} />
@@ -166,7 +215,16 @@ export default function JobScreen() {
         renderItem={({ item: row }) => (
           <View style={{ flexDirection: 'row', gap: GAP, marginBottom: GAP }}>
             {row.map((p: Photo) => (
-              <PhotoTile key={p.id} photo={p} size={TILE} onPress={() => router.push({ pathname: '/photo/[id]', params: { id: p.id, jobId: job.id } })} onRetry={() => retryFailed()} />
+              <View key={p.id}>
+                <PhotoTile photo={p} size={TILE} onPress={() => (selecting ? toggleSelect(p.id) : router.push({ pathname: '/photo/[id]', params: { id: p.id, jobId: job.id } }))} onRetry={() => retryFailed()} />
+                {selecting ? (
+                  <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, width: TILE, height: TILE, backgroundColor: selected.has(p.id) ? 'rgba(232,82,30,0.28)' : 'rgba(11,11,13,0.25)', alignItems: 'flex-end', padding: 6 }}>
+                    <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: Colors.onCamera, backgroundColor: selected.has(p.id) ? Colors.flag : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
+                      {selected.has(p.id) ? <SymbolView name="checkmark" size={12} tintColor={Colors.onCamera} /> : null}
+                    </View>
+                  </View>
+                ) : null}
+              </View>
             ))}
           </View>
         )}
@@ -179,6 +237,12 @@ export default function JobScreen() {
         }
       />
 
+      {selecting ? (
+        <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: Space.md, paddingBottom: insets.bottom + Space.md, backgroundColor: Colors.canvas, borderTopWidth: 1, borderColor: Colors.hairline }}>
+          <Button title={selected.size ? `Share ${selected.size} ${selected.size === 1 ? 'photo' : 'photos'} as a link` : 'Pick the photos to share'} onPress={galleryLink} loading={linking} disabled={!selected.size} testID="gallery-share" />
+        </View>
+      ) : null}
+
       <Sheet visible={share} onClose={() => setShare(false)} title="Share this job">
         <SheetRow
           title={linking ? 'Creating link…' : 'Live link to this job'}
@@ -186,7 +250,7 @@ export default function JobScreen() {
           onPress={liveLink}
           disabled={linking}
         />
-        <SheetRow title="Pick photos" subtitle="Coming in the next update" disabled />
+        <SheetRow title="Pick photos" subtitle={photos.length ? 'Choose some or select all. A fixed set the client keeps.' : 'Take a photo first'} onPress={photos.length ? startPicking : undefined} disabled={!photos.length} testID="share-pick" />
         <Button title="Cancel" variant="ghost" onPress={() => setShare(false)} style={{ marginTop: Space.sm }} />
       </Sheet>
 

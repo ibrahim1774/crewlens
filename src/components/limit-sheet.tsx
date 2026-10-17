@@ -33,7 +33,7 @@ export function LimitSheet({ error, tier, onClose }: Props) {
       ) : null}
       <SheetRow
         title="Upgrade"
-        subtitle={paywallEnabled ? undefined : 'Plans arrive in the next update'}
+        subtitle={undefined}
         disabled={!paywallEnabled}
         onPress={() => {
           track('upgrade_tapped', { from: error?.kind ?? 'unknown' });

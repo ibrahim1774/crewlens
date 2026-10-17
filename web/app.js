@@ -32,7 +32,8 @@
         const b = document.createElement('button'); b.className = 'tile'; b.setAttribute('aria-label', 'Open photo');
         const img = document.createElement('img'); img.loading = 'lazy'; img.src = p.thumb || p.url || ''; img.alt = '';
         const t = document.createElement('span'); t.className = 't mono'; const d = new Date(p.taken_at); t.textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-        b.append(img, t); b.addEventListener('click', () => open(p)); g.appendChild(b);
+        b.append(img, t);
+        if (p.kind === 'video') { const v = document.createElement('span'); v.className = 'play mono'; v.textContent = '▶'; b.appendChild(v); b.setAttribute('aria-label', 'Play video'); } b.addEventListener('click', () => open(p)); g.appendChild(b);
       }
       root.appendChild(g);
     }
@@ -40,7 +41,9 @@
   }
 
   function open(p) {
-    const dlg = $('#lightbox'); $('#lb-img').src = p.url || p.thumb || '';
+    const dlg = $('#lightbox'); const isVideo = p.kind === 'video'; const vid = $('#lb-video');
+    $('#lb-img').style.display = isVideo ? 'none' : ''; vid.style.display = isVideo ? '' : 'none';
+    if (isVideo) { vid.src = p.url || ''; vid.poster = p.thumb || ''; vid.load(); } else { vid.pause(); vid.removeAttribute('src'); $('#lb-img').src = p.url || p.thumb || ''; }
     const [a, b] = stamp(p); $('#lb-a').textContent = a; $('#lb-b').textContent = b;
     dlg.showModal();
   }

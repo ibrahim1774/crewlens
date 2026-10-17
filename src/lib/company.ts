@@ -1,6 +1,8 @@
 import * as db from '@/lib/db';
 import { notify, useVersion } from '@/lib/store';
-import { supabase } from '@/lib/supabase';
+import { supabase, supabaseConfigured } from '@/lib/supabase';
+
+const NOT_CONFIGURED = 'The cloud connection is not set up on this build yet.';
 import type { Company, Member, Tier } from '@/types/models';
 
 export const TRADES = [
@@ -94,6 +96,55 @@ export async function createCompany(input: { userId: string; name: string; trade
   };
   await cache(result.company, result.member);
   return result;
+}
+
+/** Redeems an invite code for a signed-in user with no company. */
+export async function joinCompany(input: { userId: string; code: string; displayName: string }): Promise<{ company: Company; member: Member }> {
+  if (!supabaseConfigured) throw new Error(NOT_CONFIGURED);
+  const { error } = await supabase.rpc('join_company', { p_code: input.code.trim().toUpperCase(), p_display_name: input.displayName, p_initials: initialsFor(input.displayName) });
+  if (error) throw new Error(error.message.includes('invite_invalid') ? 'invite_invalid' : error.message.includes('limit:seats') ? 'limit:seats' : error.message.includes('already_member') ? 'already_member' : error.message);
+  const m = await fetchMembership(input.userId);
+  if (!m) throw new Error('join_failed');
+  return m;
+}
+
+export interface Invite {
+  code: string;
+  createdAt: string;
+  expiresAt: string;
+  usedAt: string | null;
+}
+
+export async function createInvite(): Promise<Invite> {
+  const { data, error } = await supabase.rpc('create_invite');
+  if (error) throw new Error(error.message.includes('limit:seats') ? 'limit:seats' : error.message.includes('not_owner') ? 'not_owner' : error.message);
+  const r = data as { code: string; created_at: string; expires_at: string; used_at: string | null };
+  return { code: r.code, createdAt: r.created_at, expiresAt: r.expires_at, usedAt: r.used_at };
+}
+
+export async function listInvites(): Promise<Invite[]> {
+  const c = getCompany();
+  if (!c || !supabaseConfigured) return [];
+  const { data } = await supabase.from('invites').select('code, created_at, expires_at, used_at').eq('company_id', c.id).is('used_at', null).gt('expires_at', new Date().toISOString()).order('created_at', { ascending: false });
+  return (data ?? []).map((r) => ({ code: r.code, createdAt: r.created_at, expiresAt: r.expires_at, usedAt: r.used_at }));
+}
+
+export async function deleteInvite(code: string): Promise<void> {
+  await supabase.from('invites').delete().eq('code', code);
+}
+
+export async function listMembers(): Promise<Member[]> {
+  const c = getCompany();
+  if (!c || !supabaseConfigured) return getMember() ? [getMember() as Member] : [];
+  const { data } = await supabase.from('members').select('user_id, company_id, role, display_name, initials').eq('company_id', c.id).order('created_at', { ascending: true });
+  return (data ?? []).map((r) => ({ userId: r.user_id, companyId: r.company_id, role: r.role, displayName: r.display_name, initials: r.initials }));
+}
+
+export async function removeMember(userId: string): Promise<void> {
+  const c = getCompany();
+  if (!c) throw new Error('no_company');
+  const { error } = await supabase.from('members').delete().eq('company_id', c.id).eq('user_id', userId);
+  if (error) throw error;
 }
 
 export async function clearCompany(): Promise<void> {

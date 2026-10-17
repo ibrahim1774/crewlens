@@ -31,14 +31,15 @@ export function Sheet({ visible, onClose, title, children }: Props) {
   );
 }
 
-type RowProps = { title: string; subtitle?: string; onPress?: () => void; disabled?: boolean; destructive?: boolean };
+type RowProps = { title: string; subtitle?: string; onPress?: () => void; disabled?: boolean; destructive?: boolean; testID?: string };
 
-export function SheetRow({ title, subtitle, onPress, disabled, destructive }: RowProps) {
+export function SheetRow({ title, subtitle, onPress, disabled, destructive, testID }: RowProps) {
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled || !onPress}
       accessibilityRole="button"
+      testID={testID}
       style={({ pressed }) => ({
         paddingVertical: Space.md,
         borderBottomWidth: 1,

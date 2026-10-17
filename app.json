@@ -71,7 +71,8 @@
       "react-native-appsflyer",
       "expo-asset",
       "expo-sharing",
-      "expo-mail-composer"
+      "expo-mail-composer",
+      "expo-video"
     ],
     "experiments": {
       "typedRoutes": true,

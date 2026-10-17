@@ -71,7 +71,7 @@ export default function FirstJob() {
       <View style={{ gap: Space.sm }}>
         <Mono color={Colors.ink2} size={11}>STEP 8 OF 10</Mono>
         <Heading size={34} bold>Stamp a photo of the job you are on today.</Heading>
-        <Body color={Colors.ink2}>Crew Lens files it to the job you are standing at and burns in the time, place and your initials. That is the record.</Body>
+        <Body color={Colors.ink2}>It files to the job you are standing at with the time, place and your initials burned in. Backed up the moment it uploads. That photo is yours for good.</Body>
       </View>
       <View style={{ borderWidth: 1, borderColor: Colors.hairline, borderRadius: Radius.card, backgroundColor: Colors.surface, padding: Space.md, gap: Space.sm }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: Space.sm }}>

@@ -32,7 +32,7 @@ env:
 - takeScreenshot: company
 - tapOn: "Continue"
 - extendedWaitUntil:
-    visible: "Two permissions"
+    visible: "Two permissions, zero sorting"
     timeout: 30000
 - tapOn:
     text: ".*Camera.*"

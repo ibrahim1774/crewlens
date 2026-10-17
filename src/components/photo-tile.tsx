@@ -5,7 +5,7 @@ import { Pressable, View } from 'react-native';
 
 import { Mono } from '@/components/text';
 import { Colors } from '@/constants/theme';
-import { signedUrl } from '@/lib/photos';
+import { formatDuration, signedUrl } from '@/lib/photos';
 import type { Photo } from '@/types/models';
 
 /** Resolves a displayable URI: local file first, else a signed remote URL. */
@@ -42,6 +42,12 @@ export function PhotoTile({ photo, size, onPress, onRetry }: Props) {
       <View style={{ position: 'absolute', left: 4, bottom: 4, backgroundColor: 'rgba(11,11,13,0.6)', paddingHorizontal: 4, paddingVertical: 1, borderRadius: 2 }}>
         <Mono size={9} color={Colors.onCamera}>{time}</Mono>
       </View>
+      {photo.kind === 'video' ? (
+        <View style={{ position: 'absolute', right: 4, bottom: 4, flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: 'rgba(11,11,13,0.6)', paddingHorizontal: 4, paddingVertical: 1, borderRadius: 2 }}>
+          <SymbolView name="play.fill" size={8} tintColor={Colors.onCamera} />
+          <Mono size={9} color={Colors.onCamera}>{formatDuration(photo.durationS)}</Mono>
+        </View>
+      ) : null}
       {unsynced ? <View style={{ position: 'absolute', right: 6, top: 6, width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.flag, borderWidth: 1, borderColor: Colors.onCamera }} /> : null}
       {failed ? (
         <Pressable onPress={onRetry} hitSlop={8} accessibilityRole="button" accessibilityLabel="Retry upload" style={{ position: 'absolute', right: 4, top: 4, backgroundColor: 'rgba(11,11,13,0.6)', borderRadius: 2, padding: 2 }}>

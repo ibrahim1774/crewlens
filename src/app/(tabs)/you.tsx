@@ -88,13 +88,13 @@ export default function You() {
           </Mono>
         </View>
         <Row title="Plans" value="Solo, Pro with documents, Crew" onPress={() => router.push({ pathname: '/(auth)/paywall', params: { upgrade: '1' } })} icon="chevron.right" />
-        <Row title="Manage subscription" value={paywallEnabled ? undefined : 'Billing arrives with the App Store release'} onPress={paywallEnabled ? () => Linking.openURL('itms-apps://apps.apple.com/account/subscriptions') : undefined} icon="arrow.up.right" />
+        <Row title="Manage subscription" value="Change or cancel in the App Store" onPress={() => Linking.openURL('itms-apps://apps.apple.com/account/subscriptions')} icon="arrow.up.right" />
         <Row title="Sync" value={sync.failed ? `${sync.failed} failed, ${sync.pending} waiting` : sync.pending ? `${sync.pending} waiting to upload` : 'Everything is uploaded'} />
       </Section>
 
       <Section title="Company">
         <Row title={company?.name ?? ''} value={company?.trade ? company.trade[0].toUpperCase() + company.trade.slice(1) : undefined} />
-        <Row title="Team" value="Invite your crew in the next update" />
+        <Row title="Team" value={`${company?.seats ?? 1} ${(company?.seats ?? 1) === 1 ? 'seat' : 'seats'} · invite by text`} onPress={() => router.push('/team')} icon="chevron.right" />
       </Section>
 
       <Section title="Support">

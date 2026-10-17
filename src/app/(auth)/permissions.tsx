@@ -59,8 +59,8 @@ export default function Permissions() {
     <Screen footer={<Button title="Continue" onPress={next} disabled={!camera?.granted} />}>
       <View style={{ gap: Space.sm }}>
         <Mono color={Colors.ink2} size={11}>STEP 6 OF 10</Mono>
-        <Heading size={34} bold>Two permissions</Heading>
-        <Body color={Colors.ink2}>Camera is required. Location is what files photos to the right job and stamps where they were taken.</Body>
+        <Heading size={34} bold>Two permissions, zero sorting</Heading>
+        <Body color={Colors.ink2}>Camera takes the photo. Location files it to the right job and stamps where it was taken, so you never sort a camera roll again.</Body>
       </View>
       <Row
         icon="camera"

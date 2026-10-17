@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+import { VideoView, useVideoPlayer } from 'expo-video';
 import * as MediaLibrary from 'expo-media-library';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
@@ -16,11 +17,18 @@ import type { Photo } from '@/types/models';
 
 const { width: W } = Dimensions.get('window');
 
+function VideoPage({ uri }: { uri: string }) {
+  const player = useVideoPlayer(uri, (p) => {
+    p.loop = false;
+  });
+  return <VideoView player={player} style={{ width: W, height: '100%' }} contentFit="contain" nativeControls />;
+}
+
 function Page({ photo }: { photo: Photo }) {
   const uri = usePhotoUri(photo, 'full');
   return (
     <View style={{ width: W, flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-      {uri ? <Image source={{ uri }} style={{ width: W, height: '100%' }} contentFit="contain" transition={150} /> : <Mono color={Colors.onCamera}>LOADING</Mono>}
+      {!uri ? <Mono color={Colors.onCamera}>LOADING</Mono> : photo.kind === 'video' ? <VideoPage uri={uri} /> : <Image source={{ uri }} style={{ width: W, height: '100%' }} contentFit="contain" transition={150} />}
     </View>
   );
 }

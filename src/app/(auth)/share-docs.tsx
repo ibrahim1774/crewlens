@@ -72,8 +72,8 @@ export default function ShareDocs() {
     <Screen footer={<Button title="Go to my jobs" onPress={finish} testID="onboarding-finish" />}>
       <View style={{ gap: Space.sm }}>
         <Mono color={Colors.ink2} size={11}>STEP 10 OF 10</Mono>
-        <Heading size={34} bold>Send the client one link. Attach the paperwork.</Heading>
-        <Body color={Colors.ink2}>The live link shows every photo as you shoot it. Documents keep the invoice and the contract next to the proof.</Body>
+        <Heading size={34} bold>One link for the client. The paperwork next to the proof.</Heading>
+        <Body color={Colors.ink2}>The live link shows every photo as you shoot. Documents keep the invoice and contract with the job, so nothing gets lost in email or a text thread.</Body>
       </View>
       <Row icon="link" title="Copy the live job link" body={job ? `${job.name} updates for the client as you shoot.` : 'Create a job first and the link is one tap away.'} action={job ? (busy ? '…' : 'COPY') : 'LATER'} onPress={copy} done={copied} testID="share-copy" />
       <Row icon="doc.text" title="Upload a document" body="Invoice, proposal or contract. Edit and sign it in the app, then text it. Pro plan." action="UPLOAD" onPress={upload} testID="share-upload" />

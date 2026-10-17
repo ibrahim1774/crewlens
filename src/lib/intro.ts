@@ -23,7 +23,7 @@ export const INTRO_SLIDES: IntroSlide[] = [
     key: 'problem',
     eyebrow: 'THE PROBLEM',
     title: 'Your camera roll is not a job record.',
-    body: 'Thousands of photos with no job, no address and no proof of when. When a client says the damage was already there, you are scrolling.',
+    body: 'Thousands of photos with no job name, no address and no proof of when. One lost phone and the proof for every job is gone with it.',
     mockup: 'cameraRoll',
   },
   {
@@ -44,7 +44,7 @@ export const INTRO_SLIDES: IntroSlide[] = [
     key: 'timeline',
     eyebrow: 'THE TIMELINE',
     title: 'Before. During. After. In order.',
-    body: 'Each job keeps a day-by-day timeline. Scroll the whole history of a site in ten seconds.',
+    body: 'Each job keeps a day-by-day timeline, backed up. Scroll the whole history of a site in ten seconds, years later.',
     mockup: 'timeline',
   },
   {

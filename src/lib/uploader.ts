@@ -67,7 +67,7 @@ async function drainTombstones() {
         if (error) throw error;
         if (t.key) {
           await supabase.storage.from('photos').remove([t.key]);
-          await supabase.storage.from('thumbs').remove([t.key]);
+          await supabase.storage.from('thumbs').remove([t.key.replace(/\.mp4$/, '.jpg')]);
         }
       } else {
         const { error } = await supabase.from('projects').delete().eq('id', t.id);
@@ -88,15 +88,17 @@ async function uploadOne(p: Photo) {
     if (!job) throw Object.assign(new Error('job_missing'), { permanent: true });
     if (!job.remote) await pushJob(job.id);
 
-    const key = `${p.companyId}/${p.jobId}/${p.id}.jpg`;
+    const video = p.kind === 'video';
+    const thumbKey = `${p.companyId}/${p.jobId}/${p.id}.jpg`;
+    const key = video ? `${p.companyId}/${p.jobId}/${p.id}.mp4` : thumbKey;
     if (!p.localThumbUri || !p.localUri) throw Object.assign(new Error('local_file_missing'), { permanent: true });
 
     const thumb = await new File(p.localThumbUri).bytes();
-    const t = await supabase.storage.from('thumbs').upload(key, thumb, { contentType: 'image/jpeg', upsert: true });
+    const t = await supabase.storage.from('thumbs').upload(thumbKey, thumb, { contentType: 'image/jpeg', upsert: true });
     if (t.error) throw t.error;
 
     const full = await new File(p.localUri).bytes();
-    const f = await supabase.storage.from('photos').upload(key, full, { contentType: 'image/jpeg', upsert: true });
+    const f = await supabase.storage.from('photos').upload(key, full, { contentType: video ? 'video/mp4' : 'image/jpeg', upsert: true });
     if (f.error) throw f.error;
 
     // Deleted while the bytes were in flight: do not create the row; the tombstone removes the objects.
@@ -114,7 +116,7 @@ async function uploadOne(p: Photo) {
         taker_initials: p.takerInitials,
         kind: p.kind,
         storage_path: key,
-        thumb_path: key,
+        thumb_path: thumbKey,
         width: p.width,
         height: p.height,
         duration_s: p.durationS,

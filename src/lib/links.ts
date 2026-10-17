@@ -49,6 +49,18 @@ export async function getOrCreateLiveLink(jobId: string): Promise<ShareLink> {
   return map(created.data);
 }
 
+/** A fixed set of photos (select-all included). Expiry follows the plan like live links. */
+export async function createGalleryLink(jobId: string, photoIds: string[]): Promise<ShareLink> {
+  const company = getCompany();
+  if (!company) throw new Error('no_company');
+  if (!supabaseConfigured) throw new Error('Sharing needs the cloud connection, which is not set up yet.');
+  if (!photoIds.length) throw new Error('no_photos');
+  void meta.set('link_shared', '1');
+  const created = await supabase.from('share_links').insert({ company_id: company.id, project_id: jobId, type: 'gallery', photo_ids: photoIds }).select(COLS).single();
+  if (created.error || !created.data) throw created.error ?? new Error('link_create_failed');
+  return map(created.data);
+}
+
 export async function revokeLink(id: string): Promise<void> {
   const { error } = await supabase.from('share_links').update({ revoked_at: new Date().toISOString() }).eq('id', id);
   if (error) throw error;

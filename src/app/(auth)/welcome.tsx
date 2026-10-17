@@ -94,6 +94,47 @@ const CARDS = [
   },
 ];
 
+const OLD_WAY = ['4,000 photos, no job names', 'No date or address you can prove', 'Texting photos to the office at night', 'The invoice buried in email'];
+const NEW_WAY = ['Filed to the job by GPS', 'Time, place and initials burned in', 'One live link the client keeps', 'Invoice signed and sent from the job'];
+
+/** Side by side: the Photos app with an X, Crew Lens with a check. The argument in one glance. */
+function Comparison() {
+  const Col = ({ title, items, ok }: { title: string; items: string[]; ok: boolean }) => (
+    <View style={{ flex: 1, gap: 6, padding: Space.sm, borderRadius: Radius.card, borderWidth: 1, borderColor: ok ? Colors.ink : Colors.hairline, backgroundColor: ok ? Colors.surface : Colors.canvas }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+        <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: ok ? Colors.ok : Colors.flag, alignItems: 'center', justifyContent: 'center' }}>
+          <SymbolView name={ok ? 'checkmark' : 'xmark'} size={11} tintColor={Colors.onCamera} />
+        </View>
+        <Mono size={10} bold color={ok ? Colors.ink : Colors.ink2}>{title}</Mono>
+      </View>
+      <View style={{ flexDirection: 'row', gap: 3 }}>
+        {THUMBS.slice(0, 3).map((src, i) => (
+          <View key={i} style={{ flex: 1, aspectRatio: 1, borderRadius: 2, overflow: 'hidden', backgroundColor: Colors.hairline, opacity: ok ? 1 : 0.45 }}>
+            <Image source={src} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+            {ok ? (
+              <View style={{ position: 'absolute', left: 2, bottom: 2, backgroundColor: 'rgba(11,11,13,0.65)', paddingHorizontal: 2, borderRadius: 2 }}>
+                <Mono size={6} color={Colors.onCamera}>{['09:18', '09:21', '09:40'][i]} · JOS</Mono>
+              </View>
+            ) : null}
+          </View>
+        ))}
+      </View>
+      {items.map((t) => (
+        <View key={t} style={{ flexDirection: 'row', gap: 5, alignItems: 'flex-start' }}>
+          <Mono size={10} color={ok ? Colors.ok : Colors.flag} bold>{ok ? '✓' : '✕'}</Mono>
+          <Body size={11} color={ok ? Colors.ink : Colors.ink2} style={{ flex: 1, lineHeight: 14 }}>{t}</Body>
+        </View>
+      ))}
+    </View>
+  );
+  return (
+    <View style={{ flexDirection: 'row', gap: Space.sm }} testID="welcome-comparison">
+      <Col title="YOUR PHOTOS APP" items={OLD_WAY} ok={false} />
+      <Col title="CREW LENS" items={NEW_WAY} ok />
+    </View>
+  );
+}
+
 function Deck({ reduceMotion }: { reduceMotion: boolean }) {
   const [index, setIndex] = useState(0);
   const t = useRef(new Animated.Value(reduceMotion ? 1 : 0)).current;
@@ -125,7 +166,7 @@ function Deck({ reduceMotion }: { reduceMotion: boolean }) {
   const card = CARDS[index];
 
   return (
-    <View style={{ minHeight: 190, justifyContent: 'center' }} accessibilityLabel="Examples of job activity: added photos, shared the job link, sent an invoice">
+    <View style={{ minHeight: 150, justifyContent: 'center' }} accessibilityLabel="Examples of job activity: added photos, shared the job link, sent an invoice">
       <Animated.View
         key={card.key}
         testID={`welcome-card-${card.key}`}
@@ -169,13 +210,14 @@ export default function Welcome() {
             <Stamp photo={{ takenAt: now, lat: null, lng: null }} initials="YOU" size={10} />
             <Heading size={22} bold>CREW LENS</Heading>
           </View>
-          <Heading size={38} bold style={{ textAlign: 'center', lineHeight: 40, letterSpacing: 0.5 }}>
-            EVERY JOB.{'\n'}STAMPED, FILED, SHARED.
+          <Heading size={36} bold style={{ textAlign: 'center', lineHeight: 38, letterSpacing: 0.5 }} testID="welcome-headline">
+            NEVER LOSE THE PHOTO{'\n'}THAT PROVES YOUR WORK.
           </Heading>
           <Body color={Colors.ink2} style={{ textAlign: 'center' }}>
-            Job-site photos with the time, place and crew burned in. One live link for the client. The paperwork next to the photos.
+            Every job-site photo and document, stamped with the time and place, filed to the job, backed up, and one link away for the client. Nothing lost in a camera roll or a text thread.
           </Body>
         </View>
+        <Comparison />
         <Deck reduceMotion={reduceMotion} />
         <Pressable onPress={() => router.push('/(auth)/intro')} accessibilityRole="link" hitSlop={8} style={{ alignSelf: 'center', paddingVertical: Space.xs }} testID="welcome-tour">
           <Mono size={12} color={Colors.slate} bold>SEE HOW IT WORKS</Mono>

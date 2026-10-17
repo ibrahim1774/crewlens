@@ -106,7 +106,7 @@ export default function PaywallGate() {
       <View style={{ gap: Space.sm }}>
         <Mono color={Colors.ink2} size={11}>{fromUpgrade ? 'PLANS' : 'STEP 7 OF 10'}</Mono>
         <Heading size={34} bold>{fromUpgrade ? 'Upgrade your plan' : 'Pick your plan'}</Heading>
-        <Body color={Colors.ink2}>Every plan stamps and files every photo. Pro adds the paperwork: upload an invoice or contract, edit and sign it on the phone, text it to the client.</Body>
+        <Body color={Colors.ink2}>Every plan keeps every photo stamped, filed to the job and backed up. Pro adds the paperwork: upload the invoice or contract, sign it on the phone, text it to the client, and it stays with the job.</Body>
       </View>
       <View style={{ flexDirection: 'row', alignSelf: 'flex-start', borderWidth: 1, borderColor: Colors.hairline, borderRadius: Radius.card, overflow: 'hidden' }}>
         {(['monthly', 'yearly'] as Period[]).map((p) => {

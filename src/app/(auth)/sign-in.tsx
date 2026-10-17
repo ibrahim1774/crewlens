@@ -70,7 +70,7 @@ export default function SignIn() {
       <View style={{ gap: Space.sm }}>
         <Mono color={Colors.ink2} size={11}>STEP 2 OF 10</Mono>
         <Heading size={34} bold>Sign in</Heading>
-        <Body color={Colors.ink2}>Your photos sync to your account so the office and your crew see them.</Body>
+        <Body color={Colors.ink2}>Your jobs, photos and paperwork back up to your account. A lost or broken phone never means a lost job.</Body>
       </View>
 
       {appleAvailable ? (

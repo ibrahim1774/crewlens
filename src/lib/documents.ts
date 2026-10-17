@@ -62,6 +62,13 @@ export async function listDocuments(jobId: string): Promise<Doc[]> {
   return rows.map(map);
 }
 
+/** Every document in the company, newest first, for the Activity feed. */
+export async function listAllDocuments(limit = 100): Promise<Doc[]> {
+  const db = await ready();
+  const rows = await db.getAllAsync<Row>('select * from documents order by updated_at desc limit ?', limit);
+  return rows.map(map);
+}
+
 export async function countDocuments(jobId: string): Promise<number> {
   const db = await ready();
   const r = await db.getFirstAsync<{ n: number }>('select count(*) as n from documents where job_id = ?', jobId);

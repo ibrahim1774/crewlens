@@ -1,4 +1,4 @@
-import { CameraView, useCameraPermissions, type CameraType, type FlashMode } from 'expo-camera';
+import { CameraView, useCameraPermissions, useMicrophonePermissions, type CameraType, type FlashMode } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
@@ -16,7 +16,8 @@ import { Colors, Space } from '@/constants/theme';
 import { useCompany, useMember } from '@/lib/company';
 import { consumeCameraJob } from '@/lib/handoff';
 import { useFix, useJobs } from '@/lib/jobs';
-import { atPhotoCap, capture } from '@/lib/photos';
+import { atPhotoCap, capture, captureVideo, formatDuration } from '@/lib/photos';
+import * as dbm from '@/lib/db';
 import { effectiveTier, limitsFor } from '@/lib/plan';
 import { stripOrder } from '@/lib/strip';
 import { LimitError } from '@/lib/supabase';
@@ -38,6 +39,11 @@ export default function Camera() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ jobId?: string }>();
   const [permission, requestPermission] = useCameraPermissions();
+  const [mic, requestMic] = useMicrophonePermissions();
+  const [mode, setMode] = useState<'picture' | 'video'>('picture');
+  const [recording, setRecording] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+  const recordStart = useRef(0);
   const company = useCompany();
   const member = useMember();
   const jobs = useJobs();
@@ -114,9 +120,73 @@ export default function Camera() {
     }
   }, [ready, busy, selected, fix, tier]);
 
+  const videoAllowed = limitsFor(tier).videosPerJob > 0;
+
+  const toggleMode = useCallback(async () => {
+    if (recording) return;
+    if (mode === 'video') {
+      setMode('picture');
+      return;
+    }
+    if (!videoAllowed) {
+      setToast('Video is on Pro and Crew.');
+      return;
+    }
+    if (!mic?.granted) {
+      const r = await requestMic();
+      if (!r.granted) {
+        setToast('Microphone is off. Clips record without sound.');
+      }
+    }
+    setMode('video');
+  }, [mic?.granted, mode, recording, requestMic, videoAllowed]);
+
+  useEffect(() => {
+    if (!recording) return;
+    const t = setInterval(() => setElapsed(Math.round((Date.now() - recordStart.current) / 1000)), 250);
+    return () => clearInterval(t);
+  }, [recording]);
+
+  const record = useCallback(async () => {
+    if (!ready || !cam.current) return;
+    if (selected === 'new') {
+      router.push({ pathname: '/job/new', params: { returnTo: 'camera' } });
+      return;
+    }
+    if (recording) {
+      cam.current.stopRecording();
+      return;
+    }
+    const cap = limitsFor(tier).videosPerJob;
+    if ((await dbm.photos.countByJob(selected, 'video')) >= cap) {
+      setToast(`${cap} clips per job on your plan.`);
+      return;
+    }
+    const maxS = limitsFor(tier).videoMaxS;
+    setRecording(true);
+    setElapsed(0);
+    recordStart.current = Date.now();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    try {
+      const rec = await cam.current.recordAsync({ maxDuration: maxS });
+      const durationS = (Date.now() - recordStart.current) / 1000;
+      setRecording(false);
+      if (!rec?.uri) return;
+      setBusy(true);
+      const clip = await captureVideo({ jobId: selected, uri: rec.uri, durationS, fix });
+      setLast(clip);
+      setCounts((c) => ({ ...c, [selected]: (c[selected] ?? 0) + 1 }));
+    } catch (e) {
+      setRecording(false);
+      Alert.alert('Could not save clip', e instanceof Error && e.message === 'no_company' ? 'Sign in again to keep shooting.' : 'Try again.');
+    } finally {
+      setBusy(false);
+    }
+  }, [ready, selected, recording, tier, fix]);
+
   const longPress = useCallback(() => {
-    setToast(limitsFor(tier).videosPerJob === 0 ? 'Video is on Pro and Crew.' : 'Video is coming soon.');
-  }, [tier]);
+    if (mode === 'picture') void toggleMode();
+  }, [mode, toggleMode]);
 
   if (!permission) return <View style={{ flex: 1, backgroundColor: Colors.camera }} />;
   if (!permission.granted) {
@@ -133,14 +203,22 @@ export default function Camera() {
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors.camera }}>
-      <CameraView ref={cam} style={{ flex: 1 }} facing={facing} flash={flash} onCameraReady={() => setReady(true)} responsiveOrientationWhenOrientationLocked />
+      <CameraView ref={cam} style={{ flex: 1 }} facing={facing} flash={flash} mode={mode} mute={!mic?.granted} onCameraReady={() => setReady(true)} responsiveOrientationWhenOrientationLocked />
 
       {/* Top bar */}
       <View style={{ position: 'absolute', top: insets.top, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', paddingHorizontal: Space.sm }}>
         <IconButton name="xmark" label="Close camera" onPress={() => router.back()} />
         <View style={{ flex: 1, alignItems: 'center' }}>
-          <Mono size={11} color={Colors.onCamera}>{fix ? `GPS ±${Math.round(fix.accuracyM ?? 0)} M` : 'NO GPS'}</Mono>
+          {recording ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.flag, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 2 }}>
+              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.onCamera }} />
+              <Mono size={11} color={Colors.onCamera} bold>REC {formatDuration(elapsed)} / {formatDuration(limitsFor(tier).videoMaxS)}</Mono>
+            </View>
+          ) : (
+            <Mono size={11} color={Colors.onCamera}>{fix ? `GPS ±${Math.round(fix.accuracyM ?? 0)} M` : 'NO GPS'}</Mono>
+          )}
         </View>
+        <IconButton name={mode === 'video' ? 'camera' : 'video'} label={mode === 'video' ? 'Switch to photo' : 'Switch to video'} onPress={() => void toggleMode()} />
         <IconButton name={flash === 'off' ? 'bolt.slash' : 'bolt.fill'} label="Toggle flash" onPress={() => setFlash((f) => (f === 'off' ? 'on' : 'off'))} />
         <IconButton name="arrow.triangle.2.circlepath.camera" label="Flip camera" onPress={() => setFacing((f) => (f === 'back' ? 'front' : 'back'))} />
       </View>
@@ -163,11 +241,11 @@ export default function Camera() {
         <JobChipStrip chips={strip.chips} selected={selected} counts={counts} onSelect={onSelect} />
         <View style={{ alignItems: 'center', justifyContent: 'center', height: 88 }}>
           <Pressable
-            onPress={shoot}
+            onPress={mode === 'video' ? record : shoot}
             onLongPress={longPress}
             disabled={!ready || busy}
             accessibilityRole="button"
-            accessibilityLabel={selected === 'new' ? 'Create a job here' : 'Take photo'}
+            accessibilityLabel={selected === 'new' ? 'Create a job here' : mode === 'video' ? (recording ? 'Stop recording' : 'Record video') : 'Take photo'}
             testID="shutter"
             style={({ pressed }) => ({
               width: 76,
@@ -179,8 +257,8 @@ export default function Camera() {
               justifyContent: 'center',
               opacity: !ready ? 0.5 : pressed ? 0.8 : 1,
             })}>
-            <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: busy ? Colors.ink2 : Colors.flag, alignItems: 'center', justifyContent: 'center' }}>
-              {selected === 'new' ? <SymbolView name="plus" size={26} tintColor={Colors.onCamera} /> : null}
+            <View style={{ width: recording ? 30 : 60, height: recording ? 30 : 60, borderRadius: recording ? 6 : 30, backgroundColor: busy ? Colors.ink2 : Colors.flag, alignItems: 'center', justifyContent: 'center' }}>
+              {selected === 'new' ? <SymbolView name="plus" size={26} tintColor={Colors.onCamera} /> : mode === 'video' && !recording ? <SymbolView name="video.fill" size={22} tintColor={Colors.onCamera} /> : null}
             </View>
           </Pressable>
         </View>
