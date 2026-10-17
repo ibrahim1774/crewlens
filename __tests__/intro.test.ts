@@ -1,24 +1,23 @@
 import { clampSlide, INTRO_SLIDES } from '@/lib/intro';
 
-test('the tour is exactly ten screens with unique keys and titles', () => {
+test('the tour is exactly ten screens with unique keys, titles and mockups', () => {
   expect(INTRO_SLIDES).toHaveLength(10);
   expect(new Set(INTRO_SLIDES.map((s) => s.key)).size).toBe(10);
   expect(new Set(INTRO_SLIDES.map((s) => s.title)).size).toBe(10);
+  expect(new Set(INTRO_SLIDES.map((s) => s.mockup)).size).toBe(10);
 });
 
-test('every slide has an image and copy that fits the screen', () => {
+test('every slide has copy that fits the screen', () => {
   for (const s of INTRO_SLIDES) {
-    expect(s.image).toBeDefined();
     expect(s.eyebrow).toMatch(/^[A-Z0-9 \-·]+$/);
     expect(s.title.length).toBeLessThanOrEqual(52);
     expect(s.body.length).toBeLessThanOrEqual(150);
   }
 });
 
-test('only the problem slide has no stamp, and it says why', () => {
-  const withoutStamp = INTRO_SLIDES.filter((s) => s.stamp === null);
-  expect(withoutStamp.map((s) => s.key)).toEqual(['problem']);
-  expect(withoutStamp[0].stampNote).toBe('NO JOB · NO TIME · NO PROOF');
+test('the tour opens on the problem and closes on the call to action', () => {
+  expect(INTRO_SLIDES[0].mockup).toBe('cameraRoll');
+  expect(INTRO_SLIDES[9].mockup).toBe('start');
 });
 
 test('clampSlide keeps a swipe index on a real slide', () => {

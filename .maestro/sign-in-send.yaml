@@ -1,0 +1,33 @@
+appId: com.ibrahim1774.crewlens
+name: Email sign-in step 1, request a code
+# Run after onboarding.yaml or intro.yaml left the app on the sign-in screen, or from the welcome screen.
+env:
+  EMAIL: "ibrahim3709@gmail.com"
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "Continue"
+    timeout: 15000
+    optional: true
+- tapOn:
+    text: "Continue"
+    optional: true
+- runFlow:
+    when:
+      visible: "Get started"
+    commands:
+      - tapOn: "Get started"
+- extendedWaitUntil:
+    visible: "Sign in"
+    timeout: 15000
+- tapOn:
+    id: "email"
+- eraseText
+- inputText: ${EMAIL}
+- hideKeyboard
+- tapOn: "Send code"
+- extendedWaitUntil:
+    visible: "6-digit code"
+    timeout: 20000
+- assertVisible: "Verify code"
+- takeScreenshot: sign-in-code-requested

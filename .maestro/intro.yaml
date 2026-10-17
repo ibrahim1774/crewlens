@@ -61,7 +61,8 @@ env:
 - extendedWaitUntil:
     visible: "Start the record."
     timeout: 5000
-- assertNotVisible: "SKIP"
+- assertNotVisible:
+    id: "intro-skip"
 - takeScreenshot: intro-10
 - tapOn: "Get started"
 - extendedWaitUntil:

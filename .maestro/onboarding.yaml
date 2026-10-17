@@ -19,10 +19,12 @@ env:
     optional: true
 # First launch opens the ten-screen tour; skipping it lands on sign-in.
 - extendedWaitUntil:
-    visible: "SKIP"
+    visible:
+      id: "intro-skip"
     timeout: 30000
 - takeScreenshot: 01-intro
-- tapOn: "SKIP"
+- tapOn:
+    id: "intro-skip"
 - extendedWaitUntil:
     visible: "Sign in"
     timeout: 10000

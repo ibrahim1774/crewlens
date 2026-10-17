@@ -1,0 +1,71 @@
+appId: com.ibrahim1774.crewlens
+name: Email sign-in step 2, verify the code and create the company
+env:
+  CODE: "000000"
+  FULL_NAME: "Maestro Tester"
+  COMPANY: "Maestro Roofing"
+---
+- assertVisible: "6-digit code"
+- tapOn:
+    id: "code"
+- inputText: ${CODE}
+- hideKeyboard
+- tapOn: "Verify code"
+# New account: name → company → permissions → paywall placeholder → tabs.
+- extendedWaitUntil:
+    visible:
+      id: "name"
+    timeout: 30000
+- tapOn:
+    id: "name"
+- inputText: ${FULL_NAME}
+- hideKeyboard
+- tapOn: "Continue"
+- extendedWaitUntil:
+    visible:
+      id: "company"
+    timeout: 10000
+- tapOn:
+    id: "company"
+- inputText: ${COMPANY}
+- hideKeyboard
+- tapOn: "Roofing"
+- takeScreenshot: company
+- tapOn: "Continue"
+- extendedWaitUntil:
+    visible: "Two permissions"
+    timeout: 30000
+- tapOn: "Camera"
+- extendedWaitUntil:
+    visible: "Allow"
+    timeout: 5000
+    optional: true
+- tapOn:
+    text: "Allow"
+    optional: true
+- tapOn: "Location while using"
+- extendedWaitUntil:
+    visible: "Allow While Using App"
+    timeout: 5000
+    optional: true
+- tapOn:
+    text: "Allow While Using App"
+    optional: true
+- takeScreenshot: permissions
+- tapOn: "Continue"
+- extendedWaitUntil:
+    visible: "Allow"
+    timeout: 5000
+    optional: true
+- tapOn:
+    text: "Allow"
+    optional: true
+- extendedWaitUntil:
+    visible: "Start using Crew Lens"
+    timeout: 15000
+- tapOn: "Start using Crew Lens"
+- extendedWaitUntil:
+    visible:
+      id: "new-job"
+    timeout: 20000
+- takeScreenshot: jobs-empty
