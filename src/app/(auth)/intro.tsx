@@ -65,7 +65,7 @@ function Slide({ slide, index, active, width, height, topInset, bottomInset, red
   const copyShift = rise.interpolate({ inputRange: [0, 1], outputRange: [18, 0] });
 
   return (
-    <View style={{ width, height, backgroundColor: Colors.camera }} accessible accessibilityLabel={`Screen ${index + 1} of ${INTRO_SLIDES.length}. ${slide.title} ${slide.body}`}>
+    <View style={{ width, height, backgroundColor: Colors.camera }} testID={`intro-slide-${index + 1}`}>
       <Animated.View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, transform: [{ scale: drift }] }}>
         <Image source={slide.image} style={{ width, height }} contentFit="cover" transition={active ? 180 : 0} priority={index < 2 ? 'high' : 'normal'} />
       </Animated.View>
@@ -93,7 +93,7 @@ function Slide({ slide, index, active, width, height, topInset, bottomInset, red
           transform: [{ translateY: copyShift }],
         }}>
         <Mono size={11} color={Colors.flag} bold>{String(index + 1).padStart(2, '0')} / {INTRO_SLIDES.length}  ·  {slide.eyebrow}</Mono>
-        <Heading size={40} bold color={Colors.onCamera} style={{ lineHeight: 42 }}>{slide.title}</Heading>
+        <Heading size={40} bold color={Colors.onCamera} style={{ lineHeight: 42 }} accessibilityRole="header">{slide.title}</Heading>
         <Body size={16} color={Colors.onCamera} style={{ opacity: 0.86, lineHeight: 23 }}>{slide.body}</Body>
       </Animated.View>
     </View>
