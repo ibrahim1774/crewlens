@@ -12,7 +12,11 @@ const POSTHOG_HOST = process.env.EXPO_PUBLIC_POSTHOG_HOST ?? 'https://us.i.posth
 const APPSFLYER_KEY = process.env.EXPO_PUBLIC_APPSFLYER_DEV_KEY ?? '';
 const APPLE_APP_ID = process.env.EXPO_PUBLIC_APPLE_APP_ID ?? '';
 
-export const posthog = POSTHOG_KEY
+// Only a project API key (phc_…) works from a client; a personal key (phx_…) is rejected with 401 on every flush.
+const posthogKeyValid = POSTHOG_KEY.startsWith('phc_');
+if (POSTHOG_KEY && !posthogKeyValid) console.warn('PostHog: EXPO_PUBLIC_POSTHOG_KEY must be a project key starting with phc_; analytics disabled.');
+
+export const posthog = posthogKeyValid
   ? new PostHog(POSTHOG_KEY, { host: POSTHOG_HOST, captureAppLifecycleEvents: true })
   : null;
 

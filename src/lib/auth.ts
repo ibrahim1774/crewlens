@@ -4,7 +4,7 @@ import { useSyncExternalStore } from 'react';
 
 import { clearCompany, fetchMembership, getMember, setMembershipChecked } from '@/lib/company';
 import { meta, resetLocal } from '@/lib/db';
-import { supabase } from '@/lib/supabase';
+import { supabase, supabaseConfigured } from '@/lib/supabase';
 
 let session: Session | null = null;
 let sessionLoaded = false;
@@ -75,7 +75,10 @@ export function useSession(): { session: Session | null; loaded: boolean } {
 }
 
 /** Sign in with Apple. Returns the full name Apple shares on first sign-in, if any. */
+const NOT_CONFIGURED = 'Cloud sign-in is not set up on this build yet.';
+
 export async function signInWithApple(): Promise<{ fullName: string | null }> {
+  if (!supabaseConfigured) throw new Error(NOT_CONFIGURED);
   const credential = await AppleAuthentication.signInAsync({
     requestedScopes: [AppleAuthentication.AppleAuthenticationScope.FULL_NAME, AppleAuthentication.AppleAuthenticationScope.EMAIL],
   });
@@ -90,6 +93,7 @@ export async function signInWithApple(): Promise<{ fullName: string | null }> {
 }
 
 export async function sendEmailCode(email: string): Promise<void> {
+  if (!supabaseConfigured) throw new Error(NOT_CONFIGURED);
   const { error } = await supabase.auth.signInWithOtp({ email: email.trim().toLowerCase(), options: { shouldCreateUser: true } });
   if (error) throw error;
 }

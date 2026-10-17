@@ -1,8 +1,22 @@
 appId: com.ibrahim1774.crewlens
 name: Crew Lens onboarding reaches sign-in
+env:
+  DEV_URL: "exp+crewlens://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8082"
 ---
 - launchApp:
     clearState: true
+# Development-client builds land on the launcher; open the project and dismiss the first-run menu.
+- openLink: ${DEV_URL}
+- extendedWaitUntil:
+    visible: "Continue"
+    timeout: 15000
+    optional: true
+- tapOn:
+    text: "Continue"
+    optional: true
+- tapOn:
+    text: "Close"
+    optional: true
 - extendedWaitUntil:
     visible: "Get started"
     timeout: 30000
@@ -14,5 +28,6 @@ name: Crew Lens onboarding reaches sign-in
 - tapOn:
     id: "email"
 - inputText: "maestro@crewlens.test"
+- hideKeyboard
 - takeScreenshot: 02-sign-in
 - assertVisible: "Send code"
