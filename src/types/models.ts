@@ -34,6 +34,7 @@ export interface Job {
   updatedAt: string;
   archivedAt: string | null;
   /** Derived from photos. */
+  coverUri: string | null;
   lastPhotoAt: string | null;
   photoCount: number;
   pendingCount: number;

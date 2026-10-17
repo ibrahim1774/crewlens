@@ -13,9 +13,9 @@ test('maps a job row with values', () => {
   const j = mapJobRow({
     id: 'a', company_id: 'c', name: 'n', address: '1 Main', client_name: 'Jo', lat: 40.1, lng: -74.2,
     status: 'archived', cover_photo_id: 'p', created_at: 't', updated_at: 't2', archived_at: 't3', remote: 1,
-    photo_count: 3, pending_count: 1, last_photo_at: '2026-10-17T10:00:00Z',
+    photo_count: 3, pending_count: 1, last_photo_at: '2026-10-17T10:00:00Z', cover_uri: 'file:///t.jpg',
   });
-  expect(j).toMatchObject({ lat: 40.1, lng: -74.2, status: 'archived', coverPhotoId: 'p', archivedAt: 't3', photoCount: 3, pendingCount: 1, remote: true });
+  expect(j).toMatchObject({ coverUri: 'file:///t.jpg', lat: 40.1, lng: -74.2, status: 'archived', coverPhotoId: 'p', archivedAt: 't3', photoCount: 3, pendingCount: 1, remote: true });
 });
 
 test('maps a photo row', () => {
