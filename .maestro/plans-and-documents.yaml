@@ -45,9 +45,13 @@ name: Plans from the You tab, then a job with a sample invoice edited and saved 
     timeout: 10000
 - tapOn:
     id: "tab-jobs"
-# Job + sample invoice
+# Job + sample invoice (the Start here row avoids the dev-client gear that overlaps the header button)
 - tapOn:
-    id: "new-job"
+    id: "start-job"
+- extendedWaitUntil:
+    visible:
+      id: "job-name"
+    timeout: 10000
 - tapOn:
     id: "job-name"
 - inputText: "Maestro House"

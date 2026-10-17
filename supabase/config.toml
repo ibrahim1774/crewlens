@@ -2,3 +2,7 @@
 [functions.share]
 # The share page is anonymous. The function validates the share token itself and uses the service role.
 verify_jwt = false
+
+[functions.superwall-webhook]
+# Superwall calls this with a bearer secret in the Authorization header; there is no user JWT.
+verify_jwt = false

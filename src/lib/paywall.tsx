@@ -2,6 +2,7 @@ import { usePlacement, useSuperwallEvents, useUser } from 'expo-superwall';
 import { useEffect } from 'react';
 
 import { track, trackConversion } from '@/lib/analytics';
+import { useSession } from '@/lib/auth';
 import { paywallEnabled } from '@/lib/plan';
 import { notify } from '@/lib/store';
 
@@ -17,9 +18,15 @@ export function hasEntitlement(): boolean {
   return entitled;
 }
 
-/** Mirrors Superwall's subscription status into app state. Render once under the provider. */
+/** Mirrors Superwall's subscription status into app state and ties the Superwall user to the signed-in account. Render once under the provider. */
 export function SubscriptionSync() {
-  const { subscriptionStatus } = useUser();
+  const { subscriptionStatus, identify } = useUser();
+  const { session } = useSession();
+
+  useEffect(() => {
+    if (!session?.user.id) return;
+    identify(session.user.id).catch(() => {});
+  }, [identify, session?.user.id]);
 
   useEffect(() => {
     if (subscriptionStatus?.status === 'ACTIVE') entitled = true;
