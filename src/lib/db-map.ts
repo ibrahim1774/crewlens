@@ -5,7 +5,7 @@ export interface JobRow {
   id: string; company_id: string; name: string; address: string; client_name: string | null;
   lat: number | null; lng: number | null; status: string; cover_photo_id: string | null;
   created_at: string; updated_at: string; archived_at: string | null; remote: number; dirty?: number; sync_error?: string | null;
-  photo_count: number | null; pending_count: number | null; last_photo_at: string | null; cover_uri?: string | null; cover_thumb_path?: string | null;
+  photo_count: number | null; pending_count: number | null; last_photo_at: string | null; cover_uri?: string | null; cover_remote?: string | null;
 }
 
 export interface PhotoRow {
@@ -14,6 +14,12 @@ export interface PhotoRow {
   width: number | null; height: number | null; duration_s: number | null; taken_at: string;
   lat: number | null; lng: number | null; accuracy_m: number | null; sync_state: string; attempts: number | null;
   last_error: string | null; uploading_since: string | null; next_attempt_at: string | null;
+}
+
+/** "photos/<key>" or "thumbs/<key>" from the job query; anything else is ignored. */
+function parseRemote(v: string | null): { bucket: 'photos' | 'thumbs'; key: string } | null {
+  const m = v ? /^(photos|thumbs)\/(.+)$/.exec(v) : null;
+  return m ? { bucket: m[1] as 'photos' | 'thumbs', key: m[2] } : null;
 }
 
 export function mapJobRow(r: JobRow): Job {
@@ -34,7 +40,7 @@ export function mapJobRow(r: JobRow): Job {
     dirty: !!r.dirty,
     syncError: r.sync_error ?? null,
     coverUri: r.cover_uri ?? null,
-    coverThumbPath: r.cover_thumb_path ?? null,
+    coverRemote: parseRemote(r.cover_remote ?? null),
     lastPhotoAt: r.last_photo_at,
     photoCount: r.photo_count ?? 0,
     pendingCount: r.pending_count ?? 0,

@@ -15,13 +15,14 @@ type Props = { job: Job; onPress: () => void; distanceM?: number | null };
 function useCoverUri(job: Job): string | null {
   const [remote, setRemote] = useState<string | null>(null);
   useEffect(() => {
-    if (job.coverUri || !job.coverThumbPath) return;
+    const r = job.coverRemote;
+    if (job.coverUri || !r) return;
     let alive = true;
-    signedUrl('thumbs', job.coverThumbPath).then((u) => alive && setRemote(u));
+    signedUrl(r.bucket, r.key).then((u) => alive && setRemote(u));
     return () => {
       alive = false;
     };
-  }, [job.coverUri, job.coverThumbPath]);
+  }, [job.coverUri, job.coverRemote?.bucket, job.coverRemote?.key]);
   return job.coverUri ?? remote;
 }
 

@@ -34,15 +34,19 @@ create index if not exists photos_job on photos(job_id, taken_at desc);
 create index if not exists photos_sync on photos(sync_state);
 `;
 
+// The job card cover is ~1200px wide, so photos use the full image; a clip's full file is video, so it uses its still.
+const COVER_LOCAL = "case when p.kind = 'video' then p.local_thumb_uri else coalesce(p.local_uri, p.local_thumb_uri) end";
+const COVER_REMOTE = "case when p.kind = 'video' then 'thumbs/' || p.thumb_path else 'photos/' || p.storage_path end";
+
 const JOB_SELECT = `
 select j.*,
   (select count(*) from photos p where p.job_id = j.id) as photo_count,
   (select count(*) from photos p where p.job_id = j.id and p.sync_state <> 'synced') as pending_count,
   (select max(taken_at) from photos p where p.job_id = j.id) as last_photo_at,
-  coalesce((select local_thumb_uri from photos p where p.id = j.cover_photo_id),
-           (select local_thumb_uri from photos p where p.job_id = j.id order by taken_at desc limit 1)) as cover_uri,
-  coalesce((select thumb_path from photos p where p.id = j.cover_photo_id),
-           (select thumb_path from photos p where p.job_id = j.id order by taken_at desc limit 1)) as cover_thumb_path
+  coalesce((select ${COVER_LOCAL} from photos p where p.id = j.cover_photo_id),
+           (select ${COVER_LOCAL} from photos p where p.job_id = j.id order by taken_at desc limit 1)) as cover_uri,
+  coalesce((select ${COVER_REMOTE} from photos p where p.id = j.cover_photo_id),
+           (select ${COVER_REMOTE} from photos p where p.job_id = j.id order by taken_at desc limit 1)) as cover_remote
 from jobs j`;
 
 const MIGRATIONS = [
@@ -102,7 +106,7 @@ export const jobs = {
     const row = await db.getFirstAsync<JobRow>(`${JOB_SELECT} where j.id = ?`, id);
     return row ? mapJobRow(row) : null;
   },
-  async upsert(j: Omit<Job, 'lastPhotoAt' | 'photoCount' | 'pendingCount' | 'coverUri' | 'coverThumbPath'>): Promise<void> {
+  async upsert(j: Omit<Job, 'lastPhotoAt' | 'photoCount' | 'pendingCount' | 'coverUri' | 'coverRemote'>): Promise<void> {
     const db = await ready();
     await db.runAsync(
       `insert into jobs(id, company_id, name, address, client_name, lat, lng, status, cover_photo_id, created_at, updated_at, archived_at, remote, dirty, sync_error)

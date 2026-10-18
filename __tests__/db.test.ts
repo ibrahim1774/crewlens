@@ -53,7 +53,18 @@ test('a job whose photos were all taken on another phone still has a cover to fe
   const j = mapJobRow({
     id: 'a', company_id: 'c', name: 'n', address: '', client_name: null, lat: null, lng: null,
     status: 'active', cover_photo_id: null, created_at: 't', updated_at: 't', archived_at: null, remote: 1,
-    photo_count: 4, pending_count: 0, last_photo_at: 't', cover_uri: null, cover_thumb_path: 'c/a/p.jpg',
+    photo_count: 4, pending_count: 0, last_photo_at: 't', cover_uri: null, cover_remote: 'photos/c/a/p.jpg',
   });
-  expect(j).toMatchObject({ coverUri: null, coverThumbPath: 'c/a/p.jpg', photoCount: 4 });
+  expect(j).toMatchObject({ coverUri: null, coverRemote: { bucket: 'photos', key: 'c/a/p.jpg' }, photoCount: 4 });
+});
+
+test('a video cover comes from the thumbs bucket, and junk is ignored', () => {
+  const base = {
+    id: 'a', company_id: 'c', name: 'n', address: '', client_name: null, lat: null, lng: null,
+    status: 'active', cover_photo_id: null, created_at: 't', updated_at: 't', archived_at: null, remote: 1,
+    photo_count: 1, pending_count: 0, last_photo_at: 't', cover_uri: null,
+  };
+  expect(mapJobRow({ ...base, cover_remote: 'thumbs/c/a/v.jpg' }).coverRemote).toEqual({ bucket: 'thumbs', key: 'c/a/v.jpg' });
+  expect(mapJobRow({ ...base, cover_remote: 'other/x' }).coverRemote).toBeNull();
+  expect(mapJobRow({ ...base, cover_remote: null }).coverRemote).toBeNull();
 });
