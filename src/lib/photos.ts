@@ -322,6 +322,15 @@ export async function pullPhotos(jobId: string): Promise<void> {
   }
 }
 
+const pulledThisSession = new Set<string>();
+
+/** pullPhotos at most once per job per app session, for lists that show many jobs. */
+export function pullPhotosOnce(jobId: string): void {
+  if (pulledThisSession.has(jobId)) return;
+  pulledThisSession.add(jobId);
+  pullPhotos(jobId).catch(() => pulledThisSession.delete(jobId));
+}
+
 const signedCache = new Map<string, { url: string; exp: number }>();
 
 /** Signed URL for a remote object, cached for 50 minutes. */

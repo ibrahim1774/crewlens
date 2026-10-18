@@ -1,16 +1,38 @@
 import { Image } from 'expo-image';
 import { SymbolView } from 'expo-symbols';
+import { useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { Body, Heading, Mono } from '@/components/text';
 import { Colors, Radius, Space } from '@/constants/theme';
+import { pullPhotosOnce, signedUrl } from '@/lib/photos';
 import { timeAgo } from '@/lib/time';
 import type { Job } from '@/types/models';
 
 type Props = { job: Job; onPress: () => void; distanceM?: number | null };
 
+/** The cover: this phone's thumbnail if it has one, else the server copy (a crewmate's photo). */
+function useCoverUri(job: Job): string | null {
+  const [remote, setRemote] = useState<string | null>(null);
+  useEffect(() => {
+    if (job.coverUri || !job.coverThumbPath) return;
+    let alive = true;
+    signedUrl('thumbs', job.coverThumbPath).then((u) => alive && setRemote(u));
+    return () => {
+      alive = false;
+    };
+  }, [job.coverUri, job.coverThumbPath]);
+  return job.coverUri ?? remote;
+}
+
 /** Photo-forward job card: the latest photo fills the card, name and address sit on it. */
 export function JobCard({ job, onPress, distanceM }: Props) {
+  // Photos a crewmate took live only on the server until something asks; the list is virtualized,
+  // so this pulls just the jobs on screen, once per session each.
+  useEffect(() => {
+    if (job.remote) pullPhotosOnce(job.id);
+  }, [job.id, job.remote]);
+  const coverUri = useCoverUri(job);
   const archived = job.status === 'archived';
   const meta = [
     distanceM != null ? `${distanceM < 1000 ? `${Math.round(distanceM)} m` : `${(distanceM / 1000).toFixed(1)} km`} away` : null,
@@ -30,8 +52,8 @@ export function JobCard({ job, onPress, distanceM }: Props) {
         borderColor: Colors.hairline,
       })}>
       <View style={{ height: 168, backgroundColor: Colors.hairline }}>
-        {job.coverUri ? (
-          <Image source={{ uri: job.coverUri }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={150} />
+        {coverUri ? (
+          <Image source={{ uri: coverUri }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={150} />
         ) : (
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 6 }}>
             <SymbolView name="camera" size={26} tintColor={Colors.ink2} />

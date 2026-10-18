@@ -35,6 +35,8 @@ export interface Job {
   archivedAt: string | null;
   /** Derived from photos. */
   coverUri: string | null;
+  /** Server thumbnail of the cover, for photos taken on another phone. */
+  coverThumbPath: string | null;
   lastPhotoAt: string | null;
   photoCount: number;
   pendingCount: number;

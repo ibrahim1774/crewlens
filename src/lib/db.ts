@@ -40,7 +40,9 @@ select j.*,
   (select count(*) from photos p where p.job_id = j.id and p.sync_state <> 'synced') as pending_count,
   (select max(taken_at) from photos p where p.job_id = j.id) as last_photo_at,
   coalesce((select local_thumb_uri from photos p where p.id = j.cover_photo_id),
-           (select local_thumb_uri from photos p where p.job_id = j.id order by taken_at desc limit 1)) as cover_uri
+           (select local_thumb_uri from photos p where p.job_id = j.id order by taken_at desc limit 1)) as cover_uri,
+  coalesce((select thumb_path from photos p where p.id = j.cover_photo_id),
+           (select thumb_path from photos p where p.job_id = j.id order by taken_at desc limit 1)) as cover_thumb_path
 from jobs j`;
 
 const MIGRATIONS = [
@@ -100,7 +102,7 @@ export const jobs = {
     const row = await db.getFirstAsync<JobRow>(`${JOB_SELECT} where j.id = ?`, id);
     return row ? mapJobRow(row) : null;
   },
-  async upsert(j: Omit<Job, 'lastPhotoAt' | 'photoCount' | 'pendingCount' | 'coverUri'>): Promise<void> {
+  async upsert(j: Omit<Job, 'lastPhotoAt' | 'photoCount' | 'pendingCount' | 'coverUri' | 'coverThumbPath'>): Promise<void> {
     const db = await ready();
     await db.runAsync(
       `insert into jobs(id, company_id, name, address, client_name, lat, lng, status, cover_photo_id, created_at, updated_at, archived_at, remote, dirty, sync_error)

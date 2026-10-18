@@ -1,7 +1,7 @@
 import { buildActivity, dayLabel } from '@/lib/activity';
 import type { Doc, Job, Photo } from '@/types/models';
 
-const job = (id: string): Job => ({ id, companyId: 'c', name: `Job ${id}`, address: '', clientName: null, lat: null, lng: null, status: 'active', coverPhotoId: null, createdAt: 't', updatedAt: 't', archivedAt: null, remote: true, dirty: false, syncError: null, coverUri: null, photoCount: 0, pendingCount: 0, lastPhotoAt: null });
+const job = (id: string): Job => ({ id, companyId: 'c', name: `Job ${id}`, address: '', clientName: null, lat: null, lng: null, status: 'active', coverPhotoId: null, createdAt: 't', updatedAt: 't', archivedAt: null, remote: true, dirty: false, syncError: null, coverUri: null, coverThumbPath: null, photoCount: 0, pendingCount: 0, lastPhotoAt: null });
 const photo = (id: string, jobId: string, at: string, initials = 'JOS'): Photo => ({ id, jobId, companyId: 'c', takerId: 'u', takerInitials: initials, kind: 'photo', localUri: null, localThumbUri: null, storagePath: null, thumbPath: null, width: 0, height: 0, durationS: null, takenAt: at, lat: null, lng: null, accuracyM: null, syncState: 'synced', attempts: 0, lastError: null, uploadingSince: null, nextAttemptAt: null });
 const doc = (id: string, jobId: string, extra: Partial<Doc> = {}): Doc => ({ id, jobId, companyId: 'c', name: 'Invoice', kind: 'pdf', localUri: null, storagePath: null, sizeBytes: null, pages: null, version: 1, createdBy: 'u', sentTo: null, sentVia: null, sentAt: null, syncState: 'synced', createdAt: '2026-10-17T09:00:00Z', updatedAt: '2026-10-17T09:00:00Z', ...extra });
 const NOW = Date.parse('2026-10-17T12:00:00Z');

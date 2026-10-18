@@ -48,3 +48,12 @@ test('resetLocal wipes photos, jobs and tombstones but keeps the intro-seen flag
   expect(reset).toContain('delete from jobs');
   expect(reset).toContain('delete from tombstones');
 });
+
+test('a job whose photos were all taken on another phone still has a cover to fetch', () => {
+  const j = mapJobRow({
+    id: 'a', company_id: 'c', name: 'n', address: '', client_name: null, lat: null, lng: null,
+    status: 'active', cover_photo_id: null, created_at: 't', updated_at: 't', archived_at: null, remote: 1,
+    photo_count: 4, pending_count: 0, last_photo_at: 't', cover_uri: null, cover_thumb_path: 'c/a/p.jpg',
+  });
+  expect(j).toMatchObject({ coverUri: null, coverThumbPath: 'c/a/p.jpg', photoCount: 4 });
+});
