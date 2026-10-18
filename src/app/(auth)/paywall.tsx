@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Linking, Pressable, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -50,6 +50,15 @@ export default function PaywallGate() {
   useEffect(() => {
     track('onboarding_step', { step: 'plan', superwall: superwallActive });
   }, []);
+
+  // With Superwall on, its paywall is the plan picker (all plans, both periods), so open it straight away.
+  // Closing it leaves this table underneath, whose button opens it again.
+  const opened = useRef(false);
+  useEffect(() => {
+    if (!superwallActive || opened.current) return;
+    opened.current = true;
+    void show(fromUpgrade ? 'upgrade_tapped' : 'onboarding_complete', () => void finish('pro', 'monthly', fromUpgrade));
+  }, [show, fromUpgrade]);
 
   const choose = () => {
     track('plan_selected', { tier, period, product: productId(tier, period) });
