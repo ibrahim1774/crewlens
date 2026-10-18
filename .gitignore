@@ -35,3 +35,7 @@ yarn-error.*
 .DS_Store
 .superpowers/
 .vercel/
+
+# Video build inputs and intermediates (regenerate with store/video/make_video.py)
+store/video/rec/
+store/video/build/

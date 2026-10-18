@@ -126,7 +126,7 @@ export default function PhotoViewer() {
         showsHorizontalScrollIndicator={false}
       />
       <View style={{ position: 'absolute', top: insets.top, left: Space.sm, right: Space.md, flexDirection: 'row', alignItems: 'center' }}>
-        <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Close" hitSlop={10} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
+        <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Close" testID="photo-close" hitSlop={10} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
           <SymbolView name="xmark" size={22} tintColor={Colors.onCamera} />
         </Pressable>
         <Mono color={Colors.onCamera} style={{ flex: 1, textAlign: 'center' }}>{index + 1} / {photos.length}</Mono>
