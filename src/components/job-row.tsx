@@ -39,7 +39,7 @@ export function JobRow({ job, coverUri, onPress, distanceM }: Props) {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: Space.sm, marginTop: 2 }}>
           <Mono size={11}>
             {distanceM != null ? `${Math.round(distanceM)} M · ` : ''}
-            {timeAgo(job.lastPhotoAt).toUpperCase()} · {job.photoCount} {job.photoCount === 1 ? 'PHOTO' : 'PHOTOS'}
+            {job.photoCount === 0 ? 'NO PHOTOS YET' : `${timeAgo(job.lastPhotoAt).toUpperCase()} · ${job.photoCount} ${job.photoCount === 1 ? 'PHOTO' : 'PHOTOS'}`}
           </Mono>
           {job.pendingCount > 0 ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>

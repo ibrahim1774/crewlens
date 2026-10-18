@@ -170,7 +170,7 @@ export default function JobScreen() {
         {!archived ? <ActionButton name="camera.fill" label="Camera" testID="job-camera" onPress={() => router.push({ pathname: '/camera', params: { jobId: job.id } })} /> : null}
         <ActionButton name="link" label={copied ? 'Copied' : 'Share'} testID="job-share" onPress={() => setShare(true)} />
         <ActionButton name="doc.text" label={docCount ? `Docs · ${docCount}` : 'Docs'} testID="job-docs" onPress={() => router.push({ pathname: '/job/[id]/documents', params: { id: job.id } })} />
-        <ActionButton name="ellipsis" label="More" onPress={() => setMore(true)} />
+        <ActionButton name="ellipsis" label="More" testID="job-more" onPress={() => setMore(true)} />
       </View>
       {selecting ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: Space.sm, padding: Space.sm, paddingHorizontal: Space.md, backgroundColor: Colors.ink }} testID="gallery-bar">

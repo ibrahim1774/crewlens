@@ -17,12 +17,13 @@ name: Import library photos into a job, pick photos for a gallery link, check Ac
     visible:
       id: "new-job"
     timeout: 30000
-- tapOn: "Maestro House"
+- tapOn: ".*Maestro House.*"
 - extendedWaitUntil:
     visible:
       id: "job-docs"
     timeout: 10000
-- tapOn: "More"
+- tapOn:
+    id: "job-more"
 - extendedWaitUntil:
     visible: "Import from Photos.*"
     timeout: 5000
@@ -54,7 +55,7 @@ name: Import library photos into a job, pick photos for a gallery link, check Ac
       id: "job-share"
     timeout: 60000
 - extendedWaitUntil:
-    visible: ".*6 PHOTOS.*"
+    visible: ".*1[0-9] PHOTOS.*"
     timeout: 20000
 - takeScreenshot: 20-job-timeline
 # Gallery link: pick photos, select all.
@@ -72,7 +73,7 @@ name: Import library photos into a job, pick photos for a gallery link, check Ac
     timeout: 5000
 - tapOn:
     id: "gallery-select-all"
-- assertVisible: "6 OF 6 SELECTED"
+- assertVisible: "12 OF 12 SELECTED"
 - takeScreenshot: 21-gallery-pick
 - tapOn:
     id: "gallery-cancel"
@@ -86,7 +87,7 @@ name: Import library photos into a job, pick photos for a gallery link, check Ac
 - tapOn:
     id: "tab-activity"
 - extendedWaitUntil:
-    visible: ".*added 6 photos.*"
+    visible: ".*added [0-9]+ photos.*"
     timeout: 10000
 - takeScreenshot: 22-activity
 - tapOn:

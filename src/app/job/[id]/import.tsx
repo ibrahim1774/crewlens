@@ -89,11 +89,7 @@ export default function ImportPhotos() {
           <Heading size={26} bold>Import photos</Heading>
           <Mono size={11} color={Colors.ink2} numberOfLines={1}>{(job?.name ?? '').toUpperCase()} · {selected.size} SELECTED</Mono>
         </View>
-        {assets.length ? (
-          <Pressable onPress={() => setSelected(selected.size === assets.length ? new Set() : new Set(assets.map((a) => a.id)))} accessibilityRole="button" hitSlop={8} testID="import-select-all">
-            <Mono size={12} bold>{selected.size === assets.length ? 'NONE' : 'SELECT ALL'}</Mono>
-          </Pressable>
-        ) : null}
+
       </View>
       {!perm?.granted ? (
         <Empty title="Photos access is off." body="Crew Lens needs to read your library to file existing photos to this job. Nothing is uploaded until you pick it." action={{ title: 'Allow photos', onPress: ask }} />
@@ -121,7 +117,18 @@ export default function ImportPhotos() {
         />
       )}
       <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: Space.md, paddingBottom: insets.bottom + Space.md, backgroundColor: Colors.canvas, borderTopWidth: 1, borderColor: Colors.hairline, gap: 4 }}>
-        <Button title={busy ? `Importing ${done} of ${selected.size}…` : selected.size ? `Import ${selected.size} ${selected.size === 1 ? 'photo' : 'photos'}` : 'Pick photos to import'} onPress={run} loading={busy} disabled={!selected.size} testID="import-run" />
+        <View style={{ flexDirection: 'row', gap: Space.sm }}>
+          {assets.length ? (
+            <Button
+              title={selected.size === assets.length ? 'None' : 'Select all'}
+              variant="ghost"
+              onPress={() => setSelected(selected.size === assets.length ? new Set() : new Set(assets.map((a) => a.id)))}
+              style={{ width: 120 }}
+              testID="import-select-all"
+            />
+          ) : null}
+          <Button title={busy ? `Importing ${done} of ${selected.size}…` : selected.size ? `Import ${selected.size} ${selected.size === 1 ? 'photo' : 'photos'}` : 'Pick photos'} onPress={run} loading={busy} disabled={!selected.size} style={{ flex: 1 }} testID="import-run" />
+        </View>
         <Body size={11} color={Colors.ink2} style={{ textAlign: 'center' }}>Imported photos keep the day they were taken and get your initials. Originals stay in your library.</Body>
       </View>
     </View>
