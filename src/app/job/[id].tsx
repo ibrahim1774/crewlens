@@ -222,7 +222,7 @@ export default function JobScreen() {
               <View key={p.id}>
                 <PhotoTile photo={p} size={TILE} onPress={() => (selecting ? toggleSelect(p.id) : router.push({ pathname: '/photo/[id]', params: { id: p.id, jobId: job.id } }))} onRetry={() => retryFailed()} />
                 {selecting ? (
-                  <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, width: TILE, height: TILE, backgroundColor: selected.has(p.id) ? 'rgba(232,82,30,0.28)' : 'rgba(11,11,13,0.25)', alignItems: 'flex-end', padding: 6 }}>
+                  <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, width: TILE, height: TILE, backgroundColor: selected.has(p.id) ? 'rgba(34,33,30,0.22)' : 'rgba(11,11,13,0.25)', alignItems: 'flex-end', padding: 6 }}>
                     <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: Colors.onCamera, backgroundColor: selected.has(p.id) ? Colors.flag : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
                       {selected.has(p.id) ? <SymbolView name="checkmark" size={12} tintColor={Colors.onCamera} /> : null}
                     </View>

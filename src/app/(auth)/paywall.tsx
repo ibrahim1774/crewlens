@@ -13,7 +13,7 @@ import { meta } from '@/lib/db';
 import { superwallActive, usePaywall, useRestorePurchases } from '@/lib/paywall';
 import type { Tier } from '@/types/models';
 
-const TERMS_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
+const TERMS_URL = 'https://crewlens-share.vercel.app/terms';
 const PRIVACY_URL = 'https://crewlens-share.vercel.app/privacy';
 
 async function finish(tier: Tier, period: Period, upgrade: boolean) {
@@ -105,7 +105,7 @@ export default function PaywallGate() {
       {/* Feature rows */}
       <View style={{ marginTop: 6, borderWidth: 1, borderColor: Colors.hairline, borderRadius: Radius.card, backgroundColor: Colors.surface, overflow: 'hidden' }}>
         {FEATURES.map((f, ri) => (
-          <View key={f.label} style={{ flexDirection: 'row', alignItems: 'center', borderTopWidth: ri ? 1 : 0, borderColor: Colors.hairline, backgroundColor: f.flagship ? 'rgba(232,82,30,0.06)' : undefined }}>
+          <View key={f.label} style={{ flexDirection: 'row', alignItems: 'center', borderTopWidth: ri ? 1 : 0, borderColor: Colors.hairline, backgroundColor: f.flagship ? 'rgba(34,33,30,0.06)' : undefined }}>
             <View style={{ width: labelW, paddingVertical: compact ? 7 : 9, paddingHorizontal: Space.sm }}>
               <Body size={compact ? 11 : 12} bold={f.flagship} color={f.flagship ? Colors.flag : Colors.ink}>{f.label}</Body>
             </View>
@@ -114,7 +114,7 @@ export default function PaywallGate() {
               const off = v === '—';
               const on = p.tier === tier;
               return (
-                <Pressable key={p.tier} onPress={() => setTier(p.tier)} accessibilityRole="radio" accessibilityState={{ selected: on }} style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: compact ? 5 : 7, backgroundColor: on ? 'rgba(232,82,30,0.08)' : undefined }}>
+                <Pressable key={p.tier} onPress={() => setTier(p.tier)} accessibilityRole="radio" accessibilityState={{ selected: on }} style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: compact ? 5 : 7, backgroundColor: on ? 'rgba(34,33,30,0.08)' : undefined }}>
                   {off ? (
                     <SymbolView name="minus" size={11} tintColor={Colors.hairline} />
                   ) : (

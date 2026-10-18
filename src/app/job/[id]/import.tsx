@@ -105,7 +105,7 @@ export default function ImportPhotos() {
             return (
               <Pressable onPress={() => toggle(item.id)} accessibilityRole="checkbox" accessibilityState={{ checked: on }} testID={`asset-${item.id}`} style={{ width: TILE, height: TILE, backgroundColor: Colors.hairline }}>
                 <Image source={{ uri: item.uri }} style={{ width: TILE, height: TILE }} contentFit="cover" />
-                <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, width: TILE, height: TILE, backgroundColor: on ? 'rgba(232,82,30,0.28)' : 'transparent', alignItems: 'flex-end', padding: 6 }}>
+                <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, width: TILE, height: TILE, backgroundColor: on ? 'rgba(34,33,30,0.22)' : 'transparent', alignItems: 'flex-end', padding: 6 }}>
                   <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: Colors.onCamera, backgroundColor: on ? Colors.flag : 'rgba(11,11,13,0.25)', alignItems: 'center', justifyContent: 'center' }}>
                     {on ? <SymbolView name="checkmark" size={12} tintColor={Colors.onCamera} /> : null}
                   </View>
