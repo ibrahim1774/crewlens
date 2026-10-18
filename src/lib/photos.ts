@@ -32,8 +32,8 @@ export function targetSize(width: number, height: number, longEdge: number): { w
   return { width: Math.round(width * scale), height: Math.round(height * scale) };
 }
 
-const DAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 function dayParts(iso: string, timeZone?: string) {
   const d = new Date(iso);
@@ -41,12 +41,15 @@ function dayParts(iso: string, timeZone?: string) {
   const f = new Intl.DateTimeFormat('en-US', { timeZone, year: 'numeric', month: 'numeric', day: 'numeric', weekday: 'short' });
   const parts = f.formatToParts(d);
   const get = (t: string) => parts.find((p) => p.type === t)?.value ?? '';
-  return { y: Number(get('year')), mo: Number(get('month')) - 1, day: Number(get('day')), dow: DAYS.indexOf(get('weekday').toUpperCase()) };
+  return { y: Number(get('year')), mo: Number(get('month')) - 1, day: Number(get('day')), dow: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(get('weekday')) };
 }
 
 export interface DayGroup<T> {
   key: string;
+  /** "Saturday · Oct 17" */
   label: string;
+  /** "2 photos" */
+  count: string;
   photos: T[];
 }
 
@@ -65,8 +68,9 @@ export function groupByDay<T extends { takenAt: string }>(photos: T[], timeZone?
     .map(([key, g]) => {
       const photos = [...g.photos].sort((a, b) => (a.takenAt < b.takenAt ? 1 : -1));
       const n = photos.length;
-      const label = `${DAYS[g.parts.dow]} ${MONTHS[g.parts.mo]} ${String(g.parts.day).padStart(2, '0')} · ${n} ${n === 1 ? 'PHOTO' : 'PHOTOS'}`;
-      return { key, label, photos };
+      const label = `${DAYS[g.parts.dow]} · ${MONTHS[g.parts.mo]} ${g.parts.day}`;
+      const count = `${n} ${n === 1 ? 'photo' : 'photos'}`;
+      return { key, label, count, photos };
     });
 }
 

@@ -37,13 +37,13 @@ export function PhotoTile({ photo, size, onPress, onRetry }: Props) {
   const failed = photo.syncState === 'failed';
   const unsynced = photo.syncState !== 'synced' && !failed;
   return (
-    <Pressable onPress={onPress} accessibilityRole="imagebutton" accessibilityLabel={`Photo ${time}`} style={{ width: size, height: size, backgroundColor: Colors.hairline }}>
+    <Pressable onPress={onPress} accessibilityRole="imagebutton" accessibilityLabel={`Photo ${time}`} style={{ width: size, height: size, backgroundColor: Colors.hairline, borderRadius: 12, overflow: 'hidden' }}>
       {uri ? <Image source={{ uri }} style={{ width: size, height: size }} contentFit="cover" transition={120} /> : null}
-      <View style={{ position: 'absolute', left: 4, bottom: 4, backgroundColor: 'rgba(11,11,13,0.6)', paddingHorizontal: 4, paddingVertical: 1, borderRadius: 2 }}>
+      <View style={{ position: 'absolute', left: 4, bottom: 4, backgroundColor: 'rgba(11,11,13,0.6)', paddingHorizontal: 5, paddingVertical: 1, borderRadius: 6 }}>
         <Mono size={9} color={Colors.onCamera}>{time}</Mono>
       </View>
       {photo.kind === 'video' ? (
-        <View style={{ position: 'absolute', right: 4, bottom: 4, flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: 'rgba(11,11,13,0.6)', paddingHorizontal: 4, paddingVertical: 1, borderRadius: 2 }}>
+        <View style={{ position: 'absolute', right: 4, bottom: 4, flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: 'rgba(11,11,13,0.6)', paddingHorizontal: 5, paddingVertical: 1, borderRadius: 6 }}>
           <SymbolView name="play.fill" size={8} tintColor={Colors.onCamera} />
           <Mono size={9} color={Colors.onCamera}>{formatDuration(photo.durationS)}</Mono>
         </View>

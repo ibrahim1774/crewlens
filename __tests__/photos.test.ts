@@ -22,6 +22,8 @@ test('groups photos by local day, newest day and newest photo first, with a labe
   );
   expect(g.map((x) => x.key)).toEqual(['2026-10-17', '2026-10-16']);
   expect(g[0].photos.map((p) => p.id)).toEqual(['c', 'a']);
-  expect(g[0].label).toBe('SAT OCT 17 · 2 PHOTOS');
-  expect(g[1].label).toBe('FRI OCT 16 · 1 PHOTO');
+  expect(g[0].label).toBe('Saturday · Oct 17');
+  expect(g[0].count).toBe('2 photos');
+  expect(g[1].label).toBe('Friday · Oct 16');
+  expect(g[1].count).toBe('1 photo');
 });

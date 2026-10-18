@@ -25,9 +25,10 @@ import { retryFailed } from '@/lib/uploader';
 import type { Photo } from '@/types/models';
 
 const COLS = 3;
-const GAP = 2;
+const GAP = 6;
+const SIDE = 16;
 const { width: W } = Dimensions.get('window');
-const TILE = Math.floor((W - GAP * (COLS - 1)) / COLS);
+const TILE = Math.floor((W - SIDE * 2 - GAP * (COLS - 1)) / COLS);
 
 function chunk<T>(arr: T[], n: number): T[][] {
   const out: T[][] = [];
@@ -68,7 +69,7 @@ export default function JobScreen() {
     return () => clearTimeout(t);
   }, [copied]);
 
-  const sections = useMemo(() => groupByDay(photos).map((g) => ({ key: g.key, title: g.label, data: chunk(g.photos, COLS) })), [photos]);
+  const sections = useMemo(() => groupByDay(photos).map((g) => ({ key: g.key, title: g.label, count: g.count, data: chunk(g.photos, COLS) })), [photos]);
   const failedPhotos = photos.filter((p) => p.syncState === 'failed');
   const failed = failedPhotos.length;
   const capped = failedPhotos.some((p) => p.lastError?.includes('limit_photos_per_project'));
@@ -210,10 +211,13 @@ export default function JobScreen() {
         stickySectionHeadersEnabled={false}
         contentContainerStyle={{ paddingBottom: insets.bottom + Space.xl }}
         renderSectionHeader={({ section }) => (
-          <Mono size={11} color={Colors.ink2} style={{ paddingHorizontal: Space.md, paddingTop: Space.md, paddingBottom: Space.xs }}>{section.title}</Mono>
+          <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: Space.sm, paddingHorizontal: SIDE, paddingTop: Space.lg, paddingBottom: Space.sm }}>
+            <Heading size={20}>{section.title}</Heading>
+            <Mono size={13}>{section.count}</Mono>
+          </View>
         )}
         renderItem={({ item: row }) => (
-          <View style={{ flexDirection: 'row', gap: GAP, marginBottom: GAP }}>
+          <View style={{ flexDirection: 'row', gap: GAP, marginBottom: GAP, paddingHorizontal: SIDE }}>
             {row.map((p: Photo) => (
               <View key={p.id}>
                 <PhotoTile photo={p} size={TILE} onPress={() => (selecting ? toggleSelect(p.id) : router.push({ pathname: '/photo/[id]', params: { id: p.id, jobId: job.id } }))} onRetry={() => retryFailed()} />
