@@ -23,10 +23,15 @@ function Thumb({ photo, size }: { photo: Photo; size: number }) {
   );
 }
 
-function Avatar({ initials }: { initials: string }) {
+/** Who took the photos, by initials; documents carry no initials, so they get a document mark. */
+function Avatar({ initials }: { initials: string | null }) {
   return (
     <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: Colors.slate, alignItems: 'center', justifyContent: 'center' }}>
-      <Mono size={10} color={Colors.onCamera} bold>{initials || '—'}</Mono>
+      {initials === null ? (
+        <SymbolView name="doc.text" size={15} tintColor={Colors.onCamera} />
+      ) : (
+        <Mono size={10} color={Colors.onCamera} bold>{initials || '—'}</Mono>
+      )}
     </View>
   );
 }
@@ -41,7 +46,7 @@ function Card({ item }: { item: ActivityItem }) {
   return (
     <View style={{ backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.hairline, borderRadius: Radius.card, padding: Space.sm, gap: Space.sm }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: Space.sm }}>
-        <Avatar initials={item.kind === 'photos' ? item.initials : ''} />
+        <Avatar initials={item.kind === 'photos' ? item.initials : null} />
         <View style={{ flex: 1 }}>
           <Heading size={17} numberOfLines={1}>
             {item.kind === 'photos'

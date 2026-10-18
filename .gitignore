@@ -39,3 +39,4 @@ yarn-error.*
 # Video build inputs and intermediates (regenerate with store/video/make_video.py)
 store/video/rec/
 store/video/build/
+store/screenshots/build/
