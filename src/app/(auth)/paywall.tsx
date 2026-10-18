@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useEffect, useState } from 'react';
-import { Pressable, View, useWindowDimensions } from 'react-native';
+import { Linking, Pressable, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
@@ -10,8 +10,11 @@ import { ctaLabel, FEATURES, PLANS, priceLabel, productId, yearlySavingPct, type
 import { Colors, Radius, Space } from '@/constants/theme';
 import { track } from '@/lib/analytics';
 import { meta } from '@/lib/db';
-import { superwallActive, usePaywall } from '@/lib/paywall';
+import { superwallActive, usePaywall, useRestorePurchases } from '@/lib/paywall';
 import type { Tier } from '@/types/models';
+
+const TERMS_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
+const PRIVACY_URL = 'https://crewlens-share.vercel.app/privacy';
 
 async function finish(tier: Tier, period: Period, upgrade: boolean) {
   await meta.set('plan_choice', productId(tier, period));
@@ -41,6 +44,7 @@ export default function PaywallGate() {
   const [period, setPeriod] = useState<Period>('monthly');
   const [tier, setTier] = useState<Tier>('pro');
   const show = usePaywall();
+  const restore = useRestorePurchases();
   const plan = PLANS.find((p) => p.tier === tier) ?? PLANS[1];
 
   useEffect(() => {
@@ -127,9 +131,20 @@ export default function PaywallGate() {
       <View style={{ paddingBottom: insets.bottom + Space.sm, gap: Space.xs }}>
         <Button title={ctaLabel(plan)} onPress={choose} testID="plan-continue" />
         <Body size={11} color={Colors.ink2} style={{ textAlign: 'center' }}>
-          {plan.trialDays > 0 ? `Free for ${plan.trialDays} days, then ${priceLabel(plan, period)}. ` : `${priceLabel(plan, period)}. `}
-          Cancel any time in the App Store. No free version.
+          {plan.trialDays > 0 ? `Free for ${plan.trialDays} days, then ${priceLabel(plan, period)}, renews automatically. ` : `${priceLabel(plan, period)}, renews automatically. `}
+          Cancel any time in the App Store.
         </Body>
+        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: Space.lg }}>
+          <Pressable onPress={restore} accessibilityRole="button" hitSlop={8} testID="plan-restore">
+            <Mono size={12} color={Colors.ink} bold>Restore</Mono>
+          </Pressable>
+          <Pressable onPress={() => Linking.openURL(TERMS_URL)} accessibilityRole="link" hitSlop={8}>
+            <Mono size={12} color={Colors.ink}>Terms</Mono>
+          </Pressable>
+          <Pressable onPress={() => Linking.openURL(PRIVACY_URL)} accessibilityRole="link" hitSlop={8}>
+            <Mono size={12} color={Colors.ink}>Privacy</Mono>
+          </Pressable>
+        </View>
       </View>
     </View>
   );

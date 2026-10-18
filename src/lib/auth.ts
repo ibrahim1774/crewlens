@@ -4,7 +4,7 @@ import { useSyncExternalStore } from 'react';
 
 import { clearCompany, fetchMembership, getMember, setMembershipChecked } from '@/lib/company';
 import { meta, resetLocal } from '@/lib/db';
-import { supabase, supabaseConfigured } from '@/lib/supabase';
+import { SUPABASE_URL, supabase, supabaseConfigured } from '@/lib/supabase';
 
 let session: Session | null = null;
 let sessionLoaded = false;
@@ -141,6 +141,19 @@ export async function verifyEmailCode(email: string, code: string): Promise<void
   const { data, error } = await supabase.auth.verifyOtp({ email: email.trim().toLowerCase(), token: code.trim(), type: 'email' });
   if (error) throw error;
   if (data.user) await ensureMembershipChecked(data.user.id);
+}
+
+/** Deletes the account on the server, then clears this device. Throws 'remove_members_first' for an owner with a crew. */
+export async function deleteAccount(): Promise<void> {
+  if (!supabaseConfigured) throw new Error(NOT_CONFIGURED);
+  const { data: s } = await supabase.auth.getSession();
+  const token = s.session?.access_token;
+  if (!token) throw new Error('not_signed_in');
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/delete-account`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+  const body = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+  if (!res.ok || !body.ok) throw new Error(body.error ?? 'delete_failed');
+  await supabase.auth.signOut().catch(() => null);
+  await clearLocalIdentity();
 }
 
 export async function signOut(): Promise<void> {

@@ -9,7 +9,8 @@ import { Stamp } from '@/components/stamp';
 import { Body, Heading, Mono } from '@/components/text';
 import { TIER_LABEL } from '@/constants/limits';
 import { Colors, Radius, Space } from '@/constants/theme';
-import { signOut } from '@/lib/auth';
+import { track } from '@/lib/analytics';
+import { deleteAccount, signOut } from '@/lib/auth';
 import { useCompany, useMember } from '@/lib/company';
 import * as db from '@/lib/db';
 import { effectiveTier, limitsFor, paywallEnabled } from '@/lib/plan';
@@ -60,6 +61,33 @@ export default function You() {
       { text: 'Sign out', style: 'destructive', onPress: () => signOut().then(() => router.replace('/(auth)/welcome')) },
     ]);
 
+  const confirmDelete = () =>
+    Alert.alert(
+      'Delete your account?',
+      member?.role === 'owner'
+        ? 'This permanently deletes your company, every job, photo, document and share link. It cannot be undone. Cancel your subscription in the App Store separately.'
+        : 'This removes you from the company and deletes your login. The company keeps the photos you took.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete account',
+          style: 'destructive',
+          onPress: () =>
+            deleteAccount()
+              .then(() => {
+                track('account_deleted');
+                router.replace('/(auth)/welcome');
+              })
+              .catch((e: unknown) =>
+                Alert.alert(
+                  'Could not delete the account',
+                  e instanceof Error && e.message === 'remove_members_first' ? 'Remove your crew members from Team first, then try again.' : 'Check your connection and try again.',
+                ),
+              ),
+        },
+      ],
+    );
+
   const pct = Math.min(1, active / limits.activeJobs);
 
   return (
@@ -102,7 +130,8 @@ export default function You() {
         <Row title="Watch the intro again" onPress={() => router.push({ pathname: '/(auth)/intro', params: { replay: '1' } })} icon="play" />
         <Row title="Privacy policy" onPress={() => Linking.openURL('https://crewlens-share.vercel.app/privacy')} icon="arrow.up.right" />
         <Row title="Terms of use" onPress={() => Linking.openURL('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')} icon="arrow.up.right" />
-        <Row title="Sign out" destructive onPress={confirmSignOut} />
+        <Row title="Sign out" onPress={confirmSignOut} />
+        <Row title="Delete account" value="Permanently delete your account and data" destructive onPress={confirmDelete} />
       </Section>
 
       <Mono size={11} color={Colors.ink2} style={{ textAlign: 'center' }}>

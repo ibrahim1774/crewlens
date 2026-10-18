@@ -9,3 +9,7 @@ export function useUser() {
 export function SuperwallProvider({ children }: { children: unknown }) {
   return children;
 }
+
+export function useSuperwall() {
+  return { restorePurchases: async () => ({}) };
+}

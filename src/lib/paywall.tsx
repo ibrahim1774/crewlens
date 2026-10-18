@@ -1,5 +1,6 @@
-import { usePlacement, useSuperwallEvents, useUser } from 'expo-superwall';
+import { usePlacement, useSuperwall, useSuperwallEvents, useUser } from 'expo-superwall';
 import { useEffect } from 'react';
+import { Alert } from 'react-native';
 
 import { track, trackConversion } from '@/lib/analytics';
 import { useSession } from '@/lib/auth';
@@ -86,6 +87,31 @@ function useSuperwallPaywall() {
       await registerPlacement({ placement, feature: onAccess });
     } catch (e) {
       console.warn('Superwall register failed', e);
+    }
+  };
+}
+
+/** Restore Purchases (App Review 3.1.2). With Superwall off there is nothing to restore. */
+export function useRestorePurchases() {
+  // superwallActive is fixed for the life of the process, so the hook choice never changes between renders.
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  return superwallActive ? useSuperwallRestore() : flagOffRestore;
+}
+
+async function flagOffRestore() {
+  track('restore_tapped', { paywall: 'off' });
+  Alert.alert('Restore purchases', 'Your account already has full access. Purchases restore here once plans are live.');
+}
+
+function useSuperwallRestore() {
+  const { restorePurchases } = useSuperwall();
+  return async () => {
+    try {
+      const result = await restorePurchases();
+      track('restore_tapped', { result: JSON.stringify(result).slice(0, 80) });
+      Alert.alert('Restore purchases', 'If this Apple ID has an active Crew Lens subscription, it has been restored.');
+    } catch {
+      Alert.alert('Restore purchases', 'We could not reach the App Store. Try again in a moment.');
     }
   };
 }

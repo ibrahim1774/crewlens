@@ -6,3 +6,7 @@ verify_jwt = false
 [functions.superwall-webhook]
 # Superwall calls this with a bearer secret in the Authorization header; there is no user JWT.
 verify_jwt = false
+
+[functions.delete-account]
+# The function verifies the caller's session itself (auth.getUser) and deletes only that user.
+verify_jwt = false
