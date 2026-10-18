@@ -1,7 +1,7 @@
 """
 Crew Lens split-screen promo: Photos app (left) vs Crew Lens (right) on a wooden table,
 then an end card. Inputs are real simulator recordings in rec/. Output: out/crewlens-split.mp4
-(1080x1920, 15 s) and out/crewlens-split-app.mp4 (720x1080, 2:3 crop, silent, for the welcome screen).
+(1080x1920, 15 s) and out/crewlens-split-app.mp4 (720x1080, 2:3 crop, silent, split screen only, looped on the welcome screen).
 """
 import os, subprocess
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
@@ -149,7 +149,8 @@ def render():
            '-c:v', 'libx264', '-preset', 'medium', '-crf', '22', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', out]
     subprocess.run(cmd, check=True)
     app = os.path.join(OUT, 'crewlens-split-app.mp4')
-    subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', out, '-vf', 'crop=1080:1620:0:80,scale=720:1080', '-an', '-c:v', 'libx264', '-preset', 'slow',
+    # The welcome-screen loop is the split screen only: it stops before the end card wipes in.
+    subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', out, '-t', f'{SPLIT_END - 0.6:.1f}', '-vf', 'crop=1080:1620:0:80,scale=720:1080', '-an', '-c:v', 'libx264', '-preset', 'slow',
                     '-crf', '28', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', app], check=True)
     subprocess.run(['ffmpeg', '-v', 'error', '-y', '-ss', '9.5', '-i', out, '-frames:v', '1', '-vf', 'crop=1080:1620:0:80,scale=720:1080', os.path.join(OUT, 'poster.jpg')], check=True)
     print('wrote', out, app)

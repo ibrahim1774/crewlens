@@ -53,10 +53,10 @@ export default function Welcome() {
           <Heading size={22} bold>Crew Lens</Heading>
         </View>
         <Heading size={29} bold style={{ textAlign: 'center', lineHeight: 31, letterSpacing: 0.2 }} testID="welcome-headline">
-          NEVER LOSE THE PHOTO THAT PROVES YOUR WORK.
+          {'EVERY PHOTO,\nSORTED BY JOB.\nALL IN ONE PLACE.'}
         </Heading>
         <Body size={15} color={Colors.ink2} style={{ textAlign: 'center' }}>
-          Every job photo and document, stamped, filed to the job and backed up. One link for the client.
+          Photos and documents, stamped with time and place, backed up, and shared with the client in one link.
         </Body>
       </View>
       <Demo still={still} />
