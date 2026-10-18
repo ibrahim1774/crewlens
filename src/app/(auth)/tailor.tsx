@@ -75,7 +75,7 @@ export default function Tailor() {
         </>
       }>
       <View style={{ gap: Space.sm }}>
-        <Mono color={Colors.ink2} size={11}>STEP 5 OF 10</Mono>
+        <Mono color={Colors.ink2} size={11}>Step 5 of 10</Mono>
         <Heading size={34} bold>Set it up for how you work</Heading>
         <Body color={Colors.ink2}>Thirty seconds. Owner alone or a six-truck crew, the first steps change. Nothing here is shared or sold.</Body>
       </View>

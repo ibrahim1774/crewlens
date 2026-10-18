@@ -1,11 +1,19 @@
-import { Colors, Radius } from '@/constants/theme';
+import { Colors, Fonts, Radius } from '@/constants/theme';
 
-test('exactly one action colour in the palette', () => {
-  const oranges = Object.values(Colors).filter((c) => c === '#E8521E');
-  expect(oranges).toHaveLength(1);
+test('black and white with exactly one warning red', () => {
+  expect(Colors.flag).toBe(Colors.ink);
+  const reds = Object.values(Colors).filter((c) => c === '#D92D20');
+  expect(reds).toHaveLength(1);
+  expect(Colors.surface).toBe('#FFFFFF');
 });
 
-test('no pill radii on cards', () => {
-  expect(Radius.card).toBeLessThanOrEqual(8);
-  expect(Radius.chip).toBeLessThanOrEqual(2);
+test('soft cards and pill buttons', () => {
+  expect(Radius.card).toBeGreaterThanOrEqual(16);
+  expect(Radius.pill).toBeGreaterThanOrEqual(999);
+});
+
+test('the evidence stamp keeps its monospace face while the UI uses Figtree', () => {
+  expect(Fonts.mono).toMatch(/Mono/);
+  expect(Fonts.body).toMatch(/^Figtree_/);
+  expect(Fonts.heading).toMatch(/^Figtree_/);
 });

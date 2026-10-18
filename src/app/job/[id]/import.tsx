@@ -87,7 +87,7 @@ export default function ImportPhotos() {
         </Pressable>
         <View style={{ flex: 1 }}>
           <Heading size={26} bold>Import photos</Heading>
-          <Mono size={11} color={Colors.ink2} numberOfLines={1}>{(job?.name ?? '').toUpperCase()} · {selected.size} SELECTED</Mono>
+          <Mono size={11} color={Colors.ink2} numberOfLines={1}>{job?.name ?? ''} · {selected.size} selected</Mono>
         </View>
 
       </View>

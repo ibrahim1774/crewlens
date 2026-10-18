@@ -51,7 +51,7 @@ const CARDS = [
             </View>
           ))}
         </View>
-        <Mono size={11} color={Colors.ink2}>HARTLEY ROOF · STAMPED · FILED BY GPS</Mono>
+        <Mono size={11} color={Colors.ink2}>Hartley Roof · Stamped · Filed by GPS</Mono>
       </View>
     ),
   },
@@ -64,10 +64,10 @@ const CARDS = [
           <SymbolView name="link" size={16} tintColor={Colors.slate} />
           <Mono size={11} style={{ flex: 1 }} numberOfLines={1}>crewlens-share.vercel.app/s/k7f3q2</Mono>
           <View style={{ backgroundColor: Colors.ok, borderRadius: Radius.chip, paddingHorizontal: 6, paddingVertical: 2 }}>
-            <Mono size={9} color={Colors.onCamera} bold>LIVE</Mono>
+            <Mono size={9} color={Colors.onCamera} bold>Live</Mono>
           </View>
         </View>
-        <Mono size={11} color={Colors.ink2}>OPENED BY THE CLIENT · 2 MIN AGO · UPDATES AS YOU SHOOT</Mono>
+        <Mono size={11} color={Colors.ink2}>Opened by the client · 2 Min ago · Updates as you shoot</Mono>
       </View>
     ),
   },
@@ -82,13 +82,13 @@ const CARDS = [
           </View>
           <View style={{ flex: 1, gap: 2 }}>
             <Heading size={15} numberOfLines={1}>Invoice 0412 · Hartley Roof</Heading>
-            <Mono size={10} color={Colors.ink2}>2 PAGES · SIGNED IN APP</Mono>
+            <Mono size={10} color={Colors.ink2}>2 Pages · Signed in app</Mono>
           </View>
           <View style={{ backgroundColor: Colors.ok, borderRadius: Radius.chip, paddingHorizontal: 6, paddingVertical: 2 }}>
-            <Mono size={9} color={Colors.onCamera} bold>SENT · TEXT</Mono>
+            <Mono size={9} color={Colors.onCamera} bold>Sent · Text</Mono>
           </View>
         </View>
-        <Mono size={11} color={Colors.ink2}>EDITED ON THE PHONE · TEXTED TO THE CLIENT · FILED WITH THE PHOTOS</Mono>
+        <Mono size={11} color={Colors.ink2}>Edited on the phone · Texted to the client · Filed with the photos</Mono>
       </View>
     ),
   },
@@ -102,7 +102,7 @@ function Comparison() {
   const Col = ({ title, items, ok }: { title: string; items: string[]; ok: boolean }) => (
     <View style={{ flex: 1, gap: 6, padding: Space.sm, borderRadius: Radius.card, borderWidth: 1, borderColor: ok ? Colors.ink : Colors.hairline, backgroundColor: ok ? Colors.surface : Colors.canvas }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-        <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: ok ? Colors.ok : Colors.flag, alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: ok ? Colors.ok : Colors.danger, alignItems: 'center', justifyContent: 'center' }}>
           <SymbolView name={ok ? 'checkmark' : 'xmark'} size={11} tintColor={Colors.onCamera} />
         </View>
         <Mono size={10} bold color={ok ? Colors.ink : Colors.ink2}>{title}</Mono>
@@ -121,7 +121,7 @@ function Comparison() {
       </View>
       {items.map((t) => (
         <View key={t} style={{ flexDirection: 'row', gap: 5, alignItems: 'flex-start' }}>
-          <Mono size={10} color={ok ? Colors.ok : Colors.flag} bold>{ok ? '✓' : '✕'}</Mono>
+          <Mono size={10} color={ok ? Colors.ok : Colors.danger} bold>{ok ? '✓' : '✕'}</Mono>
           <Body size={11} color={ok ? Colors.ink : Colors.ink2} style={{ flex: 1, lineHeight: 14 }}>{t}</Body>
         </View>
       ))}
@@ -220,7 +220,7 @@ export default function Welcome() {
         <Comparison />
         <Deck reduceMotion={reduceMotion} />
         <Pressable onPress={() => router.push('/(auth)/intro')} accessibilityRole="link" hitSlop={8} style={{ alignSelf: 'center', paddingVertical: Space.xs }} testID="welcome-tour">
-          <Mono size={12} color={Colors.slate} bold>SEE HOW IT WORKS</Mono>
+          <Mono size={12} color={Colors.slate} bold>See how it works</Mono>
         </Pressable>
       </View>
     </Screen>

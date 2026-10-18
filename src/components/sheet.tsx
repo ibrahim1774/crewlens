@@ -47,7 +47,7 @@ export function SheetRow({ title, subtitle, onPress, disabled, destructive, test
         opacity: disabled ? 0.45 : pressed ? 0.7 : 1,
         gap: 2,
       })}>
-      <Heading size={18} color={destructive ? Colors.flag : Colors.ink}>{title}</Heading>
+      <Heading size={18} color={destructive ? Colors.danger : Colors.ink}>{title}</Heading>
       {subtitle ? <Heading size={13} color={Colors.ink2} style={{ fontFamily: 'Inter_400Regular' }}>{subtitle}</Heading> : null}
     </Pressable>
   );

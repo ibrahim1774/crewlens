@@ -1,5 +1,4 @@
-import { BarlowCondensed_600SemiBold, BarlowCondensed_700Bold } from '@expo-google-fonts/barlow-condensed';
-import { Inter_400Regular, Inter_500Medium } from '@expo-google-fonts/inter';
+import { Figtree_400Regular, Figtree_500Medium, Figtree_600SemiBold, Figtree_700Bold, Figtree_800ExtraBold } from '@expo-google-fonts/figtree';
 import { JetBrainsMono_400Regular, JetBrainsMono_500Medium } from '@expo-google-fonts/jetbrains-mono';
 import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
@@ -43,10 +42,11 @@ function ScreenTracker() {
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
-    BarlowCondensed_600SemiBold,
-    BarlowCondensed_700Bold,
-    Inter_400Regular,
-    Inter_500Medium,
+    Figtree_400Regular,
+    Figtree_500Medium,
+    Figtree_600SemiBold,
+    Figtree_700Bold,
+    Figtree_800ExtraBold,
     JetBrainsMono_400Regular,
     JetBrainsMono_500Medium,
   });

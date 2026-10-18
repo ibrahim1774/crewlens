@@ -79,13 +79,13 @@ export default function Team() {
         </Pressable>
         <View style={{ flex: 1 }}>
           <Heading size={30} bold>Team</Heading>
-          <Mono size={11} color={Colors.ink2}>{members.length} OF {seats} {seats === 1 ? 'SEAT' : 'SEATS'} · {(company?.name ?? '').toUpperCase()}</Mono>
+          <Mono size={11} color={Colors.ink2}>{members.length} of {seats} {seats === 1 ? 'seat' : 'seats'} · {company?.name ?? ''}</Mono>
         </View>
       </View>
       <Body color={Colors.ink2}>Everyone here shoots into the same jobs with their own initials on the stamp. Photos stay with the company if someone leaves.</Body>
 
       <View style={{ gap: Space.sm }}>
-        <Mono size={11} color={Colors.ink2}>MEMBERS</Mono>
+        <Mono size={11} color={Colors.ink2}>Members</Mono>
         {members.map((m) => (
           <View key={m.userId} style={{ flexDirection: 'row', alignItems: 'center', gap: Space.sm, padding: Space.sm, backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.hairline, borderRadius: Radius.card }}>
             <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: m.role === 'owner' ? Colors.ink : Colors.slate, alignItems: 'center', justifyContent: 'center' }}>
@@ -93,11 +93,11 @@ export default function Team() {
             </View>
             <View style={{ flex: 1 }}>
               <Heading size={17}>{m.displayName}{m.userId === me?.userId ? ' (you)' : ''}</Heading>
-              <Mono size={10} color={Colors.ink2}>{m.role.toUpperCase()}</Mono>
+              <Mono size={10} color={Colors.ink2}>{m.role === 'owner' ? 'Owner' : 'Member'}</Mono>
             </View>
             {owner && m.userId !== me?.userId ? (
               <Pressable onPress={() => remove(m)} hitSlop={8} accessibilityRole="button" accessibilityLabel={`Remove ${m.displayName}`}>
-                <Mono size={11} color={Colors.flag} bold>REMOVE</Mono>
+                <Mono size={11} color={Colors.danger} bold>Remove</Mono>
               </Pressable>
             ) : null}
           </View>
@@ -106,12 +106,12 @@ export default function Team() {
 
       {owner && invites.length ? (
         <View style={{ gap: Space.sm }}>
-          <Mono size={11} color={Colors.ink2}>OPEN INVITE CODES</Mono>
+          <Mono size={11} color={Colors.ink2}>Open invite codes</Mono>
           {invites.map((i) => (
             <View key={i.code} style={{ flexDirection: 'row', alignItems: 'center', gap: Space.sm, padding: Space.sm, backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.hairline, borderRadius: Radius.card }}>
               <Mono size={16} bold style={{ flex: 1, letterSpacing: 2 }}>{i.code}</Mono>
-              <Pressable onPress={() => copy(i.code)} hitSlop={8} accessibilityRole="button"><Mono size={11} color={Colors.slate} bold>COPY</Mono></Pressable>
-              <Pressable onPress={() => deleteInvite(i.code).then(load)} hitSlop={8} accessibilityRole="button"><Mono size={11} color={Colors.flag} bold>CANCEL</Mono></Pressable>
+              <Pressable onPress={() => copy(i.code)} hitSlop={8} accessibilityRole="button"><Mono size={11} color={Colors.slate} bold>Copy</Mono></Pressable>
+              <Pressable onPress={() => deleteInvite(i.code).then(load)} hitSlop={8} accessibilityRole="button"><Mono size={11} color={Colors.danger} bold>Cancel</Mono></Pressable>
             </View>
           ))}
         </View>

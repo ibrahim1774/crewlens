@@ -23,7 +23,7 @@ function Row({ title, value, onPress, destructive, icon }: { title: string; valu
       accessibilityRole={onPress ? 'button' : undefined}
       style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: Space.md, paddingVertical: 14, borderBottomWidth: 1, borderColor: Colors.hairline, opacity: pressed ? 0.6 : 1 })}>
       <View style={{ flex: 1, gap: 2 }}>
-        <Heading size={18} color={destructive ? Colors.flag : Colors.ink}>{title}</Heading>
+        <Heading size={18} color={destructive ? Colors.danger : Colors.ink}>{title}</Heading>
         {value ? <Body size={13} color={Colors.ink2}>{value}</Body> : null}
       </View>
       {onPress && !destructive ? <SymbolView name={(icon ?? 'chevron.right') as never} size={14} tintColor={Colors.ink2} /> : null}
@@ -34,7 +34,7 @@ function Row({ title, value, onPress, destructive, icon }: { title: string; valu
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <View style={{ gap: 2 }}>
-      <Mono size={11} color={Colors.ink2} style={{ paddingBottom: Space.xs }}>{title.toUpperCase()}</Mono>
+      <Mono size={11} color={Colors.ink2} style={{ paddingBottom: Space.xs }}>{title}</Mono>
       <View style={{ backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.hairline, borderRadius: Radius.card, paddingHorizontal: Space.md }}>{children}</View>
     </View>
   );
@@ -78,13 +78,13 @@ export default function You() {
         <View style={{ paddingVertical: 14, gap: Space.sm, borderBottomWidth: 1, borderColor: Colors.hairline }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
             <Heading size={18}>{TIER_LABEL[tier]}{paywallEnabled ? '' : ' · early access'}</Heading>
-            <Mono>{active} OF {limits.activeJobs} ACTIVE JOBS</Mono>
+            <Mono>{active} of {limits.activeJobs} active jobs</Mono>
           </View>
           <View style={{ height: 6, backgroundColor: Colors.canvas, borderRadius: 2, overflow: 'hidden' }}>
-            <View style={{ width: `${pct * 100}%`, height: 6, backgroundColor: pct >= 0.9 ? Colors.flag : Colors.slate }} />
+            <View style={{ width: `${pct * 100}%`, height: 6, backgroundColor: pct >= 0.9 ? Colors.danger : Colors.ink }} />
           </View>
           <Mono size={11} color={Colors.ink2}>
-            {limits.photosPerJob} PHOTOS PER JOB · {limits.videosPerJob ? `VIDEO ${limits.videoMaxS}S` : 'NO VIDEO'} · LINKS {limits.linkDays ? `${limits.linkDays} DAYS` : 'NEVER EXPIRE'}
+            {limits.photosPerJob} photos per job · {limits.videosPerJob ? `${limits.videoMaxS}s video` : 'No video'} · Links {limits.linkDays ? `last ${limits.linkDays} days` : 'never expire'}
           </Mono>
         </View>
         <Row title="Plans" value="Solo, Pro with documents, Crew" onPress={() => router.push({ pathname: '/(auth)/paywall', params: { upgrade: '1' } })} icon="chevron.right" />
@@ -106,7 +106,7 @@ export default function You() {
       </Section>
 
       <Mono size={11} color={Colors.ink2} style={{ textAlign: 'center' }}>
-        CREW LENS {Application.nativeApplicationVersion ?? '1.0.0'} ({Application.nativeBuildVersion ?? '1'})
+        Crew lens {Application.nativeApplicationVersion ?? '1.0.0'} ({Application.nativeBuildVersion ?? '1'})
       </Mono>
     </Screen>
   );

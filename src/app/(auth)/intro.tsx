@@ -176,7 +176,7 @@ export default function Intro() {
         ) : (
           <>
             <Pressable onPress={() => finish(false)} hitSlop={12} accessibilityRole="button" accessibilityLabel="Skip the tour" testID="intro-skip" style={{ paddingVertical: Space.sm, paddingRight: Space.md }}>
-              <Mono size={13} color={Colors.ink} bold>SKIP</Mono>
+              <Mono size={13} color={Colors.ink} bold>Skip</Mono>
             </Pressable>
             <Button title="Next" onPress={() => goTo(index + 1)} style={{ flex: 1 }} testID="intro-next" />
           </>

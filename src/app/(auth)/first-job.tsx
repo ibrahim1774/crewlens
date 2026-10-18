@@ -69,7 +69,7 @@ export default function FirstJob() {
         )
       }>
       <View style={{ gap: Space.sm }}>
-        <Mono color={Colors.ink2} size={11}>STEP 8 OF 10</Mono>
+        <Mono color={Colors.ink2} size={11}>Step 8 of 10</Mono>
         <Heading size={34} bold>Stamp a photo of the job you are on today.</Heading>
         <Body color={Colors.ink2}>It files to the job you are standing at with the time, place and your initials burned in. Backed up the moment it uploads. That photo is yours for good.</Body>
       </View>
@@ -77,12 +77,12 @@ export default function FirstJob() {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: Space.sm }}>
           <SymbolView name="mappin.and.ellipse" size={18} tintColor={Colors.slate} />
           <Heading size={20} numberOfLines={1} style={{ flex: 1 }}>{job?.name ?? 'First job'}</Heading>
-          {shot ? <Mono size={11} color={Colors.ok} bold>{job?.photoCount} STAMPED</Mono> : <Mono size={11} color={Colors.ink2}>0 PHOTOS</Mono>}
+          {shot ? <Mono size={11} color={Colors.ok} bold>{job?.photoCount} stamped</Mono> : <Mono size={11} color={Colors.ink2}>0 Photos</Mono>}
         </View>
         <Body size={13} color={Colors.ink2}>{job?.address || (fix ? 'Address from your location' : 'Turn on location to file by GPS')}</Body>
         <View style={{ height: 150, borderRadius: Radius.chip, backgroundColor: Colors.ink, justifyContent: 'flex-end', padding: Space.sm }}>
           <Mono color={Colors.onCamera} size={10} style={{ position: 'absolute', top: Space.sm, left: Space.sm }}>
-            {shot ? 'LAST PHOTO' : 'YOUR NEXT PHOTO'}
+            {shot ? 'Last photo' : 'Your next photo'}
           </Mono>
           <Stamp photo={{ takenAt: now, lat: fix?.lat ?? null, lng: fix?.lng ?? null }} initials={initialsFor(member?.displayName ?? 'You')} tone="dark" size={12} />
         </View>

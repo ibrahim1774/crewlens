@@ -18,7 +18,7 @@ function Thumb({ photo, size }: { photo: Photo; size: number }) {
   return (
     <View style={{ width: size, height: size, borderRadius: Radius.chip, backgroundColor: Colors.hairline, overflow: 'hidden' }}>
       {uri ? <Image source={{ uri }} style={{ width: size, height: size }} contentFit="cover" /> : null}
-      {photo.syncState !== 'synced' ? <View style={{ position: 'absolute', right: 4, top: 4, width: 7, height: 7, borderRadius: 4, backgroundColor: Colors.flag, borderWidth: 1, borderColor: Colors.onCamera }} /> : null}
+      {photo.syncState !== 'synced' ? <View style={{ position: 'absolute', right: 4, top: 4, width: 7, height: 7, borderRadius: 4, backgroundColor: Colors.danger, borderWidth: 1, borderColor: Colors.onCamera }} /> : null}
     </View>
   );
 }
@@ -53,7 +53,7 @@ function Card({ item }: { item: ActivityItem }) {
                   : 'Document added'}
           </Heading>
           <Pressable onPress={toJob} accessibilityRole="link" hitSlop={6}>
-            <Mono size={11} color={Colors.slate} numberOfLines={1}>{item.job.name.toUpperCase()} · {timeAgo(item.at).toUpperCase()}</Mono>
+            <Mono size={11} color={Colors.slate} numberOfLines={1}>{item.job.name} · {timeAgo(item.at)}</Mono>
           </Pressable>
         </View>
       </View>
@@ -75,7 +75,7 @@ function Card({ item }: { item: ActivityItem }) {
           </View>
           <View style={{ flex: 1 }}>
             <Heading size={15} numberOfLines={1}>{item.doc.name}</Heading>
-            <Mono size={10} color={Colors.ink2}>{item.doc.sentTo ? `TO ${item.doc.sentTo.toUpperCase()} · ` : ''}{item.doc.pages ? `${item.doc.pages} PAGES · ` : ''}V{item.doc.version}</Mono>
+            <Mono size={10} color={Colors.ink2}>{item.doc.sentTo ? `To ${item.doc.sentTo} · ` : ''}{item.doc.pages ? `${item.doc.pages} ${item.doc.pages === 1 ? 'page' : 'pages'} · ` : ''}Version {item.doc.version}</Mono>
           </View>
           <SymbolView name="chevron.right" size={12} tintColor={Colors.ink2} />
         </Pressable>

@@ -56,7 +56,7 @@ function ToolButton({ icon, label, on, onPress, testID }: { icon: string; label:
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{ selected: !!on }} testID={testID} style={({ pressed }) => ({ flex: 1, alignItems: 'center', gap: 3, paddingVertical: Space.sm, borderRadius: Radius.card, backgroundColor: on ? Colors.flag : 'transparent', opacity: pressed ? 0.6 : 1 })}>
       <SymbolView name={icon as never} size={20} tintColor={on ? Colors.surface : Colors.ink} />
-      <Mono size={10} color={on ? Colors.surface : Colors.ink2}>{label.toUpperCase()}</Mono>
+      <Mono size={10} color={on ? Colors.surface : Colors.ink2}>{label}</Mono>
     </Pressable>
   );
 }
@@ -90,7 +90,7 @@ export default function DocumentEditor() {
         const [base64, lib] = await Promise.all([new File(uri).base64(), loadPdfjs()]);
         const fix = getLastFix();
         const lines = stampLines({ takenAt: new Date().toISOString(), lat: fix?.lat ?? null, lng: fix?.lng ?? null }, initialsFor(getMember()?.displayName ?? 'You'));
-        setHtml(buildEditorHtml({ kind: doc.kind, base64, mime: doc.kind === 'pdf' ? 'application/pdf' : 'image/jpeg', pdfjsSource: lib.pdfjs, workerSource: lib.worker, accent: Colors.flag, ink: Colors.ink, stampLines: lines }));
+        setHtml(buildEditorHtml({ kind: doc.kind, base64, mime: doc.kind === 'pdf' ? 'application/pdf' : 'image/jpeg', pdfjsSource: lib.pdfjs, workerSource: lib.worker, accent: Colors.ink, ink: Colors.ink, stampLines: lines }));
       } catch (e) {
         setError(e instanceof Error ? e.message : 'load_failed');
       }
@@ -226,7 +226,7 @@ export default function DocumentEditor() {
         </Pressable>
         <View style={{ flex: 1 }}>
           <Heading size={20} numberOfLines={1}>{doc?.name ?? 'Document'}</Heading>
-          <Mono size={10} color={Colors.ink2}>{doc ? `V${doc.version}${doc.pages ? ` · ${doc.pages} ${doc.pages === 1 ? 'PAGE' : 'PAGES'}` : ''}${dirty ? ' · UNSAVED' : ''}` : ''}</Mono>
+          <Mono size={10} color={Colors.ink2}>{doc ? `Version ${doc.version}${doc.pages ? ` · ${doc.pages} ${doc.pages === 1 ? 'page' : 'pages'}` : ''}${dirty ? ' · Unsaved' : ''}` : ''}</Mono>
         </View>
         <Pressable onPress={() => run('undo')} hitSlop={8} accessibilityRole="button" accessibilityLabel="Undo" testID="doc-undo" style={{ padding: 6 }}>
           <SymbolView name="arrow.uturn.backward" size={18} tintColor={Colors.ink} />
@@ -258,11 +258,11 @@ export default function DocumentEditor() {
         {!ready && !error ? (
           <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', gap: Space.sm }}>
             <ActivityIndicator color={Colors.slate} />
-            <Mono>OPENING</Mono>
+            <Mono>Opening</Mono>
           </View>
         ) : null}
         {error ? (
-          <View style={{ position: 'absolute', left: Space.md, right: Space.md, top: Space.md, padding: Space.md, borderRadius: Radius.card, backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.flag, gap: 4 }}>
+          <View style={{ position: 'absolute', left: Space.md, right: Space.md, top: Space.md, padding: Space.md, borderRadius: Radius.card, backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.danger, gap: 4 }}>
             <Heading size={18}>Could not open this document</Heading>
             <Body size={13} color={Colors.ink2}>{error}</Body>
           </View>
@@ -275,7 +275,7 @@ export default function DocumentEditor() {
         ))}
         <Pressable onPress={save} disabled={!dirty || saving} accessibilityRole="button" accessibilityLabel="Save" testID="tool-save" style={({ pressed }) => ({ flex: 1, alignItems: 'center', gap: 3, paddingVertical: Space.sm, borderRadius: Radius.card, backgroundColor: dirty ? Colors.flag : 'transparent', opacity: pressed ? 0.6 : dirty ? 1 : 0.4 })}>
           {saving ? <ActivityIndicator color={Colors.surface} /> : <SymbolView name="square.and.arrow.down" size={20} tintColor={dirty ? Colors.surface : Colors.ink} />}
-          <Mono size={10} color={dirty ? Colors.surface : Colors.ink2}>SAVE</Mono>
+          <Mono size={10} color={dirty ? Colors.surface : Colors.ink2}>Save</Mono>
         </Pressable>
       </View>
 

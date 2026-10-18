@@ -28,7 +28,7 @@ function Page({ photo }: { photo: Photo }) {
   const uri = usePhotoUri(photo, 'full');
   return (
     <View style={{ width: W, flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-      {!uri ? <Mono color={Colors.onCamera}>LOADING</Mono> : photo.kind === 'video' ? <VideoPage uri={uri} /> : <Image source={{ uri }} style={{ width: W, height: '100%' }} contentFit="contain" transition={150} />}
+      {!uri ? <Mono color={Colors.onCamera}>Loading</Mono> : photo.kind === 'video' ? <VideoPage uri={uri} /> : <Image source={{ uri }} style={{ width: W, height: '100%' }} contentFit="contain" transition={150} />}
     </View>
   );
 }
@@ -37,7 +37,7 @@ function Action({ name, label, onPress, tint = Colors.onCamera }: { name: string
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={({ pressed }) => ({ alignItems: 'center', gap: 4, width: 72, opacity: pressed ? 0.6 : 1 })}>
       <SymbolView name={name as never} size={22} tintColor={tint} />
-      <Mono size={10} color={tint}>{label.toUpperCase()}</Mono>
+      <Mono size={10} color={tint}>{label}</Mono>
     </Pressable>
   );
 }
@@ -135,14 +135,14 @@ export default function PhotoViewer() {
       <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, paddingBottom: insets.bottom + Space.sm, paddingHorizontal: Space.md, gap: Space.md, backgroundColor: 'rgba(11,11,13,0.6)', paddingTop: Space.md }}>
         <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' }}>
           <Stamp photo={current} initials={current.takerInitials} tone="dark" size={13} />
-          <Mono size={11} color={current.syncState === 'synced' ? Colors.ok : current.syncState === 'failed' ? Colors.flag : Colors.onCamera}>
-            {current.syncState.toUpperCase()}
+          <Mono size={11} color={current.syncState === 'synced' ? Colors.ok : current.syncState === 'failed' ? Colors.danger : Colors.onCamera}>
+            {current.syncState === 'synced' ? 'Backed up' : current.syncState === 'failed' ? 'Upload failed' : 'Uploading'}
           </Mono>
         </View>
         <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
           <Action name="square.and.arrow.up" label="Share" onPress={share} />
           <Action name="square.and.arrow.down" label="Save" onPress={save} />
-          <Action name="trash" label="Delete" onPress={remove} tint={Colors.flag} />
+          <Action name="trash" label="Delete" onPress={remove} tint={Colors.danger} />
         </View>
       </View>
     </View>

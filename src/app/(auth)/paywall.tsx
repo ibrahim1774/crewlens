@@ -61,7 +61,7 @@ export default function PaywallGate() {
   return (
     <View style={{ flex: 1, backgroundColor: Colors.canvas, paddingTop: insets.top + Space.sm, paddingHorizontal: Space.md }}>
       <View style={{ gap: 4 }}>
-        <Mono color={Colors.ink2} size={11}>{fromUpgrade ? 'PLANS' : 'STEP 7 OF 10'}</Mono>
+        <Mono color={Colors.ink2} size={11}>{fromUpgrade ? 'Plans' : 'Step 7 of 10'}</Mono>
         <Heading size={compact ? 28 : 32} bold>{fromUpgrade ? 'Upgrade your plan' : 'Pick your plan'}</Heading>
         <Body size={compact ? 13 : 14} color={Colors.ink2}>Every plan keeps every photo stamped, filed and backed up. Pro adds the paperwork: sign the invoice on the phone and text it to the client.</Body>
       </View>
@@ -89,8 +89,8 @@ export default function PaywallGate() {
               accessibilityRole="radio"
               accessibilityState={{ selected: on }}
               testID={`plan-${p.tier}`}
-              style={{ flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: Radius.card, borderWidth: on ? 2 : 1, borderColor: on ? Colors.flag : p.highlight ? Colors.ink : Colors.hairline, backgroundColor: p.highlight ? Colors.ink : Colors.surface, gap: 2 }}>
-              {p.highlight ? <Mono size={8} color={Colors.flag} bold>{p.trialDays}-DAY FREE TRIAL</Mono> : <Mono size={8} color={Colors.ink2}>{p.tier === 'solo' ? 'ONE PERSON' : 'TEAMS'}</Mono>}
+              style={{ flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: Radius.card, borderWidth: on ? 2 : 1, borderColor: on ? Colors.ok : p.highlight ? Colors.ink : Colors.hairline, backgroundColor: p.highlight ? Colors.ink : Colors.surface, gap: 2 }}>
+              {p.highlight ? <Mono size={8} color={Colors.onCamera} bold>{p.trialDays}-day free trial</Mono> : <Mono size={8} color={Colors.ink2}>{p.tier === 'solo' ? 'One person' : 'Teams'}</Mono>}
               <Heading size={compact ? 18 : 20} bold color={p.highlight ? Colors.surface : Colors.ink}>{p.name}</Heading>
               <Mono size={compact ? 10 : 11} color={p.highlight ? Colors.surface : Colors.ink} bold>{priceLabel(p, period)}</Mono>
             </Pressable>
@@ -114,7 +114,7 @@ export default function PaywallGate() {
                   {off ? (
                     <SymbolView name="minus" size={11} tintColor={Colors.hairline} />
                   ) : (
-                    <Mono size={compact ? 9 : 10} bold color={f.flagship ? Colors.flag : Colors.ink} style={{ textAlign: 'center' }}>{cell(v).toUpperCase()}</Mono>
+                    <Mono size={compact ? 9 : 10} bold color={f.flagship ? Colors.flag : Colors.ink} style={{ textAlign: 'center' }}>{cell(v)}</Mono>
                   )}
                 </Pressable>
               );

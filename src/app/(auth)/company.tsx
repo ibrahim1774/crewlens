@@ -95,7 +95,7 @@ export default function CompanyScreen() {
         )
       }>
       <View style={{ gap: Space.sm }}>
-        <Mono color={Colors.ink2} size={11}>STEP 4 OF 10</Mono>
+        <Mono color={Colors.ink2} size={11}>Step 4 of 10</Mono>
         <Heading size={34} bold>Your company</Heading>
         <Body color={Colors.ink2}>Every job, photo and document lives under the company, not on one person&apos;s phone. Nothing walks off when someone leaves.</Body>
       </View>
@@ -105,7 +105,7 @@ export default function CompanyScreen() {
       {joining ? <Body size={13} color={Colors.ink2}>The owner sends it by text from Team in the You tab. It works once and expires in 7 days.</Body> : null}
       {!joining ? <Field label="Company name" value={name} onChangeText={setName} autoCapitalize="words" placeholder="Smith Roofing" testID="company" /> : null}
       {!joining ? <View style={{ gap: Space.xs }}>
-        <Mono color={Colors.ink2} size={11}>TRADE</Mono>
+        <Mono color={Colors.ink2} size={11}>Trade</Mono>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: Space.sm }}>
           {TRADES.map((t) => {
             const on = t === trade;

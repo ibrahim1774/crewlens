@@ -19,7 +19,7 @@ export default function Index() {
     return (
       <View style={{ flex: 1, backgroundColor: Colors.canvas, alignItems: 'center', justifyContent: 'center', gap: Space.sm }}>
         <ActivityIndicator color={Colors.slate} />
-        <Mono>{session ? 'FINDING YOUR COMPANY' : 'LOADING'}</Mono>
+        <Mono>{session ? 'Finding your company…' : 'Loading…'}</Mono>
       </View>
     );
   }

@@ -72,14 +72,14 @@ export default function NewJob() {
       <Field label="Address" value={address} onChangeText={setAddress} autoCapitalize="words" placeholder="1010 Do Good Blvd" testID="job-address" />
       <Field label="Client (optional)" value={client} onChangeText={setClient} autoCapitalize="words" placeholder="Jo Johnson" />
       <View style={{ gap: Space.xs }}>
-        <Mono size={11} color={Colors.ink2}>LOCATION</Mono>
+        <Mono size={11} color={Colors.ink2}>Location</Mono>
         {fix ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Mono>{useLocation ? formatCoords(fix.lat, fix.lng) : 'NOT PINNED'}</Mono>
+            <Mono>{useLocation ? formatCoords(fix.lat, fix.lng) : 'Not pinned'}</Mono>
             <Button title={useLocation ? 'Do not pin' : 'Pin here'} variant="ghost" onPress={() => setUseLocation((v) => !v)} style={{ height: 36 }} />
           </View>
         ) : (
-          <Mono color={Colors.ink2}>NO GPS · job will not appear as nearby</Mono>
+          <Mono color={Colors.ink2}>No GPS · Job will not appear as nearby</Mono>
         )}
       </View>
       <LimitSheet error={limit} tier={effectiveTier(company?.tier ?? null, true)} onClose={() => setLimit(null)} />

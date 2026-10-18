@@ -28,7 +28,7 @@ export function StartHereCard() {
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: Space.sm }}>
         <View style={{ flex: 1 }}>
           <Heading size={20} bold>Start here</Heading>
-          <Mono size={11} color={Colors.ink2}>{s.pct}% · {s.done.length} OF {START_STEPS.length} DONE</Mono>
+          <Mono size={11} color={Colors.ink2}>{s.done.length} of {START_STEPS.length} done</Mono>
         </View>
         <Pressable onPress={() => dismissStartHere()} hitSlop={10} accessibilityRole="button" accessibilityLabel="Dismiss" testID="start-here-dismiss">
           <SymbolView name="xmark" size={16} tintColor={Colors.ink2} />

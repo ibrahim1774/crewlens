@@ -210,12 +210,12 @@ export default function Camera() {
         <IconButton name="xmark" label="Close camera" onPress={() => router.back()} />
         <View style={{ flex: 1, alignItems: 'center' }}>
           {recording ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.flag, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 2 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.danger, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 2 }}>
               <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.onCamera }} />
               <Mono size={11} color={Colors.onCamera} bold>REC {formatDuration(elapsed)} / {formatDuration(limitsFor(tier).videoMaxS)}</Mono>
             </View>
           ) : (
-            <Mono size={11} color={Colors.onCamera}>{fix ? `GPS ±${Math.round(fix.accuracyM ?? 0)} M` : 'NO GPS'}</Mono>
+            <Mono size={11} color={Colors.onCamera}>{fix ? `GPS ±${Math.round(fix.accuracyM ?? 0)} m` : 'No GPS'}</Mono>
           )}
         </View>
         <IconButton name={mode === 'video' ? 'camera' : 'video'} label={mode === 'video' ? 'Switch to photo' : 'Switch to video'} onPress={() => void toggleMode()} />
@@ -257,8 +257,8 @@ export default function Camera() {
               justifyContent: 'center',
               opacity: !ready ? 0.5 : pressed ? 0.8 : 1,
             })}>
-            <View style={{ width: recording ? 30 : 60, height: recording ? 30 : 60, borderRadius: recording ? 6 : 30, backgroundColor: busy ? Colors.ink2 : Colors.flag, alignItems: 'center', justifyContent: 'center' }}>
-              {selected === 'new' ? <SymbolView name="plus" size={26} tintColor={Colors.onCamera} /> : mode === 'video' && !recording ? <SymbolView name="video.fill" size={22} tintColor={Colors.onCamera} /> : null}
+            <View style={{ width: recording ? 30 : 60, height: recording ? 30 : 60, borderRadius: recording ? 6 : 30, backgroundColor: busy ? Colors.ink2 : recording ? Colors.danger : Colors.onCamera, alignItems: 'center', justifyContent: 'center' }}>
+              {selected === 'new' ? <SymbolView name="plus" size={26} tintColor={Colors.ink} /> : mode === 'video' && !recording ? <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: Colors.danger }} /> : null}
             </View>
           </Pressable>
         </View>

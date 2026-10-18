@@ -48,10 +48,10 @@ export function PhotoTile({ photo, size, onPress, onRetry }: Props) {
           <Mono size={9} color={Colors.onCamera}>{formatDuration(photo.durationS)}</Mono>
         </View>
       ) : null}
-      {unsynced ? <View style={{ position: 'absolute', right: 6, top: 6, width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.flag, borderWidth: 1, borderColor: Colors.onCamera }} /> : null}
+      {unsynced ? <View style={{ position: 'absolute', right: 6, top: 6, width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.danger, borderWidth: 1, borderColor: Colors.onCamera }} /> : null}
       {failed ? (
         <Pressable onPress={onRetry} hitSlop={8} accessibilityRole="button" accessibilityLabel="Retry upload" style={{ position: 'absolute', right: 4, top: 4, backgroundColor: 'rgba(11,11,13,0.6)', borderRadius: 2, padding: 2 }}>
-          <SymbolView name="exclamationmark.triangle.fill" size={14} tintColor={Colors.flag} />
+          <SymbolView name="exclamationmark.triangle.fill" size={14} tintColor={Colors.danger} />
         </Pressable>
       ) : null}
     </Pressable>

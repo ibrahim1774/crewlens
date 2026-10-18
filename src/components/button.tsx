@@ -13,9 +13,9 @@ type Props = Omit<PressableProps, 'style'> & {
 };
 
 const bg: Record<Variant, string> = { primary: Colors.flag, secondary: Colors.ink, ghost: 'transparent', danger: 'transparent' };
-const fg: Record<Variant, string> = { primary: Colors.surface, secondary: Colors.surface, ghost: Colors.ink, danger: Colors.flag };
+const fg: Record<Variant, string> = { primary: Colors.surface, secondary: Colors.surface, ghost: Colors.ink, danger: Colors.danger };
 
-/** Flat, 6px corners, hairline on ghost. Primary is the only orange surface on a screen. */
+/** Pill buttons: solid black primary, outlined secondary. */
 export function Button({ title, variant = 'primary', loading, disabled, style, ...rest }: Props) {
   const dim = disabled || loading;
   return (
@@ -25,11 +25,11 @@ export function Button({ title, variant = 'primary', loading, disabled, style, .
       {...rest}
       style={({ pressed }) => [
         {
-          height: 52,
-          borderRadius: Radius.card,
+          height: 56,
+          borderRadius: Radius.pill,
           backgroundColor: bg[variant],
-          borderWidth: variant === 'ghost' || variant === 'danger' ? 1 : 0,
-          borderColor: variant === 'danger' ? Colors.flag : Colors.hairline,
+          borderWidth: variant === 'ghost' || variant === 'danger' ? 1.5 : 0,
+          borderColor: variant === 'danger' ? Colors.danger : Colors.ink,
           alignItems: 'center',
           justifyContent: 'center',
           paddingHorizontal: Space.lg,
@@ -37,7 +37,7 @@ export function Button({ title, variant = 'primary', loading, disabled, style, .
         },
         style,
       ]}>
-      {loading ? <ActivityIndicator color={fg[variant]} /> : <Heading size={18} color={fg[variant]}>{title}</Heading>}
+      {loading ? <ActivityIndicator color={fg[variant]} /> : <Heading size={17} color={fg[variant]}>{title}</Heading>}
     </Pressable>
   );
 }

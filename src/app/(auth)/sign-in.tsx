@@ -68,7 +68,7 @@ export default function SignIn() {
   return (
     <Screen>
       <View style={{ gap: Space.sm }}>
-        <Mono color={Colors.ink2} size={11}>STEP 2 OF 10</Mono>
+        <Mono color={Colors.ink2} size={11}>Step 2 of 10</Mono>
         <Heading size={34} bold>Sign in</Heading>
         <Body color={Colors.ink2}>Your jobs, photos and paperwork back up to your account. A lost or broken phone never means a lost job.</Body>
       </View>
@@ -85,7 +85,7 @@ export default function SignIn() {
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: Space.sm }}>
         <View style={{ flex: 1, height: 1, backgroundColor: Colors.hairline }} />
-        <Mono color={Colors.ink2} size={11}>OR EMAIL</Mono>
+        <Mono color={Colors.ink2} size={11}>Or email</Mono>
         <View style={{ flex: 1, height: 1, backgroundColor: Colors.hairline }} />
       </View>
 

@@ -33,7 +33,7 @@ function Row({ icon, title, why, granted, onPress, blocked }: RowProps) {
         <Heading size={18}>{title}</Heading>
         <Body size={13} color={Colors.ink2}>{why}</Body>
       </View>
-      <Mono size={11} color={granted ? Colors.ok : Colors.flag} bold>{granted ? 'ON' : blocked ? 'SETTINGS' : 'ALLOW'}</Mono>
+      <Mono size={11} color={granted ? Colors.ok : Colors.ink} bold>{granted ? 'On' : blocked ? 'Settings' : 'Allow'}</Mono>
     </Pressable>
   );
 }
@@ -58,7 +58,7 @@ export default function Permissions() {
   return (
     <Screen footer={<Button title="Continue" onPress={next} disabled={!camera?.granted} />}>
       <View style={{ gap: Space.sm }}>
-        <Mono color={Colors.ink2} size={11}>STEP 6 OF 10</Mono>
+        <Mono color={Colors.ink2} size={11}>Step 6 of 10</Mono>
         <Heading size={34} bold>Two permissions, zero sorting</Heading>
         <Body color={Colors.ink2}>Camera takes the photo. Location files it to the right job and stamps where it was taken, so you never sort a camera roll again.</Body>
       </View>

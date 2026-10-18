@@ -46,19 +46,19 @@ export function JobChipStrip({ chips, selected, counts, onSelect }: Props) {
               gap: 6,
               height: 40,
               paddingHorizontal: Space.md,
-              borderRadius: Radius.chip,
-              backgroundColor: on ? Colors.flag : 'rgba(247,246,242,0.14)',
+              borderRadius: Radius.pill,
+              backgroundColor: on ? Colors.onCamera : 'rgba(255,255,255,0.14)',
               borderWidth: 1,
-              borderColor: on ? Colors.flag : 'rgba(247,246,242,0.3)',
+              borderColor: on ? Colors.onCamera : 'rgba(255,255,255,0.3)',
             }}>
-            {item.id === 'new' ? <SymbolView name="plus" size={14} tintColor={Colors.onCamera} /> : null}
-            <Heading size={16} color={Colors.onCamera} numberOfLines={1} style={{ maxWidth: 180 }}>
+            {item.id === 'new' ? <SymbolView name="plus" size={14} tintColor={on ? Colors.ink : Colors.onCamera} /> : null}
+            <Heading size={16} color={on ? Colors.ink : Colors.onCamera} numberOfLines={1} style={{ maxWidth: 180 }}>
               {item.label}
             </Heading>
-            {item.distanceM != null ? <Mono size={10} color={Colors.onCamera}>{Math.round(item.distanceM)}M</Mono> : null}
+            {item.distanceM != null ? <Mono size={10} color={on ? Colors.ink2 : Colors.onCamera}>{Math.round(item.distanceM)}M</Mono> : null}
             {count > 0 ? (
-              <View style={{ minWidth: 18, height: 18, borderRadius: 9, backgroundColor: Colors.onCamera, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 }}>
-                <Mono size={10} color={on ? Colors.flag : Colors.ink} bold>{count}</Mono>
+              <View style={{ minWidth: 18, height: 18, borderRadius: 9, backgroundColor: on ? Colors.ink : Colors.onCamera, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 }}>
+                <Mono size={10} color={on ? Colors.onCamera : Colors.ink} bold>{count}</Mono>
               </View>
             ) : null}
           </Pressable>

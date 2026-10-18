@@ -9,20 +9,20 @@ type Props = TextInputProps & { label: string };
 export function Field({ label, style, ...rest }: Props) {
   return (
     <View style={{ gap: Space.xs }}>
-      <Mono size={11} color={Colors.ink2}>{label.toUpperCase()}</Mono>
+      <Mono size={12} color={Colors.ink2}>{label}</Mono>
       <TextInput
         placeholderTextColor={Colors.ink2}
         {...rest}
         style={[
           {
-            height: 52,
+            height: 56,
             borderWidth: 1,
             borderColor: Colors.hairline,
-            borderRadius: Radius.card,
+            borderRadius: Radius.field,
             backgroundColor: Colors.surface,
-            paddingHorizontal: Space.md,
+            paddingHorizontal: Space.md + 2,
             fontFamily: Fonts.body,
-            fontSize: 16,
+            fontSize: 17,
             color: Colors.ink,
           },
           style,

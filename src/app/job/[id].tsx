@@ -159,7 +159,7 @@ export default function JobScreen() {
           <Heading size={30} bold color={Colors.surface} numberOfLines={2}>{job.name}</Heading>
           <Body size={13} color="rgba(247,246,242,0.8)" numberOfLines={1}>{job.address || 'No address'}</Body>
           <Mono size={11} color={Colors.onCamera} style={{ marginTop: 4 }}>
-            {photos.length} {photos.length === 1 ? 'PHOTO' : 'PHOTOS'}{archived ? ' · ARCHIVED' : ''}{job.clientName ? ` · ${job.clientName.toUpperCase()}` : ''}
+            {photos.length} {photos.length === 1 ? 'photo' : 'photos'}{archived ? ' · Archived' : ''}{job.clientName ? ` · ${job.clientName}` : ''}
           </Mono>
         </View>
         <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Back" hitSlop={10} style={{ position: 'absolute', top: insets.top, left: Space.sm, width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
@@ -175,26 +175,26 @@ export default function JobScreen() {
       {selecting ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: Space.sm, padding: Space.sm, paddingHorizontal: Space.md, backgroundColor: Colors.ink }} testID="gallery-bar">
           <Pressable onPress={cancelPicking} accessibilityRole="button" hitSlop={8} testID="gallery-cancel">
-            <Mono size={12} color={Colors.onCamera} bold>CANCEL</Mono>
+            <Mono size={12} color={Colors.onCamera} bold>Cancel</Mono>
           </Pressable>
-          <Mono size={12} color={Colors.onCamera} style={{ flex: 1, textAlign: 'center' }}>{selected.size} OF {photos.length} SELECTED</Mono>
+          <Mono size={12} color={Colors.onCamera} style={{ flex: 1, textAlign: 'center' }}>{selected.size} of {photos.length} selected</Mono>
           <Pressable onPress={selected.size === photos.length ? () => setSelected(new Set()) : selectAll} accessibilityRole="button" hitSlop={8} testID="gallery-select-all">
-            <Mono size={12} color={Colors.onCamera} bold>{selected.size === photos.length ? 'NONE' : 'SELECT ALL'}</Mono>
+            <Mono size={12} color={Colors.onCamera} bold>{selected.size === photos.length ? 'Select none' : 'Select all'}</Mono>
           </Pressable>
         </View>
       ) : null}
       {failed > 0 ? (
         <Pressable onPress={() => (capped ? router.push({ pathname: '/job/new', params: { returnTo: 'job' } }) : retryFailed())} accessibilityRole="button" style={{ flexDirection: 'row', alignItems: 'center', gap: Space.sm, padding: Space.md, backgroundColor: Colors.surface, borderBottomWidth: 1, borderColor: Colors.hairline }}>
-          <SymbolView name="exclamationmark.triangle.fill" size={16} tintColor={Colors.flag} />
+          <SymbolView name="exclamationmark.triangle.fill" size={16} tintColor={Colors.danger} />
           <Body size={13} style={{ flex: 1 }}>
             {capped ? `${TIER_LABEL[tier]} allows ${limitsFor(tier).photosPerJob} photos per job. ${failed} did not upload.` : `${failed} ${failed === 1 ? 'photo' : 'photos'} failed to upload.`}
           </Body>
-          <Heading size={14} color={Colors.flag}>{capped ? 'New job' : 'Retry'}</Heading>
+          <Heading size={14} color={Colors.danger}>{capped ? 'New job' : 'Retry'}</Heading>
         </Pressable>
       ) : null}
       {job.syncError ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: Space.sm, padding: Space.md, backgroundColor: Colors.surface, borderBottomWidth: 1, borderColor: Colors.hairline }}>
-          <SymbolView name="icloud.slash" size={16} tintColor={Colors.flag} />
+          <SymbolView name="icloud.slash" size={16} tintColor={Colors.danger} />
           <Body size={13} style={{ flex: 1 }}>This job is over your active-job cap and is not syncing. Archive another job to free a slot.</Body>
         </View>
       ) : null}

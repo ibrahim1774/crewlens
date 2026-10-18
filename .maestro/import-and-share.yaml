@@ -73,7 +73,7 @@ name: Import library photos into a job, pick photos for a gallery link, check Ac
     timeout: 5000
 - tapOn:
     id: "gallery-select-all"
-- assertVisible: "12 OF 12 SELECTED"
+- assertVisible: "12 of 12 selected"
 - takeScreenshot: 21-gallery-pick
 - tapOn:
     id: "gallery-cancel"

@@ -82,12 +82,12 @@ name: Plans from the You tab, then a job with a sample invoice edited and saved 
     id: "tool-date"
 - tapOn:
     point: "30%,52%"
-- assertVisible: ".*UNSAVED.*"
+- assertVisible: ".*Unsaved.*"
 - takeScreenshot: 15-editor-marked
 - tapOn:
     id: "tool-save"
 - extendedWaitUntil:
-    visible: ".*V2.*"
+    visible: ".*Version 2.*"
     timeout: 60000
 - takeScreenshot: 16-editor-saved
 - tapOn:
@@ -106,7 +106,7 @@ name: Plans from the You tab, then a job with a sample invoice edited and saved 
 - extendedWaitUntil:
     visible: ".*Sample invoice 0412.*"
     timeout: 10000
-- assertVisible: ".*V2.*"
+- assertVisible: ".*Version 2.*"
 - takeScreenshot: 18-docs-list
 - tapOn:
     id: "docs-back"

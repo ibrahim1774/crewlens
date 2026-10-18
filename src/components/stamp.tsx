@@ -1,6 +1,6 @@
 import { View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { Mono } from '@/components/text';
+import { StampText } from '@/components/text';
 import { Colors, Radius, Space } from '@/constants/theme';
 import { stampLines, type Stampable } from '@/lib/stamp';
 
@@ -25,16 +25,16 @@ export function Stamp({ photo, initials, tone = 'light', size = 12, style }: Pro
       style={[
         {
           alignSelf: 'flex-start',
-          backgroundColor: dark ? 'rgba(11,11,13,0.72)' : 'rgba(247,246,242,0.88)',
-          borderRadius: Radius.chip,
+          backgroundColor: dark ? 'rgba(11,11,13,0.72)' : 'rgba(255,255,255,0.92)',
+          borderRadius: 8,
           paddingHorizontal: Space.sm,
           paddingVertical: Space.xs,
           gap: 2,
         },
         style,
       ]}>
-      <Mono size={size} color={dark ? Colors.onCamera : Colors.slate} bold>{when}</Mono>
-      <Mono size={size} color={dark ? Colors.onCamera : Colors.slate}>{where}</Mono>
+      <StampText size={size} color={dark ? Colors.onCamera : Colors.ink} bold>{when}</StampText>
+      <StampText size={size} color={dark ? Colors.onCamera : Colors.ink2}>{where}</StampText>
     </View>
   );
 }

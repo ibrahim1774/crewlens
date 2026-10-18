@@ -1,27 +1,38 @@
-/** Crew Lens palette. One job per colour. See the design spec, section 3. */
+/**
+ * Crew Lens palette: black and white, warm off-white canvas, one red for warnings.
+ * Black is the action colour (buttons, selected chips, the camera button). Red only ever
+ * means something needs attention: unsynced, failed, destructive, recording.
+ */
 export const Colors = {
-  canvas: '#E9E7E1',
-  surface: '#F7F6F2',
-  ink: '#15161A',
-  ink2: '#5B5E66',
-  hairline: '#C9C7C0',
-  /** The one action colour: capture button, primary CTA, unsynced badge. */
-  flag: '#E8521E',
-  /** Data colour: stamps, links, pins. */
-  slate: '#3D5A80',
-  ok: '#2F7D4F',
+  canvas: '#F5F4F1',
+  surface: '#FFFFFF',
+  ink: '#22211E',
+  ink2: '#6E6C67',
+  hairline: '#E4E2DD',
+  /** Action colour: primary buttons, selected state, camera button. Black. */
+  flag: '#22211E',
+  /** Warnings only: unsynced, failed, destructive, recording. */
+  danger: '#D92D20',
+  /** Data colour: stamps, links, secondary text on data. */
+  slate: '#4A4945',
+  ok: '#1F8A4C',
   camera: '#0B0B0D',
-  onCamera: '#F7F6F2',
+  onCamera: '#FFFFFF',
 } as const;
 
 export const Space = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32 } as const;
-export const Radius = { chip: 2, card: 6, round: 999 } as const;
+/** Big soft corners and pill buttons, like a modern field app. */
+export const Radius = { chip: 10, card: 20, field: 18, pill: 999, round: 999 } as const;
 
 export const Fonts = {
-  heading: 'BarlowCondensed_600SemiBold',
-  headingBold: 'BarlowCondensed_700Bold',
-  body: 'Inter_400Regular',
-  bodyMedium: 'Inter_500Medium',
+  heading: 'Figtree_600SemiBold',
+  headingBold: 'Figtree_800ExtraBold',
+  body: 'Figtree_400Regular',
+  bodyMedium: 'Figtree_600SemiBold',
+  /** Labels and counters. */
+  label: 'Figtree_500Medium',
+  labelBold: 'Figtree_700Bold',
+  /** The evidence stamp keeps a monospace face: it is the product's signature. */
   mono: 'JetBrainsMono_400Regular',
   monoMedium: 'JetBrainsMono_500Medium',
 } as const;

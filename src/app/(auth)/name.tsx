@@ -32,13 +32,13 @@ export default function Name() {
   return (
     <Screen footer={<Button title="Continue" onPress={next} disabled={name.trim().length < 2} />}>
       <View style={{ gap: Space.sm }}>
-        <Mono color={Colors.ink2} size={11}>STEP 3 OF 10</Mono>
+        <Mono color={Colors.ink2} size={11}>Step 3 of 10</Mono>
         <Heading size={34} bold>Who is shooting?</Heading>
         <Body color={Colors.ink2}>Your initials go on every photo you take, so the office knows who was on site without asking.</Body>
       </View>
       <Field label="Full name" value={name} onChangeText={setName} autoCapitalize="words" autoComplete="name" placeholder="Jo Smith" autoFocus testID="name" />
       <View style={{ gap: Space.xs }}>
-        <Mono color={Colors.ink2} size={11}>PREVIEW</Mono>
+        <Mono color={Colors.ink2} size={11}>Preview</Mono>
         <Stamp photo={{ takenAt: new Date().toISOString(), lat: 40.7128, lng: -74.006 }} initials={initialsFor(name)} />
       </View>
     </Screen>

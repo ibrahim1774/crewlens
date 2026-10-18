@@ -24,7 +24,7 @@ function Row({ link, jobName, onCopy, onRevoke, onOpenJob }: { link: ShareLink; 
         <Pressable onPress={onOpenJob} accessibilityRole="link" style={{ flex: 1 }}>
           <Heading size={18} numberOfLines={1}>{jobName}</Heading>
           <Mono size={10} color={Colors.ink2}>
-            {link.type === 'live' ? 'LIVE LINK' : 'GALLERY'} · {timeAgo(link.createdAt).toUpperCase()} · {link.revokedAt ? 'REVOKED' : describeExpiry(link.expiresAt).toUpperCase()}
+            {link.type === 'live' ? 'Live link' : 'Gallery'} · {timeAgo(link.createdAt)} · {link.revokedAt ? 'Revoked' : describeExpiry(link.expiresAt)}
           </Mono>
         </Pressable>
       </View>
@@ -35,7 +35,7 @@ function Row({ link, jobName, onCopy, onRevoke, onOpenJob }: { link: ShareLink; 
             <Heading size={14} color={Colors.surface}>Copy link</Heading>
           </Pressable>
           <Pressable onPress={onRevoke} accessibilityRole="button" testID={`link-revoke-${link.id}`} style={{ flex: 1, height: 36, borderRadius: Radius.card, borderWidth: 1, borderColor: Colors.hairline, alignItems: 'center', justifyContent: 'center' }}>
-            <Heading size={14} color={Colors.flag}>Revoke</Heading>
+            <Heading size={14} color={Colors.danger}>Revoke</Heading>
           </Pressable>
         </View>
       ) : null}

@@ -68,7 +68,7 @@ function Tile({ source, size, time, initials, pending, dim }: { source: number; 
           <Mono size={7} color={Colors.onCamera} bold>{initials}</Mono>
         </View>
       ) : null}
-      {pending ? <View style={{ position: 'absolute', right: 4, top: 4, width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.flag, borderWidth: 1, borderColor: Colors.onCamera }} /> : null}
+      {pending ? <View style={{ position: 'absolute', right: 4, top: 4, width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.danger, borderWidth: 1, borderColor: Colors.onCamera }} /> : null}
     </View>
   );
 }
@@ -154,8 +154,8 @@ function JobLine({ name, address, meta, pending, archived, cover }: { name: stri
           <Mono size={7}>{meta}</Mono>
           {pending ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-              <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: Colors.flag }} />
-              <Mono size={7} color={Colors.flag}>{pending} UNSYNCED</Mono>
+              <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: Colors.danger }} />
+              <Mono size={7} color={Colors.danger}>{pending} UNSYNCED</Mono>
             </View>
           ) : null}
         </View>

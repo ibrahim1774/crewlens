@@ -19,8 +19,8 @@ import type { Doc } from '@/types/models';
 
 function sentLabel(d: Doc): string | null {
   if (!d.sentAt || !d.sentVia) return null;
-  const when = new Date(d.sentAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
-  return `SENT · ${d.sentVia.toUpperCase()} · ${when}`;
+  const when = new Date(d.sentAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return `Sent by ${d.sentVia} · ${when}`;
 }
 
 function DocRow({ doc, onPress, onMore }: { doc: Doc; onPress: () => void; onMore: () => void }) {
@@ -38,11 +38,11 @@ function DocRow({ doc, onPress, onMore }: { doc: Doc; onPress: () => void; onMor
       <View style={{ flex: 1, justifyContent: 'center', gap: 3 }}>
         <Heading size={19} numberOfLines={1}>{doc.name}</Heading>
         <Mono size={11}>
-          {doc.pages ? `${doc.pages} ${doc.pages === 1 ? 'PAGE' : 'PAGES'} · ` : ''}{formatSize(doc.sizeBytes)} · V{doc.version}
+          {doc.pages ? `${doc.pages} ${doc.pages === 1 ? 'page' : 'pages'} · ` : ''}{formatSize(doc.sizeBytes)} · Version {doc.version}
         </Mono>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: Space.sm }}>
-          {sent ? <Mono size={11} color={Colors.ok} bold>{sent}</Mono> : <Mono size={11} color={Colors.ink2}>NOT SENT YET</Mono>}
-          {doc.syncState !== 'synced' ? <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: doc.syncState === 'failed' ? Colors.flag : Colors.hairline }} /> : null}
+          {sent ? <Mono size={11} color={Colors.ok} bold>{sent}</Mono> : <Mono size={11} color={Colors.ink2}>Not sent yet</Mono>}
+          {doc.syncState !== 'synced' ? <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: doc.syncState === 'failed' ? Colors.danger : Colors.hairline }} /> : null}
         </View>
       </View>
       <Pressable onPress={onMore} hitSlop={10} accessibilityRole="button" accessibilityLabel="More" style={{ justifyContent: 'center', paddingHorizontal: Space.xs }}>
@@ -129,7 +129,7 @@ export default function Documents() {
         </Pressable>
         <View style={{ flex: 1 }}>
           <Heading size={26} bold>Documents</Heading>
-          <Mono size={11} color={Colors.ink2} numberOfLines={1}>{(job?.name ?? '').toUpperCase()} · {docs.length} {docs.length === 1 ? 'FILE' : 'FILES'}</Mono>
+          <Mono size={11} color={Colors.ink2} numberOfLines={1}>{job?.name ?? ''} · {docs.length} {docs.length === 1 ? 'file' : 'files'}</Mono>
         </View>
         {allowed ? (
           <Pressable onPress={upload} accessibilityRole="button" testID="docs-upload" disabled={busy} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, height: 40, paddingHorizontal: Space.md, borderRadius: Radius.card, backgroundColor: Colors.flag, opacity: busy ? 0.6 : 1 }}>
@@ -141,7 +141,7 @@ export default function Documents() {
 
       {!allowed ? (
         <View style={{ margin: Space.md, padding: Space.md, borderWidth: 1, borderColor: Colors.hairline, borderRadius: Radius.card, backgroundColor: Colors.surface, gap: Space.sm }}>
-          <Mono size={11} color={Colors.flag} bold>PRO FEATURE</Mono>
+          <Mono size={11} color={Colors.flag} bold>Pro feature</Mono>
           <Heading size={24} bold>Keep the paperwork with the photos.</Heading>
           <Body color={Colors.ink2}>Upload the invoice, proposal or contract for this job, edit and sign it on your phone, then text or email it to the client. Included in Pro and Crew.</Body>
           <Button title="See plans" onPress={() => router.push({ pathname: '/(auth)/paywall', params: { upgrade: '1' } })} testID="docs-upgrade" />

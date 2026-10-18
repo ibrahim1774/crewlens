@@ -43,8 +43,8 @@ export function JobRow({ job, coverUri, onPress, distanceM }: Props) {
           </Mono>
           {job.pendingCount > 0 ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.flag }} />
-              <Mono size={11} color={Colors.flag}>{job.pendingCount} UNSYNCED</Mono>
+              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.danger }} />
+              <Mono size={11} color={Colors.danger}>{job.pendingCount} UNSYNCED</Mono>
             </View>
           ) : null}
         </View>
