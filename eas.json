@@ -34,5 +34,15 @@
       "environment": "production",
       "credentialsSource": "local"
     }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "ascAppId": "6823989964",
+        "ascApiKeyPath": "./AuthKey_5YX524BBAM.p8",
+        "ascApiKeyIssuerId": "8e2cad29-fcba-4f15-baf7-23b9cbcd6c24",
+        "ascApiKeyId": "5YX524BBAM"
+      }
+    }
   }
 }
