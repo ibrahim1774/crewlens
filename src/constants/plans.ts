@@ -31,7 +31,7 @@ export const FEATURES: FeatureRow[] = [
   { label: 'Video clips', values: ['—', '10 per job', '25 per job'] },
   { label: 'Live job links', values: ['30 days', 'Never expire', 'Never expire'] },
   { label: 'Documents & invoices', values: ['—', 'Edit, sign, text', 'Edit, sign, text'], flagship: true },
-  { label: 'Seats', values: ['1', '1', '3, +$9.99 each'] },
+  { label: 'Seats', values: ['1', '1', '3'] },
 ];
 
 export type Period = 'monthly' | 'yearly';

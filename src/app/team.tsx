@@ -48,7 +48,7 @@ export default function Team() {
       else await Share.share({ message });
     } catch (e) {
       const msg = e instanceof Error ? e.message : '';
-      if (msg === 'limit:seats') Alert.alert('All seats are taken', `Your plan includes ${seats} ${seats === 1 ? 'seat' : 'seats'}. Crew adds three, and more at $9.99 each.`, [{ text: 'Not now', style: 'cancel' }, { text: 'See plans', onPress: () => router.push({ pathname: '/(auth)/paywall', params: { upgrade: '1' } }) }]);
+      if (msg === 'limit:seats') Alert.alert('All seats are taken', `Your plan includes ${seats} ${seats === 1 ? 'seat' : 'seats'}. Crew includes three.`, [{ text: 'Not now', style: 'cancel' }, { text: 'See plans', onPress: () => router.push({ pathname: '/(auth)/paywall', params: { upgrade: '1' } }) }]);
       else if (msg !== 'not_owner') Alert.alert('Could not create an invite', 'Check your connection and try again.');
     } finally {
       setBusy(false);

@@ -27,3 +27,7 @@ test('labels and product ids follow the store naming', () => {
   expect(ctaLabel(PLANS[0])).toBe('Continue with Solo');
   expect(yearlySavingPct(PLANS[1])).toBe(33);
 });
+
+test('the plans table never prices something the store cannot sell', () => {
+  for (const row of FEATURES) for (const v of row.values) expect(v).not.toMatch(/\$/);
+});

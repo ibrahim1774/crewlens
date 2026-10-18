@@ -28,7 +28,7 @@ async function finish(tier: Tier, period: Period, upgrade: boolean) {
 
 /** Short cell copy so three columns fit a phone without scrolling. */
 function cell(v: string): string {
-  return v.replace('Never expire', 'Never\nexpire').replace('Edit, sign, text', 'Edit, sign\n& text').replace('3, +$9.99 each', '3 (+$9.99\neach)').replace(' per job', '/job');
+  return v.replace('Never expire', 'Never\nexpire').replace('Edit, sign, text', 'Edit, sign\n& text').replace(' per job', '/job');
 }
 
 /**
