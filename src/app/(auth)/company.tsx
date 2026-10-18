@@ -7,7 +7,7 @@ import { Field } from '@/components/field';
 import { Screen } from '@/components/screen';
 import { Body, Heading, Mono } from '@/components/text';
 import { Colors, Radius, Space } from '@/constants/theme';
-import { track } from '@/lib/analytics';
+import { track, trackRegistration } from '@/lib/analytics';
 import { getSession } from '@/lib/auth';
 import { createCompany, fetchMembership, joinCompany, TRADES } from '@/lib/company';
 import { meta } from '@/lib/db';
@@ -34,6 +34,7 @@ export default function CompanyScreen() {
       await joinCompany({ userId: session.user.id, code, displayName });
       await meta.set('pending_name', null);
       track('company_joined');
+      trackRegistration('join');
       router.push('/(auth)/permissions');
     } catch (e) {
       const msg = e instanceof Error ? e.message : '';
@@ -62,6 +63,7 @@ export default function CompanyScreen() {
       await createCompany({ userId: session.user.id, name, trade: trade.toLowerCase(), displayName });
       await meta.set('pending_name', null);
       track('company_created', { trade: trade.toLowerCase() });
+      trackRegistration('create');
       router.push('/(auth)/tailor');
     } catch (e) {
       const msg = e instanceof Error ? e.message : '';

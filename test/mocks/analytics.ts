@@ -7,3 +7,5 @@ export function trackConversion() {}
 export function screen() {}
 
 export function identify(_props?: Record<string, unknown>) {}
+export function trackRegistration(_m?: string) {}
+export function pendingAttributionEvents() { return 0; }

@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
   // The SDK identifies with an opaque alias minted by superwall_alias(); raw user ids are never accepted.
   const alias = String(data.originalAppUserId ?? '');
   const productId = String((name === 'product_change' ? data.newProductId : data.productId) ?? '');
-  if (!/^cl_[0-9a-f]{36}$/.test(alias)) return Response.json({ ok: true, skipped: 'no_alias' });
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(alias)) return Response.json({ ok: true, skipped: 'no_alias' });
   if (data.environment === 'SANDBOX' && Deno.env.get('ALLOW_SANDBOX') !== 'true') return Response.json({ ok: true, skipped: 'sandbox' });
 
   const tier = tierFor(productId);
