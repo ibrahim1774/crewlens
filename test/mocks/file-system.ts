@@ -23,6 +23,12 @@ export class File {
   get parentDirectory() {
     return new Directory(this.uri.replace(/\/[^/]*$/, ''));
   }
+  toString() {
+    return this.uri;
+  }
+  static async downloadFileAsync(_url: string, destination: File | Directory): Promise<File> {
+    return destination instanceof File ? destination : new File(destination, 'download');
+  }
 }
 export class Directory {
   uri: string;
@@ -33,6 +39,9 @@ export class Directory {
   create() {}
   list(): (File | Directory)[] {
     return [];
+  }
+  toString() {
+    return this.uri;
   }
 }
 export const Paths = { document: 'file:///documents', cache: 'file:///cache' };

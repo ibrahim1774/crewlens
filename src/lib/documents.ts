@@ -265,12 +265,13 @@ export async function pullDocuments(jobId: string): Promise<void> {
 export async function ensureLocal(doc: Doc): Promise<string> {
   if (doc.localUri && new File(doc.localUri).exists) return doc.localUri;
   if (!doc.storagePath) throw new Error('no_file');
-  const { data, error } = await supabase.storage.from('documents').download(doc.storagePath);
+  // storage.download() returns a React Native Blob, which has no arrayBuffer(), so fetch the file straight to disk.
+  const { data, error } = await supabase.storage.from('documents').createSignedUrl(doc.storagePath, 300);
   if (error || !data) throw error ?? new Error('download_failed');
   const dir = new Directory(Paths.document, 'docs', doc.jobId);
   if (!dir.exists) dir.create({ intermediates: true });
   const dest = new File(dir, `${doc.id}.${doc.kind === 'pdf' ? 'pdf' : 'jpg'}`);
-  dest.write(new Uint8Array(await data.arrayBuffer()));
+  await File.downloadFileAsync(data.signedUrl, dest, { idempotent: true });
   await update(doc.id, { local_uri: dest.uri });
   return dest.uri;
 }
