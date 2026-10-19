@@ -94,6 +94,8 @@ export interface VideoInput {
   fix: Fix | null;
   /** Library imports must not delete the user's original. */
   keepSource?: boolean;
+  /** Library imports keep the day the photo was taken. Set here, not after: the uploader starts on the first write. */
+  takenAt?: string;
 }
 
 /** Files a recorded clip under the job with a still thumbnail; the clip itself is not re-encoded. */
@@ -159,13 +161,15 @@ export async function importFromLibrary(jobId: string, assetId: string, fallback
   const info = await MediaLibrary.getAssetInfoAsync(assetId);
   const uri = info.localUri ?? info.uri;
   if (!uri) throw new Error('asset_missing');
-  const photo = await capture({ jobId, uri, width: info.width, height: info.height, fix: info.location ? { lat: info.location.latitude, lng: info.location.longitude, accuracyM: null, at: Date.now() } : fallbackFix, keepSource: true });
-  if (info.creationTime) {
-    const takenAt = new Date(info.creationTime).toISOString();
-    await db.photos.upsert({ ...photo, takenAt });
-    return { ...photo, takenAt };
-  }
-  return photo;
+  return capture({
+    jobId,
+    uri,
+    width: info.width,
+    height: info.height,
+    fix: info.location ? { lat: info.location.latitude, lng: info.location.longitude, accuracyM: null, at: Date.now() } : fallbackFix,
+    keepSource: true,
+    takenAt: info.creationTime ? new Date(info.creationTime).toISOString() : undefined,
+  });
 }
 
 export interface CaptureInput {
@@ -176,6 +180,8 @@ export interface CaptureInput {
   fix: Fix | null;
   /** Library imports must not delete the user's original. */
   keepSource?: boolean;
+  /** Library imports keep the day the photo was taken. Set here, not after: the uploader starts on the first write. */
+  takenAt?: string;
 }
 
 /**
@@ -220,7 +226,7 @@ export async function capture(input: CaptureInput): Promise<Photo> {
     width: full.width,
     height: full.height,
     durationS: null,
-    takenAt: new Date().toISOString(),
+    takenAt: input.takenAt ?? new Date().toISOString(),
     lat: input.fix?.lat ?? null,
     lng: input.fix?.lng ?? null,
     accuracyM: input.fix?.accuracyM ?? null,
