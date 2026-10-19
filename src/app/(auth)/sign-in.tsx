@@ -9,7 +9,7 @@ import { Screen } from '@/components/screen';
 import { Body, Heading, Mono } from '@/components/text';
 import { Colors, Radius, Space } from '@/constants/theme';
 import { track } from '@/lib/analytics';
-import { sendEmailCode, signInWithApple, verifyEmailCode } from '@/lib/auth';
+import { normalizeCode, sendEmailCode, signInWithApple, verifyEmailCode } from '@/lib/auth';
 import { meta } from '@/lib/db';
 
 export default function SignIn() {
@@ -52,10 +52,11 @@ export default function SignIn() {
     }
   };
 
-  const verify = async () => {
+  const verify = async (value = code) => {
+    if (busy) return;
     setBusy(true);
     try {
-      await verifyEmailCode(email, code);
+      await verifyEmailCode(email, value);
       track('sign_in', { method: 'email' });
       router.replace('/');
     } catch (e) {
@@ -104,13 +105,27 @@ export default function SignIn() {
         <View style={{ gap: Space.sm }}>
           <View style={{ borderWidth: 1, borderColor: Colors.hairline, borderRadius: Radius.card, backgroundColor: Colors.surface, padding: Space.md, gap: 4 }}>
             <Heading size={18}>Check your email</Heading>
-            <Body size={13} color={Colors.ink2}>Tap the sign-in link in the email from Crew Lens. It opens this app and signs you in. If the email shows a 6-digit code instead, enter it below.</Body>
+            <Body size={13} color={Colors.ink2}>We sent a 6-digit code to {email.trim()}. Enter it below and you&apos;re signed in as soon as the sixth digit is in. On this phone you can also tap the link in the email.</Body>
           </View>
-          <Field label="6-digit code" value={code} onChangeText={setCode} keyboardType="number-pad" maxLength={6} placeholder="000000" testID="code" />
+          <Field
+            label="6-digit code"
+            value={code}
+            onChangeText={(t) => {
+              const next = normalizeCode(t);
+              setCode(next);
+              if (next.length === 6) void verify(next);
+            }}
+            keyboardType="number-pad"
+            textContentType="oneTimeCode"
+            autoComplete="one-time-code"
+            maxLength={6}
+            placeholder="000000"
+            testID="code"
+          />
         </View>
       ) : null}
       {sent ? (
-        <Button title="Verify code" onPress={verify} loading={busy} disabled={code.length < 6} variant="secondary" />
+        <Button title="Verify code" onPress={() => void verify()} loading={busy} disabled={code.length < 6} variant="secondary" />
       ) : (
         <Button title="Send code" onPress={send} loading={busy} disabled={!email.includes('@')} variant="secondary" />
       )}

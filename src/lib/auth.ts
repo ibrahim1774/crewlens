@@ -137,6 +137,11 @@ export async function handleAuthUrl(url: string): Promise<boolean> {
   return true;
 }
 
+/** The emailed sign-in code is 6 digits; pasted or autofilled text may carry spaces or words. */
+export function normalizeCode(input: string): string {
+  return input.replace(/\D/g, '').slice(0, 6);
+}
+
 export async function verifyEmailCode(email: string, code: string): Promise<void> {
   const { data, error } = await supabase.auth.verifyOtp({ email: email.trim().toLowerCase(), token: code.trim(), type: 'email' });
   if (error) throw error;

@@ -9,7 +9,10 @@ env:
 - tapOn:
     id: "code"
 - inputText: ${CODE}
-- tapOn: "Verify code"
+# The sixth digit signs in on its own; the button is only a fallback.
+- tapOn:
+    text: "Verify code"
+    optional: true
 # New account: name → company → permissions → paywall placeholder → tabs.
 - extendedWaitUntil:
     visible:

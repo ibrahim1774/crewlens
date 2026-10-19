@@ -1,4 +1,4 @@
-import { parseAuthCallback } from '@/lib/auth';
+import { normalizeCode, parseAuthCallback } from '@/lib/auth';
 
 test('ignores URLs that are not the exact auth callback', () => {
   expect(parseAuthCallback('crewlens://job/abc')).toBeNull();
@@ -18,4 +18,11 @@ test('rejects raw session tokens, so a crafted link cannot plant a session', () 
 test('surfaces Supabase errors', () => {
   expect(parseAuthCallback('crewlens://auth/callback#error=access_denied&error_description=Email+link+is+invalid+or+has+expired')).toEqual({ error: 'Email link is invalid or has expired' });
   expect(parseAuthCallback('crewlens://auth/callback?error=otp_expired')).toEqual({ error: 'otp_expired' });
+});
+
+test('sign-in codes keep digits only and stop at six', () => {
+  expect(normalizeCode('598 795')).toBe('598795');
+  expect(normalizeCode('Your code: 598795')).toBe('598795');
+  expect(normalizeCode('12345678')).toBe('123456');
+  expect(normalizeCode('')).toBe('');
 });
