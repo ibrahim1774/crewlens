@@ -17,7 +17,7 @@ env:
 - tapOn:
     text: "Close"
     optional: true
-# First launch lands on welcome; Get started goes to sign-in.
+# First launch lands on welcome; Get started shows the benefits, then sign-in.
 - extendedWaitUntil:
     visible:
       id: "welcome-start"
@@ -26,8 +26,16 @@ env:
 - tapOn:
     id: "welcome-start"
 - extendedWaitUntil:
+    visible: "Why crews use.*"
+    timeout: 10000
+- takeScreenshot: 01b-benefits
+- tapOn:
+    id: "benefits-continue"
+- extendedWaitUntil:
     visible: "Sign in"
     timeout: 10000
+- tapOn:
+    id: "use-email"
 - tapOn:
     id: "email"
 - inputText: "maestro@crewlens.test"

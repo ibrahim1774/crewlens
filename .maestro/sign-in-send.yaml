@@ -17,6 +17,8 @@ env:
       visible: "Get started"
     commands:
       - tapOn: "Get started"
+      - tapOn:
+          id: "benefits-continue"
 - extendedWaitUntil:
     visible: "Sign in"
     timeout: 15000

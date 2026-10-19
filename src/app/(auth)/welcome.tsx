@@ -15,8 +15,8 @@ const POSTER = require('@/assets/video/welcome-poster.jpg');
 const ICON = require('@/assets/images/icon.png');
 
 /**
- * The split-screen demo: the camera roll on the left, Crew Lens on the right, recorded from the
- * real app. Muted and looping; a still frame stands in when Reduce Motion is on.
+ * The walkthrough, recorded from the real app: jobs, stamped photos, a link for the client, an invoice
+ * signed and sent, with callouts on each benefit. Muted and looping; a still frame stands in when Reduce Motion is on.
  */
 function Demo({ still }: { still: boolean }) {
   const player = useVideoPlayer(still ? null : DEMO, (p) => {
@@ -28,7 +28,7 @@ function Demo({ still }: { still: boolean }) {
     <View
       style={{ flex: 1, alignSelf: 'center', aspectRatio: 2 / 3, maxWidth: '100%', borderRadius: Radius.card, overflow: 'hidden', backgroundColor: Colors.hairline }}
       accessible
-      accessibilityLabel="Side by side: scrolling a camera roll for one job photo, and finding it in Crew Lens in seconds"
+      accessibilityLabel="Walkthrough: jobs sorted into folders, photos stamped with date and time, a share link sent to the client, and an invoice signed and sent from the phone"
       testID="welcome-demo">
       <Image source={POSTER} style={{ position: 'absolute', width: '100%', height: '100%' }} contentFit="cover" />
       {!still ? <VideoView player={player} style={{ width: '100%', height: '100%' }} contentFit="cover" nativeControls={false} allowsPictureInPicture={false} /> : null}
@@ -64,7 +64,7 @@ export default function Welcome() {
         <Mono size={13} color={Colors.ink} bold>See how it works</Mono>
       </Pressable>
       <View style={{ gap: Space.sm }}>
-        <Button title="Get started" onPress={() => router.push('/(auth)/sign-in')} testID="welcome-start" />
+        <Button title="Get started" onPress={() => router.push('/(auth)/benefits')} testID="welcome-start" />
         <Button title="Sign in" variant="ghost" onPress={() => router.push('/(auth)/sign-in')} testID="welcome-sign-in" />
       </View>
     </View>
