@@ -56,13 +56,43 @@ env:
     id: "crew-6-15"
 - tapOn:
     id: "tailor-continue"
+- extendedWaitUntil:
+    visible: "Has this happened to you?"
+    timeout: 10000
 - tapOn:
-    id: "home-camera-roll"
+    id: "moment-camera_roll"
 - tapOn:
-    id: "headache-proving-the-work-got-done"
-- takeScreenshot: 03-pains
+    id: "moment-crew_phones"
+- scrollUntilVisible:
+    element:
+      id: "moment-invoice"
+    direction: DOWN
 - tapOn:
-    id: "pains-continue"
+    id: "moment-invoice"
+- takeScreenshot: 03-moments
+- tapOn:
+    id: "moments-continue"
+# One scene per thing picked, in the order picked: organized (two picks share it), then the invoice.
+- extendedWaitUntil:
+    visible: "Every photo lands in the right project"
+    timeout: 10000
+- takeScreenshot: 04-scene-organized
+- tapOn:
+    id: "scene-next"
+- extendedWaitUntil:
+    visible: "Sign and send the invoice on site"
+    timeout: 10000
+- takeScreenshot: 04-scene-invoice
+- tapOn:
+    id: "scene-next"
+- extendedWaitUntil:
+    visible: "Set up for.*"
+    timeout: 10000
+- assertVisible: "Sign and send it on site"
+- assertVisible: "Everyone's photos in one job"
+- takeScreenshot: 04-setup
+- tapOn:
+    id: "setup-continue"
 # The tracking prompt comes before the plan; camera and location wait until after it.
 - tapOn:
     text: "Ask App Not to Track"

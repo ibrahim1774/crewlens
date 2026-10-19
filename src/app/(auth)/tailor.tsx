@@ -33,7 +33,7 @@ export default function Tailor() {
       identify({ role: role || null, crew_size: crew || null, heard_from: source || null });
     }
     track(skipped ? 'tailor_skipped' : 'tailor_saved', { role: role || null, crew: crew || null, source: source || null });
-    router.push('/(auth)/pains');
+    router.push('/(auth)/moments');
   };
 
   return (

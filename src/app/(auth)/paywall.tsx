@@ -58,10 +58,11 @@ export default function PaywallGate() {
   // Their answers pick the starting plan here and reach Superwall as placement parameters.
   useEffect(() => {
     if (fromUpgrade) return;
-    void Promise.all(['profile_crew', 'profile_trade', 'profile_photo_home', 'profile_headache'].map((k) => meta.get(k))).then(([crew, trade, home, headache]) => {
+    void Promise.all(['profile_crew', 'profile_trade', 'profile_moments'].map((k) => meta.get(k))).then(([crew, trade, moments]) => {
       const suggested = suggestedTier(crew);
       setTier(suggested);
-      setAnswers({ crew_size: crew ?? '', trade: trade ?? '', photo_home: home ?? '', headache: headache ?? '', suggested_plan: suggested });
+      // Superwall parameters are flat values: the picked moments go as one comma-separated string.
+      setAnswers({ crew_size: crew ?? '', trade: trade ?? '', moments: moments ?? '', suggested_plan: suggested });
     });
   }, [fromUpgrade]);
 

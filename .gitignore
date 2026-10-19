@@ -40,3 +40,6 @@ yarn-error.*
 store/video/rec/
 store/video/build/
 store/screenshots/build/
+# Generated stills and clips (Higgsfield); the scene sources are copied into rec/
+store/video/gen/
+__pycache__/
