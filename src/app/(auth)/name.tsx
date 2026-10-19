@@ -1,6 +1,7 @@
 import { router, useFocusEffect } from 'expo-router';
+import { SymbolView } from 'expo-symbols';
 import { useCallback, useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Field } from '@/components/field';
@@ -44,7 +45,19 @@ export default function Name() {
         </>
       }>
       <View style={{ gap: Space.sm }}>
-        <Mono color={Colors.ink2} size={11}>{stepLabel('name')}</Mono>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Pressable
+            onPress={() => (router.canGoBack() ? router.back() : router.replace('/(auth)/welcome'))}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+            hitSlop={12}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}
+            testID="name-back">
+            <SymbolView name="chevron.left" size={14} weight="semibold" tintColor={Colors.ink} />
+            <Mono size={13} color={Colors.ink} bold>Back</Mono>
+          </Pressable>
+          <Mono color={Colors.ink2} size={11}>{stepLabel('name')}</Mono>
+        </View>
         <Heading size={34} bold>Who is shooting?</Heading>
         <Body color={Colors.ink2}>Your initials go on every photo you take, so the office knows who was on site without asking.</Body>
       </View>

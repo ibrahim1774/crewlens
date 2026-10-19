@@ -2,7 +2,7 @@ import { useCameraPermissions } from 'expo-camera';
 import * as Location from 'expo-location';
 import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Linking, Pressable, View } from 'react-native';
 
 import { Button } from '@/components/button';
@@ -10,9 +10,7 @@ import { Screen } from '@/components/screen';
 import { Body, Heading, Mono } from '@/components/text';
 import { stepLabel } from '@/constants/onboarding';
 import { Colors, Radius, Space } from '@/constants/theme';
-import { requestTrackingThenStart, track } from '@/lib/analytics';
-import { isGuest } from '@/lib/auth';
-import { getMember } from '@/lib/company';
+import { track } from '@/lib/analytics';
 
 type RowProps = { icon: string; title: string; why: string; granted: boolean; onPress: () => void; blocked?: boolean };
 
@@ -44,21 +42,13 @@ function Row({ icon, title, why, granted, onPress, blocked }: RowProps) {
 export default function Permissions() {
   const [camera, requestCamera] = useCameraPermissions();
   const [location, requestLocation] = Location.useForegroundPermissions();
-  const [asked, setAsked] = useState(false);
 
   useEffect(() => {
     track('onboarding_step', { step: 'permissions' });
   }, []);
 
-  const next = async () => {
-    if (!asked) {
-      setAsked(true);
-      await requestTrackingThenStart();
-    }
-    // Only the owner pays; someone who joined a crew is covered by the owner's plan.
-    if (getMember()?.role !== 'member') router.replace('/(auth)/paywall');
-    else router.replace(isGuest() ? '/(auth)/save' : '/(auth)/first-job');
-  };
+  // Camera and location are asked once they have paid and saved the account, right before the first photo.
+  const next = () => router.replace('/(auth)/first-job');
 
   return (
     <Screen footer={<Button title="Continue" onPress={next} disabled={!camera?.granted} />}>

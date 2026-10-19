@@ -47,7 +47,7 @@ export function SignInForm({ save = false }: { save?: boolean }) {
     // The guest became a real account just now; this is the registration ad networks should count.
     if (registersAt({ step: 'save', guest: save })) trackRegistration(getMember()?.role === 'member' ? 'join' : 'create');
     // Saving keeps going through onboarding; a sign-in goes back to the gate, which knows where this account belongs.
-    router.replace(save ? '/(auth)/first-job' : '/');
+    router.replace(save ? '/(auth)/permissions' : '/');
   };
 
   const apple = async () => {

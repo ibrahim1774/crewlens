@@ -63,20 +63,7 @@ env:
 - takeScreenshot: 03-pains
 - tapOn:
     id: "pains-continue"
-- extendedWaitUntil:
-    visible: "About 37 hours"
-    timeout: 10000
-- takeScreenshot: 04-cost
-- tapOn:
-    id: "cost-continue"
-- extendedWaitUntil:
-    visible: "Two permissions.*"
-    timeout: 10000
-- tapOn: "Camera.*"
-- tapOn:
-    text: "Allow"
-    optional: true
-- tapOn: "Continue"
+# The tracking prompt comes before the plan; camera and location wait until after it.
 - tapOn:
     text: "Ask App Not to Track"
     optional: true
@@ -91,6 +78,7 @@ env:
     visible: "Save your account"
     timeout: 15000
 - takeScreenshot: 06-save
+- assertNotVisible: "Joining a crew.*"
 # Quitting here and reopening returns to the plan step, never into the app.
 - stopApp
 - launchApp

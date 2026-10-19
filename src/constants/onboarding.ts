@@ -1,5 +1,5 @@
-/** The onboarding screens in order. Questions first, the plan next, the account last. */
-export const ONBOARDING_STEPS = ['name', 'company', 'tailor', 'pains', 'cost', 'permissions', 'paywall', 'save', 'first-job', 'crew', 'share-docs'] as const;
+/** The onboarding screens in order. Questions first, then the plan, the account, and the permissions once they have paid. */
+export const ONBOARDING_STEPS = ['name', 'company', 'tailor', 'pains', 'paywall', 'save', 'permissions', 'first-job', 'crew', 'share-docs'] as const;
 export type OnboardingStep = (typeof ONBOARDING_STEPS)[number];
 
 export function stepLabel(step: OnboardingStep): string {

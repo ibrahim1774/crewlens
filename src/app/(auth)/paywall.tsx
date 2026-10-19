@@ -26,7 +26,7 @@ async function finish(tier: Tier, period: Period, upgrade: boolean) {
     return;
   }
   // The plan is bought on the guest account; saving it with an email or Apple comes next.
-  router.replace(isGuest() ? '/(auth)/save' : '/(auth)/first-job');
+  router.replace(isGuest() ? '/(auth)/save' : '/(auth)/permissions');
 }
 
 /** Short cell copy so three columns fit a phone without scrolling. */
