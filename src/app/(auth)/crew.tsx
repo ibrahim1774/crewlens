@@ -7,6 +7,7 @@ import { Share, View } from 'react-native';
 import { Button } from '@/components/button';
 import { Screen } from '@/components/screen';
 import { Body, Heading, Mono } from '@/components/text';
+import { stepLabel } from '@/constants/onboarding';
 import { Colors, Radius, Space } from '@/constants/theme';
 import { track } from '@/lib/analytics';
 import { useCompany } from '@/lib/company';
@@ -53,7 +54,7 @@ export default function Crew() {
         </>
       }>
       <View style={{ gap: Space.sm }}>
-        <Mono color={Colors.ink2} size={11}>Step 9 of 10</Mono>
+        <Mono color={Colors.ink2} size={11}>{stepLabel('crew')}</Mono>
         <Heading size={34} bold>Who is on the job with you?</Heading>
         <Body color={Colors.ink2}>Everyone shoots into the same job with their own initials. You see the whole site from the truck, and no photo lives on just one person&apos;s phone.</Body>
       </View>
@@ -68,7 +69,7 @@ export default function Crew() {
             <SymbolView name="plus" size={14} tintColor={Colors.ink} />
           </View>
         </View>
-        <Mono size={11} color={Colors.ink2}>Crew plan · 3 Seats included · $9.99 Per extra seat</Mono>
+        <Mono size={11} color={Colors.ink2}>Crew plan · 3 seats included</Mono>
         <Body size={13} color={Colors.ink2}>The text carries the download link. Once they sign in, add them to the company from the You tab.</Body>
       </View>
     </Screen>

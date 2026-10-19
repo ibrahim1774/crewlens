@@ -67,7 +67,7 @@ export function usePaywall() {
 
 /** With the flag off there is no provider and no paywall: every placement grants access. */
 function useFlagOffPaywall() {
-  return async (placement: Placement, onAccess?: () => void) => {
+  return async (placement: Placement, onAccess?: () => void, _params?: Record<string, string>) => {
     track('placement_registered', { placement, paywall: 'off' });
     onAccess?.();
   };
@@ -78,13 +78,14 @@ function useSuperwallPaywall() {
     onError: (error) => console.warn('Superwall placement error', error),
   });
 
-  return async (placement: Placement, onAccess?: () => void) => {
+  /** `params` reach the paywall as placement parameters: the person's answers, for audience rules and copy. */
+  return async (placement: Placement, onAccess?: () => void, params?: Record<string, string>) => {
     const now = Date.now();
     if (now - lastRequest < 2000) return;
     lastRequest = now;
     track('placement_registered', { placement });
     try {
-      await registerPlacement({ placement, feature: onAccess });
+      await registerPlacement({ placement, params, feature: onAccess });
     } catch (e) {
       console.warn('Superwall register failed', e);
     }

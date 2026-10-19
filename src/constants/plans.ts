@@ -58,3 +58,8 @@ export function ctaLabel(plan: Plan): string {
 export function documentsIncluded(tier: Tier): boolean {
   return tier === 'pro' || tier === 'crew';
 }
+
+/** Bigger crews start on the Crew plan, everyone else on Pro (the one with the free trial). */
+export function suggestedTier(crew: string | null): Tier {
+  return crew === '6–15' || crew === '16+' ? 'crew' : 'pro';
+}

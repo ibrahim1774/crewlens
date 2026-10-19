@@ -12,15 +12,16 @@ env:
 - tapOn:
     text: "Continue"
     optional: true
+# Returning users take Sign in on the welcome screen.
 - runFlow:
     when:
-      visible: "Get started"
+      visible:
+        id: "welcome-sign-in"
     commands:
-      - tapOn: "Get started"
       - tapOn:
-          id: "benefits-continue"
+          id: "welcome-sign-in"
 - extendedWaitUntil:
-    visible: "Sign in"
+    visible: "Welcome back.*"
     timeout: 15000
 # Phone is the default; email is one tap away.
 - tapOn:
@@ -32,9 +33,11 @@ env:
 # Dismissing the keyboard can already submit the form on iOS, so only tap if the button is still there.
 - runFlow:
     when:
-      visible: "Send code"
+      visible:
+        id: "send-code"
     commands:
-      - tapOn: "Send code"
+      - tapOn:
+          id: "send-code"
 - extendedWaitUntil:
     visible: "6-digit code"
     timeout: 20000

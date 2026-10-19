@@ -1,14 +1,16 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, View } from 'react-native';
+import { Alert, View } from 'react-native';
 
 import { Button } from '@/components/button';
+import { Chips } from '@/components/chips';
 import { Field } from '@/components/field';
 import { Screen } from '@/components/screen';
 import { Body, Heading, Mono } from '@/components/text';
-import { Colors, Radius, Space } from '@/constants/theme';
+import { stepLabel } from '@/constants/onboarding';
+import { Colors, Space } from '@/constants/theme';
 import { track, trackRegistration } from '@/lib/analytics';
-import { getSession } from '@/lib/auth';
+import { getSession, startGuest } from '@/lib/auth';
 import { createCompany, fetchMembership, joinCompany, TRADES } from '@/lib/company';
 import { meta } from '@/lib/db';
 
@@ -23,13 +25,12 @@ export default function CompanyScreen() {
   }, []);
 
   const join = async () => {
-    const session = getSession();
-    if (!session) {
-      router.replace('/(auth)/sign-in');
-      return;
-    }
     setBusy(true);
     try {
+      // A relaunch can land here with the guest account gone (signed out or reinstalled): make a new one.
+      if (!getSession()) await startGuest();
+      const session = getSession();
+      if (!session) throw new Error('network');
       const displayName = (await meta.get('pending_name')) ?? session.user.email ?? 'Crew';
       await joinCompany({ userId: session.user.id, code, displayName });
       await meta.set('pending_name', null);
@@ -43,7 +44,8 @@ export default function CompanyScreen() {
         msg === 'invite_invalid' ? 'Codes are six characters and expire after 7 days. Ask the owner for a new one.' : msg === 'limit:seats' ? 'Ask the owner to add a seat on the Crew plan.' : 'Check your connection and try again.',
       );
       if (msg === 'already_member') {
-        await fetchMembership(session.user.id).catch(() => null);
+        const uid = getSession()?.user.id;
+        if (uid) await fetchMembership(uid).catch(() => null);
         router.replace('/');
       }
     } finally {
@@ -52,15 +54,15 @@ export default function CompanyScreen() {
   };
 
   const next = async () => {
-    const session = getSession();
-    if (!session) {
-      router.replace('/(auth)/sign-in');
-      return;
-    }
     setBusy(true);
     try {
+      // A relaunch can land here with the guest account gone (signed out or reinstalled): make a new one.
+      if (!getSession()) await startGuest();
+      const session = getSession();
+      if (!session) throw new Error('network');
       const displayName = (await meta.get('pending_name')) ?? session.user.email ?? 'Owner';
       await createCompany({ userId: session.user.id, name, trade: trade.toLowerCase(), displayName });
+      await meta.set('profile_trade', trade);
       await meta.set('pending_name', null);
       track('company_created', { trade: trade.toLowerCase() });
       trackRegistration('create');
@@ -69,7 +71,8 @@ export default function CompanyScreen() {
       const msg = e instanceof Error ? e.message : '';
       if (msg.includes('already_member')) {
         // The account already owns a company; load it instead of failing.
-        await fetchMembership(session.user.id).catch(() => null);
+        const uid = getSession()?.user.id;
+        if (uid) await fetchMembership(uid).catch(() => null);
         router.replace('/');
         return;
       }
@@ -95,7 +98,7 @@ export default function CompanyScreen() {
         )
       }>
       <View style={{ gap: Space.sm }}>
-        <Mono color={Colors.ink2} size={11}>Step 4 of 10</Mono>
+        <Mono color={Colors.ink2} size={11}>{stepLabel('company')}</Mono>
         <Heading size={34} bold>Your company</Heading>
         <Body color={Colors.ink2}>Every job, photo and document lives under the company, not on one person&apos;s phone. Nothing walks off when someone leaves.</Body>
       </View>
@@ -103,33 +106,9 @@ export default function CompanyScreen() {
         <Field label="Invite code" value={code} onChangeText={(t) => setCode(t.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))} autoCapitalize="characters" autoCorrect={false} placeholder="ABC234" testID="invite-code" />
       ) : null}
       {joining ? <Body size={13} color={Colors.ink2}>The owner sends it by text from Team in the You tab. It works once and expires in 7 days.</Body> : null}
-      {!joining ? <Field label="Company name" value={name} onChangeText={setName} autoCapitalize="words" placeholder="Smith Roofing" testID="company" /> : null}
-      {!joining ? <View style={{ gap: Space.xs }}>
-        <Mono color={Colors.ink2} size={11}>Trade</Mono>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: Space.sm }}>
-          {TRADES.map((t) => {
-            const on = t === trade;
-            return (
-              <Pressable
-                key={t}
-                onPress={() => setTrade(t)}
-                accessibilityRole="button"
-                accessibilityState={{ selected: on }}
-                style={{
-                  paddingHorizontal: Space.md,
-                  height: 40,
-                  justifyContent: 'center',
-                  borderRadius: Radius.chip,
-                  borderWidth: 1,
-                  borderColor: on ? Colors.ink : Colors.hairline,
-                  backgroundColor: on ? Colors.ink : Colors.surface,
-                }}>
-                <Heading size={16} color={on ? Colors.surface : Colors.ink}>{t}</Heading>
-              </Pressable>
-            );
-          })}
-        </View>
-      </View> : null}
+      {/* Trade first: the chips stay above the keyboard, so Continue never hides behind it. */}
+      {!joining ? <Chips label="TRADE" options={TRADES} value={trade as (typeof TRADES)[number] | ''} onChange={setTrade} testPrefix="trade" /> : null}
+      {!joining ? <Field label="Company name" value={name} onChangeText={setName} autoCapitalize="words" returnKeyType="done" placeholder="Smith Roofing" testID="company" /> : null}
     </Screen>
   );
 }

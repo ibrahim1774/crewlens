@@ -3,8 +3,8 @@ import { ActivityIndicator, View } from 'react-native';
 
 import { Mono } from '@/components/text';
 import { Colors, Space } from '@/constants/theme';
-import { useSession } from '@/lib/auth';
-import { useCompany, useMembershipChecked } from '@/lib/company';
+import { isGuest, useSession } from '@/lib/auth';
+import { useCompany, useMember, useMembershipChecked } from '@/lib/company';
 import { routeFor } from '@/lib/gate';
 import { useIntroSeen } from '@/lib/intro';
 
@@ -12,9 +12,10 @@ import { useIntroSeen } from '@/lib/intro';
 export default function Index() {
   const { session } = useSession();
   const company = useCompany();
+  const member = useMember();
   const checked = useMembershipChecked();
   const introSeen = useIntroSeen();
-  const route = routeFor({ session: !!session, membershipChecked: checked, company: !!company, introSeen });
+  const route = routeFor({ session: !!session, membershipChecked: checked, guest: isGuest(session), company: !!company, owner: member ? member.role === 'owner' : undefined, introSeen });
   if (!route) {
     return (
       <View style={{ flex: 1, backgroundColor: Colors.canvas, alignItems: 'center', justifyContent: 'center', gap: Space.sm }}>

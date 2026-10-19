@@ -1,5 +1,5 @@
 appId: com.ibrahim1774.crewlens
-name: Crew Lens onboarding reaches sign-in
+name: Crew Lens onboarding, questions first, the account last
 env:
   DEV_URL: "exp+crewlens://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8082"
 ---
@@ -29,16 +29,72 @@ env:
     visible: "Why crews use.*"
     timeout: 10000
 - takeScreenshot: 01b-benefits
+# Continue makes a guest account; the questions, company and plan hang off it.
 - tapOn:
     id: "benefits-continue"
 - extendedWaitUntil:
-    visible: "Sign in"
+    visible: "Who is shooting?"
+    timeout: 20000
+- tapOn:
+    id: "name"
+- inputText: "Maestro Owner"
+- tapOn:
+    id: "name-continue"
+- tapOn:
+    id: "trade-roofing"
+- tapOn:
+    id: "company"
+- inputText: "Maestro Test Co"
+- takeScreenshot: 02-company
+- tapOn: "Continue"
+- extendedWaitUntil:
+    visible: "Set it up for how you work"
+    timeout: 20000
+- tapOn:
+    id: "role-owner"
+- tapOn:
+    id: "crew-6-15"
+- tapOn:
+    id: "tailor-continue"
+- tapOn:
+    id: "home-camera-roll"
+- tapOn:
+    id: "headache-proving-the-work-got-done"
+- takeScreenshot: 03-pains
+- tapOn:
+    id: "pains-continue"
+- extendedWaitUntil:
+    visible: "About 37 hours"
     timeout: 10000
+- takeScreenshot: 04-cost
 - tapOn:
-    id: "use-email"
+    id: "cost-continue"
+- extendedWaitUntil:
+    visible: "Two permissions.*"
+    timeout: 10000
+- tapOn: "Camera.*"
 - tapOn:
-    id: "email"
-- inputText: "maestro@crewlens.test"
-- hideKeyboard
-- takeScreenshot: 02-sign-in
-- assertVisible: "Send code"
+    text: "Allow"
+    optional: true
+- tapOn: "Continue"
+- tapOn:
+    text: "Ask App Not to Track"
+    optional: true
+# With Superwall off, the plan table shows; a crew of 6-15 starts on the Crew plan.
+- extendedWaitUntil:
+    visible: "Continue with Crew"
+    timeout: 15000
+- takeScreenshot: 05-plan
+- tapOn:
+    id: "plan-continue"
+- extendedWaitUntil:
+    visible: "Save your account"
+    timeout: 15000
+- takeScreenshot: 06-save
+# Quitting here and reopening returns to the plan step, never into the app.
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible:
+      id: "plan-continue"
+    timeout: 30000

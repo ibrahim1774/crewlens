@@ -5,8 +5,8 @@ import { Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors, Radius } from '@/constants/theme';
-import { useSession } from '@/lib/auth';
-import { useCompany, useMembershipChecked } from '@/lib/company';
+import { isGuest, useSession } from '@/lib/auth';
+import { useCompany, useMember, useMembershipChecked } from '@/lib/company';
 import { routeFor } from '@/lib/gate';
 
 const TABS: Record<string, { label: string; icon: SFSymbol; active: SFSymbol; testID: string }> = {
@@ -89,8 +89,9 @@ function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
 export default function TabsLayout() {
   const { session } = useSession();
   const company = useCompany();
+  const member = useMember();
   const checked = useMembershipChecked();
-  const route = routeFor({ session: !!session, membershipChecked: checked, company: !!company });
+  const route = routeFor({ session: !!session, membershipChecked: checked, guest: isGuest(session), company: !!company, owner: member ? member.role === 'owner' : undefined });
   if (route && route !== '/(tabs)') return <Redirect href={route} />;
   return (
     <Tabs tabBar={(props) => <FloatingTabBar {...props} />} screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: Colors.canvas } }}>

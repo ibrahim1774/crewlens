@@ -6,9 +6,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
 import { Body, Heading, Mono } from '@/components/text';
-import { ctaLabel, FEATURES, PLANS, priceLabel, productId, yearlySavingPct, type Period } from '@/constants/plans';
+import { ctaLabel, FEATURES, PLANS, priceLabel, productId, suggestedTier, yearlySavingPct, type Period } from '@/constants/plans';
+import { stepLabel } from '@/constants/onboarding';
 import { Colors, Radius, Space } from '@/constants/theme';
 import { track } from '@/lib/analytics';
+import { isGuest } from '@/lib/auth';
 import { meta } from '@/lib/db';
 import { superwallActive, usePaywall, useRestorePurchases } from '@/lib/paywall';
 import type { Tier } from '@/types/models';
@@ -23,7 +25,8 @@ async function finish(tier: Tier, period: Period, upgrade: boolean) {
     else router.replace('/(tabs)');
     return;
   }
-  router.replace('/(auth)/first-job');
+  // The plan is bought on the guest account; saving it with a phone number comes next.
+  router.replace(isGuest() ? '/(auth)/save' : '/(auth)/first-job');
 }
 
 /** Short cell copy so three columns fit a phone without scrolling. */
@@ -43,6 +46,7 @@ export default function PaywallGate() {
   const compact = height < 760;
   const [period, setPeriod] = useState<Period>('monthly');
   const [tier, setTier] = useState<Tier>('pro');
+  const [answers, setAnswers] = useState<Record<string, string> | null>(fromUpgrade ? {} : null);
   const show = usePaywall();
   const restore = useRestorePurchases();
   const plan = PLANS.find((p) => p.tier === tier) ?? PLANS[1];
@@ -51,19 +55,29 @@ export default function PaywallGate() {
     track('onboarding_step', { step: 'plan', superwall: superwallActive });
   }, []);
 
+  // Their answers pick the starting plan here and reach Superwall as placement parameters.
+  useEffect(() => {
+    if (fromUpgrade) return;
+    void Promise.all(['profile_crew', 'profile_trade', 'profile_photo_home', 'profile_headache'].map((k) => meta.get(k))).then(([crew, trade, home, headache]) => {
+      const suggested = suggestedTier(crew);
+      setTier(suggested);
+      setAnswers({ crew_size: crew ?? '', trade: trade ?? '', photo_home: home ?? '', headache: headache ?? '', suggested_plan: suggested });
+    });
+  }, [fromUpgrade]);
+
   // With Superwall on, its paywall is the plan picker (all plans, both periods), so open it straight away.
   // Closing it leaves this table underneath, whose button opens it again.
   const opened = useRef(false);
   useEffect(() => {
-    if (!superwallActive || opened.current) return;
+    if (!superwallActive || opened.current || !answers) return;
     opened.current = true;
-    void show(fromUpgrade ? 'upgrade_tapped' : 'onboarding_complete', () => void finish('pro', 'monthly', fromUpgrade));
-  }, [show, fromUpgrade]);
+    void show(fromUpgrade ? 'upgrade_tapped' : 'onboarding_complete', () => void finish(tier, 'monthly', fromUpgrade), answers);
+  }, [show, fromUpgrade, answers, tier]);
 
   const choose = () => {
     track('plan_selected', { tier, period, product: productId(tier, period) });
     if (superwallActive) {
-      void show(fromUpgrade ? 'upgrade_tapped' : 'onboarding_complete', () => void finish(tier, period, fromUpgrade));
+      void show(fromUpgrade ? 'upgrade_tapped' : 'onboarding_complete', () => void finish(tier, period, fromUpgrade), answers ?? undefined);
       return;
     }
     void finish(tier, period, fromUpgrade);
@@ -74,7 +88,7 @@ export default function PaywallGate() {
   return (
     <View style={{ flex: 1, backgroundColor: Colors.canvas, paddingTop: insets.top + Space.sm, paddingHorizontal: Space.md }}>
       <View style={{ gap: 4 }}>
-        <Mono color={Colors.ink2} size={11}>{fromUpgrade ? 'Plans' : 'Step 7 of 10'}</Mono>
+        <Mono color={Colors.ink2} size={11}>{fromUpgrade ? 'Plans' : stepLabel('paywall')}</Mono>
         <Heading size={compact ? 28 : 32} bold>{fromUpgrade ? 'Upgrade your plan' : 'Pick your plan'}</Heading>
         <Body size={compact ? 13 : 14} color={Colors.ink2}>Every plan keeps every photo stamped, filed and backed up. Pro adds the paperwork: sign the invoice on the phone and text it to the client.</Body>
       </View>

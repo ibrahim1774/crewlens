@@ -74,17 +74,63 @@ export function useSession(): { session: Session | null; loaded: boolean } {
   return { session: snap, loaded: sessionLoaded };
 }
 
-/** Sign in with Apple. Returns the full name Apple shares on first sign-in, if any. */
 const NOT_CONFIGURED = 'Cloud sign-in is not set up on this build yet.';
 
-export async function signInWithApple(): Promise<{ fullName: string | null }> {
+/** The account "Get started" makes with no details, so the company and the purchase exist before sign-up. */
+export function isGuest(s: Session | null = session): boolean {
+  return s?.user.is_anonymous === true;
+}
+
+export async function startGuest(): Promise<void> {
+  if (!supabaseConfigured) throw new Error(NOT_CONFIGURED);
+  if (session) return;
+  const { error } = await supabase.auth.signInAnonymously();
+  if (error) throw error;
+}
+
+/**
+ * link: attach the phone, email or Apple ID to the guest account, keeping its company and plan.
+ * switch: a guest tapped Sign in for an account they already have, so leave the guest account first.
+ * sign-in: nobody is signed in.
+ */
+export function signInMode(s: { guest: boolean; save: boolean }): 'link' | 'switch' | 'sign-in' {
+  if (!s.guest) return 'sign-in';
+  return s.save ? 'link' : 'switch';
+}
+
+async function prepare(save: boolean): Promise<'link' | 'sign-in'> {
+  const mode = signInMode({ guest: isGuest(), save });
+  if (mode === 'switch') await supabase.auth.signOut();
+  return mode === 'link' ? 'link' : 'sign-in';
+}
+
+/**
+ * Server errors in plain words. An address that already belongs to another account becomes
+ * 'account_exists', which the form turns into its own message.
+ */
+export function friendlyAuthError(e: { code?: string; message: string }): Error {
+  if (e.code === 'phone_exists' || e.code === 'email_exists' || e.code === 'identity_already_exists' || /already (been )?(registered|linked|exists)/i.test(e.message)) {
+    return new Error('account_exists');
+  }
+  if (e.code === 'otp_expired' || /expired or is invalid/i.test(e.message)) return new Error("That code didn't work. Check the 6 digits, or send a new code.");
+  if (e.code?.startsWith('over_') || /rate limit/i.test(e.message)) return new Error('Too many codes in a row. Wait a minute and try again.');
+  return e instanceof Error ? e : new Error(e.message);
+}
+
+/** Sign in with Apple, or attach Apple to the guest account when saving it. Returns the full name Apple shares on first sign-in, if any. */
+
+export async function signInWithApple(save = false): Promise<{ fullName: string | null }> {
   if (!supabaseConfigured) throw new Error(NOT_CONFIGURED);
   const credential = await AppleAuthentication.signInAsync({
     requestedScopes: [AppleAuthentication.AppleAuthenticationScope.FULL_NAME, AppleAuthentication.AppleAuthenticationScope.EMAIL],
   });
   if (!credential.identityToken) throw new Error('apple_no_token');
-  const { error } = await supabase.auth.signInWithIdToken({ provider: 'apple', token: credential.identityToken });
-  if (error) throw error;
+  const mode = await prepare(save);
+  const { error } =
+    mode === 'link'
+      ? await supabase.auth.linkIdentity({ provider: 'apple', token: credential.identityToken })
+      : await supabase.auth.signInWithIdToken({ provider: 'apple', token: credential.identityToken });
+  if (error) throw friendlyAuthError(error);
   const { data } = await supabase.auth.getUser();
   if (data.user) await ensureMembershipChecked(data.user.id);
   const n = credential.fullName;
@@ -95,13 +141,15 @@ export async function signInWithApple(): Promise<{ fullName: string | null }> {
 /** Where the email's link lands: the app itself. Must be in the Supabase redirect allow-list. */
 export const AUTH_CALLBACK_URL = 'crewlens://auth/callback';
 
-export async function sendEmailCode(email: string): Promise<void> {
+export async function sendEmailCode(email: string, save = false): Promise<void> {
   if (!supabaseConfigured) throw new Error(NOT_CONFIGURED);
-  const { error } = await supabase.auth.signInWithOtp({
-    email: email.trim().toLowerCase(),
-    options: { shouldCreateUser: true, emailRedirectTo: AUTH_CALLBACK_URL },
-  });
-  if (error) throw error;
+  const address = email.trim().toLowerCase();
+  const mode = await prepare(save);
+  const { error } =
+    mode === 'link'
+      ? await supabase.auth.updateUser({ email: address }, { emailRedirectTo: AUTH_CALLBACK_URL })
+      : await supabase.auth.signInWithOtp({ email: address, options: { shouldCreateUser: true, emailRedirectTo: AUTH_CALLBACK_URL } });
+  if (error) throw friendlyAuthError(error);
 }
 
 /**
@@ -163,25 +211,28 @@ export function formatUSPhone(input: string): string {
   return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
 }
 
-export async function sendPhoneCode(phone: string): Promise<void> {
+export async function sendPhoneCode(phone: string, save = false): Promise<void> {
   if (!supabaseConfigured) throw new Error(NOT_CONFIGURED);
   const e164 = toE164US(phone);
   if (!e164) throw new Error('Enter a 10-digit US mobile number.');
-  const { error } = await supabase.auth.signInWithOtp({ phone: e164, options: { shouldCreateUser: true } });
-  if (error) throw error;
+  const mode = await prepare(save);
+  const { error } = mode === 'link' ? await supabase.auth.updateUser({ phone: e164 }) : await supabase.auth.signInWithOtp({ phone: e164, options: { shouldCreateUser: true } });
+  if (error) throw friendlyAuthError(error);
 }
 
-export async function verifyPhoneCode(phone: string, code: string): Promise<void> {
+export async function verifyPhoneCode(phone: string, code: string, save = false): Promise<void> {
   const e164 = toE164US(phone);
   if (!e164) throw new Error('Enter a 10-digit US mobile number.');
-  const { data, error } = await supabase.auth.verifyOtp({ phone: e164, token: code.trim(), type: 'sms' });
-  if (error) throw error;
+  const link = signInMode({ guest: isGuest(), save }) === 'link';
+  const { data, error } = await supabase.auth.verifyOtp({ phone: e164, token: code.trim(), type: link ? 'phone_change' : 'sms' });
+  if (error) throw friendlyAuthError(error);
   if (data.user) await ensureMembershipChecked(data.user.id);
 }
 
-export async function verifyEmailCode(email: string, code: string): Promise<void> {
-  const { data, error } = await supabase.auth.verifyOtp({ email: email.trim().toLowerCase(), token: code.trim(), type: 'email' });
-  if (error) throw error;
+export async function verifyEmailCode(email: string, code: string, save = false): Promise<void> {
+  const link = signInMode({ guest: isGuest(), save }) === 'link';
+  const { data, error } = await supabase.auth.verifyOtp({ email: email.trim().toLowerCase(), token: code.trim(), type: link ? 'email_change' : 'email' });
+  if (error) throw friendlyAuthError(error);
   if (data.user) await ensureMembershipChecked(data.user.id);
 }
 

@@ -8,8 +8,11 @@ import { Linking, Pressable, View } from 'react-native';
 import { Button } from '@/components/button';
 import { Screen } from '@/components/screen';
 import { Body, Heading, Mono } from '@/components/text';
+import { stepLabel } from '@/constants/onboarding';
 import { Colors, Radius, Space } from '@/constants/theme';
 import { requestTrackingThenStart, track } from '@/lib/analytics';
+import { isGuest } from '@/lib/auth';
+import { getMember } from '@/lib/company';
 
 type RowProps = { icon: string; title: string; why: string; granted: boolean; onPress: () => void; blocked?: boolean };
 
@@ -52,13 +55,15 @@ export default function Permissions() {
       setAsked(true);
       await requestTrackingThenStart();
     }
-    router.replace('/(auth)/paywall');
+    // Only the owner pays; someone who joined a crew is covered by the owner's plan.
+    if (getMember()?.role !== 'member') router.replace('/(auth)/paywall');
+    else router.replace(isGuest() ? '/(auth)/save' : '/(auth)/first-job');
   };
 
   return (
     <Screen footer={<Button title="Continue" onPress={next} disabled={!camera?.granted} />}>
       <View style={{ gap: Space.sm }}>
-        <Mono color={Colors.ink2} size={11}>Step 6 of 10</Mono>
+        <Mono color={Colors.ink2} size={11}>{stepLabel('permissions')}</Mono>
         <Heading size={34} bold>Two permissions, zero sorting</Heading>
         <Body color={Colors.ink2}>Camera takes the photo. Location files it to the right job and stamps where it was taken, so you never sort a camera roll again.</Body>
       </View>

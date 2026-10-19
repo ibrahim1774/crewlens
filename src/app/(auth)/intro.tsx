@@ -123,7 +123,7 @@ export default function Intro() {
         else router.replace('/(tabs)');
         return;
       }
-      router.replace('/(auth)/sign-in');
+      router.replace('/(auth)/benefits');
     },
     [index, replay],
   );

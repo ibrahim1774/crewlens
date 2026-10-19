@@ -7,6 +7,7 @@ import { Field } from '@/components/field';
 import { Screen } from '@/components/screen';
 import { Stamp } from '@/components/stamp';
 import { Body, Heading, Mono } from '@/components/text';
+import { stepLabel } from '@/constants/onboarding';
 import { Colors, Space } from '@/constants/theme';
 import { track } from '@/lib/analytics';
 import { initialsFor, useCompany } from '@/lib/company';
@@ -30,9 +31,16 @@ export default function Name() {
   };
 
   return (
-    <Screen footer={<Button title="Continue" onPress={next} disabled={name.trim().length < 2} />}>
+    <Screen
+      footer={
+        <>
+          <Button title="Continue" onPress={next} disabled={name.trim().length < 2} testID="name-continue" />
+          {/* Tapped Get started by mistake? Sign in leaves the empty guest account for the real one. */}
+          <Button title="Already have an account? Sign in" variant="ghost" onPress={() => router.push('/(auth)/sign-in')} testID="name-sign-in" />
+        </>
+      }>
       <View style={{ gap: Space.sm }}>
-        <Mono color={Colors.ink2} size={11}>Step 3 of 10</Mono>
+        <Mono color={Colors.ink2} size={11}>{stepLabel('name')}</Mono>
         <Heading size={34} bold>Who is shooting?</Heading>
         <Body color={Colors.ink2}>Your initials go on every photo you take, so the office knows who was on site without asking.</Body>
       </View>

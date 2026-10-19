@@ -31,3 +31,13 @@ test('labels and product ids follow the store naming', () => {
 test('the plans table never prices something the store cannot sell', () => {
   for (const row of FEATURES) for (const v of row.values) expect(v).not.toMatch(/\$/);
 });
+
+import { suggestedTier } from '@/constants/plans';
+
+test('bigger crews start on the Crew plan, everyone else on Pro', () => {
+  expect(suggestedTier('6–15')).toBe('crew');
+  expect(suggestedTier('16+')).toBe('crew');
+  expect(suggestedTier('2–5')).toBe('pro');
+  expect(suggestedTier('Just me')).toBe('pro');
+  expect(suggestedTier(null)).toBe('pro');
+});
