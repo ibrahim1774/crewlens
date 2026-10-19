@@ -9,11 +9,16 @@ import { Screen } from '@/components/screen';
 import { Body, Heading, Mono } from '@/components/text';
 import { Colors, Radius, Space } from '@/constants/theme';
 import { track } from '@/lib/analytics';
-import { normalizeCode, sendEmailCode, signInWithApple, verifyEmailCode } from '@/lib/auth';
+import { formatUSPhone, normalizeCode, sendEmailCode, sendPhoneCode, signInWithApple, toE164US, verifyEmailCode, verifyPhoneCode } from '@/lib/auth';
 import { meta } from '@/lib/db';
 
+type Method = 'phone' | 'email';
+
+/** Phone number first (a texted code iOS fills in for you), then Apple, with email one tap away. */
 export default function SignIn() {
   const [appleAvailable, setAppleAvailable] = useState(false);
+  const [method, setMethod] = useState<Method>('phone');
+  const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [sent, setSent] = useState(false);
@@ -43,7 +48,8 @@ export default function SignIn() {
   const send = async () => {
     setBusy(true);
     try {
-      await sendEmailCode(email);
+      if (method === 'phone') await sendPhoneCode(phone);
+      else await sendEmailCode(email);
       setSent(true);
     } catch (e) {
       fail(e);
@@ -56,8 +62,9 @@ export default function SignIn() {
     if (busy) return;
     setBusy(true);
     try {
-      await verifyEmailCode(email, value);
-      track('sign_in', { method: 'email' });
+      if (method === 'phone') await verifyPhoneCode(phone, value);
+      else await verifyEmailCode(email, value);
+      track('sign_in', { method });
       router.replace('/');
     } catch (e) {
       fail(e);
@@ -65,6 +72,15 @@ export default function SignIn() {
       setBusy(false);
     }
   };
+
+  const switchTo = (next: Method) => {
+    setMethod(next);
+    setSent(false);
+    setCode('');
+  };
+
+  const ready = method === 'phone' ? toE164US(phone) !== null : email.includes('@');
+  const sentTo = method === 'phone' ? phone : email.trim();
 
   return (
     <Screen>
@@ -74,38 +90,41 @@ export default function SignIn() {
         <Body color={Colors.ink2}>Your jobs, photos and paperwork back up to your account. A lost or broken phone never means a lost job.</Body>
       </View>
 
-      {appleAvailable ? (
-        <AppleAuthentication.AppleAuthenticationButton
-          buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
-          buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
-          cornerRadius={Radius.card}
-          style={{ height: 52 }}
-          onPress={apple}
+      {method === 'phone' ? (
+        <Field
+          label="Mobile number"
+          value={phone}
+          onChangeText={(t) => setPhone(formatUSPhone(t))}
+          keyboardType="phone-pad"
+          textContentType="telephoneNumber"
+          autoComplete="tel"
+          editable={!sent}
+          placeholder="(555) 555-0123"
+          testID="phone"
         />
-      ) : null}
+      ) : (
+        <Field
+          label="Email"
+          value={email}
+          onChangeText={setEmail}
+          autoCapitalize="none"
+          autoComplete="email"
+          keyboardType="email-address"
+          editable={!sent}
+          placeholder="you@company.com"
+          testID="email"
+        />
+      )}
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: Space.sm }}>
-        <View style={{ flex: 1, height: 1, backgroundColor: Colors.hairline }} />
-        <Mono color={Colors.ink2} size={11}>Or email</Mono>
-        <View style={{ flex: 1, height: 1, backgroundColor: Colors.hairline }} />
-      </View>
-
-      <Field
-        label="Email"
-        value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-        autoComplete="email"
-        keyboardType="email-address"
-        editable={!sent}
-        placeholder="you@company.com"
-        testID="email"
-      />
       {sent ? (
         <View style={{ gap: Space.sm }}>
           <View style={{ borderWidth: 1, borderColor: Colors.hairline, borderRadius: Radius.card, backgroundColor: Colors.surface, padding: Space.md, gap: 4 }}>
-            <Heading size={18}>Check your email</Heading>
-            <Body size={13} color={Colors.ink2}>We sent a 6-digit code to {email.trim()}. Enter it below and you&apos;re signed in as soon as the sixth digit is in. On this phone you can also tap the link in the email.</Body>
+            <Heading size={18}>{method === 'phone' ? 'Check your texts' : 'Check your email'}</Heading>
+            <Body size={13} color={Colors.ink2}>
+              {method === 'phone'
+                ? `We texted a 6-digit code to ${sentTo}. Tap it above the keyboard and you're signed in.`
+                : `We sent a 6-digit code to ${sentTo}. Enter it below and you're signed in as soon as the sixth digit is in. On this phone you can also tap the link in the email.`}
+            </Body>
           </View>
           <Field
             label="6-digit code"
@@ -122,14 +141,39 @@ export default function SignIn() {
             placeholder="000000"
             testID="code"
           />
+          <Button title="Verify code" onPress={() => void verify()} loading={busy} disabled={code.length < 6} />
+          <Button title={method === 'phone' ? 'Use a different number' : 'Use a different email'} variant="ghost" onPress={() => switchTo(method)} />
         </View>
-      ) : null}
-      {sent ? (
-        <Button title="Verify code" onPress={() => void verify()} loading={busy} disabled={code.length < 6} variant="secondary" />
       ) : (
-        <Button title="Send code" onPress={send} loading={busy} disabled={!email.includes('@')} variant="secondary" />
+        <Button title={method === 'phone' ? 'Text me a code' : 'Send code'} onPress={send} loading={busy} disabled={!ready} testID="send-code" />
       )}
-      {sent ? <Button title="Use a different email" variant="ghost" onPress={() => { setSent(false); setCode(''); }} /> : null}
+
+      {!sent ? (
+        <>
+          {appleAvailable ? (
+            <>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: Space.sm }}>
+                <View style={{ flex: 1, height: 1, backgroundColor: Colors.hairline }} />
+                <Mono color={Colors.ink2} size={11}>Or</Mono>
+                <View style={{ flex: 1, height: 1, backgroundColor: Colors.hairline }} />
+              </View>
+              <AppleAuthentication.AppleAuthenticationButton
+                buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+                buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE_OUTLINE}
+                cornerRadius={Radius.card}
+                style={{ height: 52 }}
+                onPress={apple}
+              />
+            </>
+          ) : null}
+          <Button
+            title={method === 'phone' ? 'Use email instead' : 'Use phone number instead'}
+            variant="ghost"
+            onPress={() => switchTo(method === 'phone' ? 'email' : 'phone')}
+            testID={method === 'phone' ? 'use-email' : 'use-phone'}
+          />
+        </>
+      ) : null}
     </Screen>
   );
 }
