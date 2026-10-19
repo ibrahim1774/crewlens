@@ -7,9 +7,10 @@ import { Button } from '@/components/button';
 import { Field } from '@/components/field';
 import { Screen } from '@/components/screen';
 import { Body, Heading, Mono } from '@/components/text';
-import { stepLabel } from '@/constants/onboarding';
+import { registersAt, stepLabel } from '@/constants/onboarding';
 import { Colors, Radius, Space } from '@/constants/theme';
-import { track } from '@/lib/analytics';
+import { track, trackRegistration } from '@/lib/analytics';
+import { getMember } from '@/lib/company';
 import { formatUSPhone, normalizeCode, sendEmailCode, sendPhoneCode, signInWithApple, toE164US, verifyEmailCode, verifyPhoneCode } from '@/lib/auth';
 import { meta } from '@/lib/db';
 
@@ -47,6 +48,8 @@ export function SignInForm({ save = false }: { save?: boolean }) {
 
   const done = (how: string) => {
     track(save ? 'account_saved' : 'sign_in', { method: how });
+    // The guest became a real account just now; this is the registration ad networks should count.
+    if (registersAt({ step: 'save', guest: save })) trackRegistration(getMember()?.role === 'member' ? 'join' : 'create');
     // Saving keeps going through onboarding; a sign-in goes back to the gate, which knows where this account belongs.
     router.replace(save ? '/(auth)/first-job' : '/');
   };
