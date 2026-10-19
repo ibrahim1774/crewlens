@@ -11,20 +11,16 @@ import { registersAt, stepLabel } from '@/constants/onboarding';
 import { Colors, Radius, Space } from '@/constants/theme';
 import { track, trackRegistration } from '@/lib/analytics';
 import { getMember } from '@/lib/company';
-import { formatUSPhone, normalizeCode, sendEmailCode, sendPhoneCode, signInWithApple, toE164US, verifyEmailCode, verifyPhoneCode } from '@/lib/auth';
+import { normalizeCode, sendEmailCode, signInWithApple, verifyEmailCode } from '@/lib/auth';
 import { meta } from '@/lib/db';
 
-type Method = 'phone' | 'email';
-
 /**
- * Phone number first (a texted code iOS fills in for you), then Apple, with email one tap away.
- * `save` is the onboarding step after the plan: it attaches the number to the guest account that
+ * Email code first, then Apple.
+ * `save` is the onboarding step after the plan: it attaches the email or Apple ID to the guest account that
  * already holds the company and the purchase. Without it, this is Sign in for an existing account.
  */
 export function SignInForm({ save = false }: { save?: boolean }) {
   const [appleAvailable, setAppleAvailable] = useState(false);
-  const [method, setMethod] = useState<Method>('phone');
-  const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [sent, setSent] = useState(false);
@@ -38,7 +34,7 @@ export function SignInForm({ save = false }: { save?: boolean }) {
   const fail = (e: unknown) => {
     if (e instanceof Error && e.message === 'account_exists') {
       Alert.alert(
-        method === 'phone' ? 'That number already has an account' : 'That email already has an account',
+        'That email already has an account',
         save ? 'Use a different one to save this account. Signing in to the other account would leave the setup you just did behind.' : 'Try signing in with it instead.',
       );
       return;
@@ -70,8 +66,7 @@ export function SignInForm({ save = false }: { save?: boolean }) {
   const send = async () => {
     setBusy(true);
     try {
-      if (method === 'phone') await sendPhoneCode(phone, save);
-      else await sendEmailCode(email, save);
+      await sendEmailCode(email, save);
       setSent(true);
     } catch (e) {
       fail(e);
@@ -84,9 +79,8 @@ export function SignInForm({ save = false }: { save?: boolean }) {
     if (busy) return;
     setBusy(true);
     try {
-      if (method === 'phone') await verifyPhoneCode(phone, value, save);
-      else await verifyEmailCode(email, value, save);
-      done(method);
+      await verifyEmailCode(email, value, save);
+      done('email');
     } catch (e) {
       fail(e);
     } finally {
@@ -94,14 +88,12 @@ export function SignInForm({ save = false }: { save?: boolean }) {
     }
   };
 
-  const switchTo = (next: Method) => {
-    setMethod(next);
+  const reset = () => {
     setSent(false);
     setCode('');
   };
 
-  const ready = method === 'phone' ? toE164US(phone) !== null : /^\S+@\S+\.\S+$/.test(email.trim());
-  const sentTo = method === 'phone' ? phone : email.trim();
+  const ready = /^\S+@\S+\.\S+$/.test(email.trim());
 
   return (
     <Screen>
@@ -115,19 +107,6 @@ export function SignInForm({ save = false }: { save?: boolean }) {
         </Body>
       </View>
 
-      {method === 'phone' ? (
-        <Field
-          label="Mobile number"
-          value={phone}
-          onChangeText={(t) => setPhone(formatUSPhone(t))}
-          keyboardType="phone-pad"
-          textContentType="telephoneNumber"
-          autoComplete="tel"
-          editable={!sent}
-          placeholder="(555) 555-0123"
-          testID="phone"
-        />
-      ) : (
         <Field
           label="Email"
           value={email}
@@ -139,17 +118,12 @@ export function SignInForm({ save = false }: { save?: boolean }) {
           placeholder="you@company.com"
           testID="email"
         />
-      )}
 
       {sent ? (
         <View style={{ gap: Space.sm }}>
           <View style={{ borderWidth: 1, borderColor: Colors.hairline, borderRadius: Radius.card, backgroundColor: Colors.surface, padding: Space.md, gap: 4 }}>
-            <Heading size={18}>{method === 'phone' ? 'Check your texts' : 'Check your email'}</Heading>
-            <Body size={13} color={Colors.ink2}>
-              {method === 'phone'
-                ? `We texted a 6-digit code to ${sentTo}. Tap it above the keyboard and you're in.`
-                : `We sent a 6-digit code to ${sentTo}. Enter it below and you're in as soon as the sixth digit is typed.`}
-            </Body>
+            <Heading size={18}>Check your email</Heading>
+            <Body size={13} color={Colors.ink2}>{`We sent a 6-digit code to ${email.trim()}. Enter it below and you're in as soon as the sixth digit is typed.`}</Body>
           </View>
           <Field
             label="6-digit code"
@@ -169,35 +143,25 @@ export function SignInForm({ save = false }: { save?: boolean }) {
           />
           <Button title="Verify code" onPress={() => void verify()} loading={busy} disabled={code.length < 6} testID="verify-code" />
           <Button title="Send a new code" variant="ghost" onPress={send} disabled={busy} testID="resend-code" />
-          <Button title={method === 'phone' ? 'Use a different number' : 'Use a different email'} variant="ghost" onPress={() => switchTo(method)} />
+          <Button title="Use a different email" variant="ghost" onPress={reset} />
         </View>
       ) : (
-        <Button title={method === 'phone' ? 'Text me a code' : 'Email me a code'} onPress={send} loading={busy} disabled={!ready} testID="send-code" />
+        <Button title="Email me a code" onPress={send} loading={busy} disabled={!ready} testID="send-code" />
       )}
 
-      {!sent ? (
+      {!sent && appleAvailable ? (
         <>
-          {appleAvailable ? (
-            <>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: Space.sm }}>
-                <View style={{ flex: 1, height: 1, backgroundColor: Colors.hairline }} />
-                <Mono color={Colors.ink2} size={11}>Or</Mono>
-                <View style={{ flex: 1, height: 1, backgroundColor: Colors.hairline }} />
-              </View>
-              <AppleAuthentication.AppleAuthenticationButton
-                buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
-                buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE_OUTLINE}
-                cornerRadius={Radius.card}
-                style={{ height: 52 }}
-                onPress={apple}
-              />
-            </>
-          ) : null}
-          <Button
-            title={method === 'phone' ? 'Use email instead' : 'Use phone number instead'}
-            variant="ghost"
-            onPress={() => switchTo(method === 'phone' ? 'email' : 'phone')}
-            testID={method === 'phone' ? 'use-email' : 'use-phone'}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: Space.sm }}>
+            <View style={{ flex: 1, height: 1, backgroundColor: Colors.hairline }} />
+            <Mono color={Colors.ink2} size={11}>Or</Mono>
+            <View style={{ flex: 1, height: 1, backgroundColor: Colors.hairline }} />
+          </View>
+          <AppleAuthentication.AppleAuthenticationButton
+            buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+            buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE_OUTLINE}
+            cornerRadius={Radius.card}
+            style={{ height: 52 }}
+            onPress={apple}
           />
         </>
       ) : null}

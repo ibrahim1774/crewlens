@@ -25,7 +25,7 @@ async function finish(tier: Tier, period: Period, upgrade: boolean) {
     else router.replace('/(tabs)');
     return;
   }
-  // The plan is bought on the guest account; saving it with a phone number comes next.
+  // The plan is bought on the guest account; saving it with an email or Apple comes next.
   router.replace(isGuest() ? '/(auth)/save' : '/(auth)/first-job');
 }
 

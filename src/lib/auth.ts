@@ -190,45 +190,6 @@ export function normalizeCode(input: string): string {
   return input.replace(/\D/g, '').slice(0, 6);
 }
 
-/** Ten US digits, without the +1 a person may or may not have typed. */
-function usDigits(input: string): string {
-  const d = input.replace(/\D/g, '');
-  return d.length === 11 && d.startsWith('1') ? d.slice(1) : d;
-}
-
-/** A US mobile number in the +1XXXXXXXXXX form Supabase sends texts to, or null if it is not one. */
-export function toE164US(input: string): string | null {
-  const d = usDigits(input);
-  return /^[2-9]\d{9}$/.test(d) ? `+1${d}` : null;
-}
-
-/** Formats the field as it is typed: (347) 613-1906. */
-export function formatUSPhone(input: string): string {
-  const d = usDigits(input).slice(0, 10);
-  if (!d) return '';
-  if (d.length <= 3) return `(${d}`;
-  if (d.length <= 6) return `(${d.slice(0, 3)}) ${d.slice(3)}`;
-  return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
-}
-
-export async function sendPhoneCode(phone: string, save = false): Promise<void> {
-  if (!supabaseConfigured) throw new Error(NOT_CONFIGURED);
-  const e164 = toE164US(phone);
-  if (!e164) throw new Error('Enter a 10-digit US mobile number.');
-  const mode = await prepare(save);
-  const { error } = mode === 'link' ? await supabase.auth.updateUser({ phone: e164 }) : await supabase.auth.signInWithOtp({ phone: e164, options: { shouldCreateUser: true } });
-  if (error) throw friendlyAuthError(error);
-}
-
-export async function verifyPhoneCode(phone: string, code: string, save = false): Promise<void> {
-  const e164 = toE164US(phone);
-  if (!e164) throw new Error('Enter a 10-digit US mobile number.');
-  const link = signInMode({ guest: isGuest(), save }) === 'link';
-  const { data, error } = await supabase.auth.verifyOtp({ phone: e164, token: code.trim(), type: link ? 'phone_change' : 'sms' });
-  if (error) throw friendlyAuthError(error);
-  if (data.user) await ensureMembershipChecked(data.user.id);
-}
-
 export async function verifyEmailCode(email: string, code: string, save = false): Promise<void> {
   const link = signInMode({ guest: isGuest(), save }) === 'link';
   const { data, error } = await supabase.auth.verifyOtp({ email: email.trim().toLowerCase(), token: code.trim(), type: link ? 'email_change' : 'email' });

@@ -23,9 +23,6 @@ env:
 - extendedWaitUntil:
     visible: "Welcome back.*"
     timeout: 15000
-# Phone is the default; email is one tap away.
-- tapOn:
-    id: "use-email"
 - tapOn:
     id: "email"
 - eraseText
