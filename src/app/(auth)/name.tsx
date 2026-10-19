@@ -1,5 +1,5 @@
-import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
 
 import { Button } from '@/components/button';
@@ -16,10 +16,14 @@ import { meta } from '@/lib/db';
 export default function Name() {
   const [name, setName] = useState('');
   const company = useCompany();
-  useEffect(() => {
-    // A slow membership lookup resolved after the gate: this user already has a company.
-    if (company) router.replace('/(tabs)');
-  }, [company]);
+  // A slow membership lookup resolved after the gate: this user already has a company.
+  // Only while this screen is showing: it stays mounted under the later steps, and the company
+  // those steps create must not yank the person out of onboarding.
+  useFocusEffect(
+    useCallback(() => {
+      if (company) router.replace('/');
+    }, [company]),
+  );
   useEffect(() => {
     track('onboarding_step', { step: 'name' });
     meta.get('pending_name').then((n) => n && setName(n));
