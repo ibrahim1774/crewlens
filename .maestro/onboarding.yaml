@@ -57,12 +57,12 @@ env:
 - tapOn:
     id: "tailor-continue"
 - extendedWaitUntil:
-    visible: "Has this happened to you?"
+    visible: "What slows you down?"
     timeout: 10000
 - tapOn:
     id: "moment-camera_roll"
 - tapOn:
-    id: "moment-crew_phones"
+    id: "moment-scattered"
 - scrollUntilVisible:
     element:
       id: "moment-invoice"
@@ -89,7 +89,7 @@ env:
     visible: "Set up for.*"
     timeout: 10000
 - assertVisible: "Sign and send it on site"
-- assertVisible: "Everyone's photos in one job"
+- assertVisible: "Everyone's photos in one place"
 - takeScreenshot: 04-setup
 - tapOn:
     id: "setup-continue"

@@ -7,7 +7,6 @@ import { Pressable, View } from 'react-native';
 import { Button } from '@/components/button';
 import { Screen } from '@/components/screen';
 import { Body, Heading, Mono } from '@/components/text';
-import { stepLabel } from '@/constants/onboarding';
 import { Colors, Radius, Space } from '@/constants/theme';
 import { track } from '@/lib/analytics';
 import { meta } from '@/lib/db';
@@ -72,7 +71,6 @@ export default function ShareDocs() {
   return (
     <Screen footer={<Button title="Go to my jobs" onPress={finish} testID="onboarding-finish" />}>
       <View style={{ gap: Space.sm }}>
-        <Mono color={Colors.ink2} size={11}>{stepLabel('share-docs')}</Mono>
         <Heading size={34} bold>One link for the client. The paperwork next to the proof.</Heading>
         <Body color={Colors.ink2}>The live link shows every photo as you shoot. Documents keep the invoice and contract with the job, so nothing gets lost in email or a text thread.</Body>
       </View>

@@ -1,4 +1,4 @@
-import { plural, timeAgo } from '@/lib/time';
+import { plural, timeAgo, waitAtMost } from '@/lib/time';
 
 const now = Date.parse('2026-10-17T12:00:00Z');
 test('relative times', () => {
@@ -12,4 +12,16 @@ test('relative times', () => {
 test('plural', () => {
   expect(plural(1, 'photo')).toBe('1 photo');
   expect(plural(3, 'photo')).toBe('3 photos');
+});
+
+test('waitAtMost resolves when the work finishes first', async () => {
+  let done = false;
+  await waitAtMost(new Promise<void>((r) => setTimeout(() => { done = true; r(); }, 5)), 1000);
+  expect(done).toBe(true);
+});
+
+test('waitAtMost gives up after the limit so a slow network never blocks the paywall', async () => {
+  const start = Date.now();
+  await waitAtMost(new Promise<void>(() => {}), 30);
+  expect(Date.now() - start).toBeLessThan(500);
 });

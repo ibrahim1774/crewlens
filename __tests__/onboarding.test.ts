@@ -1,14 +1,3 @@
-import { stepLabel } from '@/constants/onboarding';
-
-test('steps count in order: questions, the plan, the account, then permissions once they have paid', () => {
-  expect(stepLabel('name')).toBe('Step 1 of 10');
-  expect(stepLabel('moments')).toBe('Step 4 of 10');
-  expect(stepLabel('paywall')).toBe('Step 5 of 10');
-  expect(stepLabel('save')).toBe('Step 6 of 10');
-  expect(stepLabel('permissions')).toBe('Step 7 of 10');
-  expect(stepLabel('share-docs')).toBe('Step 10 of 10');
-});
-
 import { registersAt } from '@/constants/onboarding';
 
 test('registration counts once per person: at save for guests, at the company for people who signed in first', () => {

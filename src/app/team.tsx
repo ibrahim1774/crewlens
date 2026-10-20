@@ -8,10 +8,10 @@ import { Alert, Pressable, Share, View } from 'react-native';
 import { Button } from '@/components/button';
 import { Screen } from '@/components/screen';
 import { Body, Heading, Mono } from '@/components/text';
+import { inviteText } from '@/constants/invite';
 import { Colors, Radius, Space } from '@/constants/theme';
 import { track } from '@/lib/analytics';
 import { createInvite, deleteInvite, listInvites, listMembers, removeMember, useCompany, useMember, type Invite } from '@/lib/company';
-import { APP_STORE_URL } from '@/app/(auth)/crew';
 import type { Member } from '@/types/models';
 
 /** Members, open invite codes, and the seat count. Owners invite and remove; members see the list. */
@@ -43,7 +43,7 @@ export default function Team() {
       const inv = await createInvite();
       track('invite_created');
       await load();
-      const message = `Join ${company?.name ?? 'our crew'} on Crew Lens. Install it, sign in, then enter code ${inv.code}: ${APP_STORE_URL}`;
+      const message = inviteText(company?.name, inv.code);
       if (await SMS.isAvailableAsync()) await SMS.sendSMSAsync([], message);
       else await Share.share({ message });
     } catch (e) {
@@ -117,7 +117,7 @@ export default function Team() {
         </View>
       ) : null}
       {owner && !invites.length ? (
-        <Body size={13} color={Colors.ink2}>An invite is a six-character code sent by text. The person installs Crew Lens, signs in, and enters it on the &quot;Your company&quot; step.</Body>
+        <Body size={13} color={Colors.ink2}>An invite is a six-character code sent by text. The person installs Crew Lens, taps Get started, then &quot;Joining a crew?&quot; and enters it.</Body>
       ) : null}
     </Screen>
   );

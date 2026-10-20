@@ -1,9 +1,9 @@
 /**
- * "Has this happened to you?": everyday moments that waste a contractor's time. Each one points at the thing
+ * "What slows you down?": everyday moments that waste a contractor's time. Each one points at the thing
  * Crew Lens is for (photos organized by project, a link for the client, the invoice sent from the job), and the
  * person then watches a short scene of that feature, in the order they picked.
  */
-export type MomentId = 'camera_roll' | 'scattered' | 'crew_phones' | 'sending' | 'updates' | 'invoice' | 'paperwork';
+export type MomentId = 'camera_roll' | 'scattered' | 'sending' | 'updates' | 'invoice';
 export type SceneId = 'organized' | 'share' | 'invoice';
 
 export interface Moment {
@@ -12,24 +12,18 @@ export interface Moment {
   label: string;
 }
 
-type Rule = Moment & { scene: SceneId; fix: string; crewOnly?: boolean };
+type Rule = Moment & { scene: SceneId; fix: string };
 
 const RULES: Rule[] = [
-  { id: 'camera_roll', scene: 'organized', icon: 'photo.on.rectangle.angled', label: 'Job photos get buried in your camera roll', fix: 'Every photo filed by project' },
-  { id: 'scattered', scene: 'organized', icon: 'tray.full', label: 'Photos are spread across texts, email and apps', fix: 'One place for every project' },
-  { id: 'crew_phones', scene: 'organized', icon: 'person.2', label: "Your crew's photos stay on their phones", fix: "Everyone's photos in one job", crewOnly: true },
-  { id: 'sending', scene: 'share', icon: 'paperplane', label: 'Sending a client photos means texting them one by one', fix: 'A whole job in one link' },
-  { id: 'updates', scene: 'share', icon: 'phone', label: 'Clients keep asking how the job is going', fix: 'A link they can check anytime' },
-  { id: 'invoice', scene: 'invoice', icon: 'doc.text', label: 'Invoices go out days after the job is done', fix: 'Sign and send it on site' },
-  { id: 'paperwork', scene: 'invoice', icon: 'folder', label: "Each job's paperwork is somewhere different", fix: 'Documents live with the job' },
+  { id: 'camera_roll', scene: 'organized', icon: 'photo.on.rectangle.angled', label: 'Photos lost in my camera roll', fix: 'Every photo filed by project' },
+  { id: 'scattered', scene: 'organized', icon: 'person.2', label: 'Photos scattered across phones', fix: "Everyone's photos in one place" },
+  { id: 'sending', scene: 'share', icon: 'paperplane', label: 'Texting photos one by one', fix: 'A whole job in one link' },
+  { id: 'updates', scene: 'share', icon: 'phone', label: 'Clients asking for updates', fix: 'A link they can check anytime' },
+  { id: 'invoice', scene: 'invoice', icon: 'doc.text', label: 'Invoices going out late', fix: 'Sign and send it on site' },
 ];
 
-export const MOMENTS: readonly { id: MomentId }[] = RULES.map(({ id }) => ({ id }));
-
-/** The moments to offer. The crew one stays hidden only for someone who said they work alone. */
-export function momentsFor(p: { crew: string | null }): Moment[] {
-  return RULES.filter((r) => !r.crewOnly || p.crew !== 'Just me').map(({ id, icon, label }) => ({ id, icon, label }));
-}
+/** The five options, in the order shown. */
+export const MOMENTS: readonly Moment[] = RULES.map(({ id, icon, label }) => ({ id, icon, label }));
 
 const rule = (id: MomentId) => RULES.find((r) => r.id === id)!;
 
@@ -44,9 +38,9 @@ export function fixFor(id: MomentId): string {
 }
 
 /** "You said": the first moment they picked that this scene answers, or null when it plays as the fallback. */
-export function quoteFor(scene: SceneId, picked: MomentId[], p: { crew: string | null }): string | null {
+export function quoteFor(scene: SceneId, picked: MomentId[]): string | null {
   const id = picked.find((m) => sceneOf(m) === scene);
-  return id ? (momentsFor(p).find((m) => m.id === id)?.label ?? null) : null;
+  return id ? rule(id).label : null;
 }
 
 export const MAX_SCENES = 3;

@@ -1,16 +1,11 @@
-import { MOMENTS, activeStep, fixFor, momentsFor, quoteFor, sceneOf, scenesFor, type MomentId } from '@/constants/moments';
+import { MOMENTS, activeStep, fixFor, quoteFor, sceneOf, scenesFor, type MomentId } from '@/constants/moments';
 
-const ids = (list: { id: MomentId }[]) => list.map((m) => m.id);
 const ALL = ['organized', 'share', 'invoice'] as const;
 
-test('a solo contractor never sees the crew moment', () => {
-  expect(ids(momentsFor({ crew: 'Just me' }))).not.toContain('crew_phones');
-  expect(ids(momentsFor({ crew: 'Just me' }))).toContain('camera_roll');
-});
-
-test('owners with a crew, or who skipped the crew question, see it', () => {
-  expect(ids(momentsFor({ crew: '6–15' }))).toContain('crew_phones');
-  expect(ids(momentsFor({ crew: null }))).toContain('crew_phones');
+test('five short options, each one line on a phone', () => {
+  expect(MOMENTS).toHaveLength(5);
+  for (const m of MOMENTS) expect(m.label.length).toBeLessThanOrEqual(32);
+  expect(new Set(MOMENTS.map((m) => m.label)).size).toBe(5);
 });
 
 test('every moment maps to one of the three things Crew Lens is for', () => {
@@ -25,21 +20,19 @@ test('scenes follow the order picked, play once each, skip scenes without a clip
   expect(scenesFor(['sending', 'invoice'], ['organized', 'invoice'])).toEqual(['invoice']);
 });
 
-test('no picks, or none with a clip yet, still show the organizing scene instead of a dead end', () => {
+test('picks with no clip yet still show the organizing scene instead of a dead end', () => {
   expect(scenesFor([], ALL)).toEqual(['organized']);
   expect(scenesFor(['invoice'], ['organized'])).toEqual(['organized']);
 });
 
 test('the scene quotes the first moment picked for it', () => {
-  expect(quoteFor('organized', ['sending', 'scattered', 'camera_roll'], { crew: null })).toBe('Photos are spread across texts, email and apps');
-  expect(quoteFor('share', [], { crew: null })).toBeNull();
+  const picked: MomentId[] = ['sending', 'scattered', 'camera_roll'];
+  expect(quoteFor('organized', picked)).toBe('Photos scattered across phones');
+  expect(quoteFor('share', [])).toBeNull();
 });
 
-test('every moment has a short fix for the summary and a distinct label', () => {
+test('every moment has a short fix for the summary', () => {
   for (const m of MOMENTS) expect(fixFor(m.id).length).toBeLessThanOrEqual(30);
-  const labels = momentsFor({ crew: '2–5' }).map((m) => m.label);
-  expect(new Set(labels).size).toBe(labels.length);
-  expect(labels).toHaveLength(MOMENTS.length);
 });
 
 test('the step list follows the clip: nothing lit during the opening moment, then each step as its part plays', () => {

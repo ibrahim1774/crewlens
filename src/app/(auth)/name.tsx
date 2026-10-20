@@ -8,7 +8,6 @@ import { Field } from '@/components/field';
 import { Screen } from '@/components/screen';
 import { Stamp } from '@/components/stamp';
 import { Body, Heading, Mono } from '@/components/text';
-import { stepLabel } from '@/constants/onboarding';
 import { Colors, Space } from '@/constants/theme';
 import { track } from '@/lib/analytics';
 import { initialsFor, useCompany } from '@/lib/company';
@@ -35,11 +34,18 @@ export default function Name() {
     router.push('/(auth)/company');
   };
 
+  const join = async () => {
+    if (name.trim()) await meta.set('pending_name', name.trim());
+    router.push('/(auth)/join');
+  };
+
   return (
     <Screen
       footer={
         <>
           <Button title="Continue" onPress={next} disabled={name.trim().length < 2} testID="name-continue" />
+          {/* Crew members skip the company and the plan: the owner's seat covers them. */}
+          <Button title="Joining a crew? Enter your code" variant="ghost" onPress={join} testID="name-join" />
           {/* Tapped Get started by mistake? Sign in leaves the empty guest account for the real one. */}
           <Button title="Already have an account? Sign in" variant="ghost" onPress={() => router.push('/(auth)/sign-in')} testID="name-sign-in" />
         </>
@@ -56,7 +62,6 @@ export default function Name() {
             <SymbolView name="chevron.left" size={14} weight="semibold" tintColor={Colors.ink} />
             <Mono size={13} color={Colors.ink} bold>Back</Mono>
           </Pressable>
-          <Mono color={Colors.ink2} size={11}>{stepLabel('name')}</Mono>
         </View>
         <Heading size={34} bold>Who is shooting?</Heading>
         <Body color={Colors.ink2}>Your initials go on every photo you take, so the office knows who was on site without asking.</Body>

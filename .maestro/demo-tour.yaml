@@ -1,0 +1,89 @@
+appId: com.ibrahim1774.crewlens
+name: Read-only tour of the demo account (Maestro Roofing) - filters, search, share link, invoice, photo viewer, tabs, plans
+# Assumes the demo account is signed in with the jobs "Smith Kitchen Remodel" and "Henderson Roof". Creates nothing.
+env:
+  DEV_URL: "exp+crewlens://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8082"
+---
+- launchApp
+- openLink: ${DEV_URL}
+- tapOn:
+    text: "Open"
+    optional: true
+- tapOn:
+    text: "Continue"
+    optional: true
+- tapOn:
+    text: "Close"
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: "new-job"
+    timeout: 30000
+- tapOn:
+    id: "filter-recent"
+- tapOn:
+    id: "filter-all-jobs"
+- takeScreenshot: t01-all-jobs
+- tapOn:
+    id: "search-jobs"
+- inputText: "Hend"
+- assertVisible: ".*Henderson Roof.*"
+- assertNotVisible: ".*Smith Kitchen Remodel.*"
+- takeScreenshot: t02-search
+- tapOn:
+    id: "search-jobs"
+- tapOn: ".*Smith Kitchen Remodel.*"
+- extendedWaitUntil:
+    visible:
+      id: "job-more"
+    timeout: 10000
+- tapOn:
+    id: "job-share"
+- tapOn: "Live link to this job.*"
+- extendedWaitUntil:
+    visible: "Copied"
+    timeout: 15000
+- takeScreenshot: t03-link-copied
+- tapOn:
+    id: "job-docs"
+- extendedWaitUntil:
+    visible: ".*Sample invoice.*"
+    timeout: 10000
+- tapOn: ".*Sample invoice.*"
+- extendedWaitUntil:
+    visible:
+      id: "doc-close"
+    timeout: 20000
+- takeScreenshot: t04-invoice
+- tapOn:
+    id: "doc-close"
+- tapOn:
+    id: "docs-back"
+- tapOn: ".*14:17.*"
+- extendedWaitUntil:
+    visible:
+      id: "photo-close"
+    timeout: 10000
+- swipe:
+    direction: LEFT
+- takeScreenshot: t05-photo
+- tapOn:
+    id: "photo-close"
+- tapOn: "Back"
+- tapOn:
+    id: "tab-activity"
+- takeScreenshot: t06-activity
+- tapOn:
+    id: "tab-shared"
+- takeScreenshot: t07-shared
+- tapOn:
+    id: "tab-you"
+- assertVisible: "Delete account"
+- assertVisible: "Privacy policy"
+- assertVisible: "Terms of use"
+- takeScreenshot: t08-you
+- tapOn: "Plans"
+- extendedWaitUntil:
+    visible: "Restore"
+    timeout: 15000
+- takeScreenshot: t09-plans

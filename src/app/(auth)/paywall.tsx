@@ -7,7 +7,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '@/components/button';
 import { Body, Heading, Mono } from '@/components/text';
 import { ctaLabel, FEATURES, PLANS, priceLabel, productId, suggestedTier, yearlySavingPct, type Period } from '@/constants/plans';
-import { stepLabel } from '@/constants/onboarding';
 import { Colors, Radius, Space } from '@/constants/theme';
 import { track } from '@/lib/analytics';
 import { isGuest } from '@/lib/auth';
@@ -89,7 +88,7 @@ export default function PaywallGate() {
   return (
     <View style={{ flex: 1, backgroundColor: Colors.canvas, paddingTop: insets.top + Space.sm, paddingHorizontal: Space.md }}>
       <View style={{ gap: 4 }}>
-        <Mono color={Colors.ink2} size={11}>{fromUpgrade ? 'Plans' : stepLabel('paywall')}</Mono>
+        {fromUpgrade ? <Mono color={Colors.ink2} size={11}>Plans</Mono> : null}
         <Heading size={compact ? 28 : 32} bold>{fromUpgrade ? 'Upgrade your plan' : 'Pick your plan'}</Heading>
         <Body size={compact ? 13 : 14} color={Colors.ink2}>Every plan keeps every photo stamped, filed and backed up. Pro adds the paperwork: sign the invoice on the phone and text it to the client.</Body>
       </View>
@@ -153,10 +152,13 @@ export default function PaywallGate() {
 
       <View style={{ flex: 1 }} />
       <View style={{ paddingBottom: insets.bottom + Space.sm, gap: Space.xs }}>
+        {/* The amount they'll be charged reads as clearly as the trial (App Review 3.1.2). */}
+        <Body size={15} bold style={{ textAlign: 'center' }} testID="plan-price">
+          {plan.trialDays > 0 ? `${plan.trialDays} days free, then ${priceLabel(plan, period)}` : priceLabel(plan, period)}
+        </Body>
         <Button title={ctaLabel(plan)} onPress={choose} testID="plan-continue" />
         <Body size={11} color={Colors.ink2} style={{ textAlign: 'center' }}>
-          {plan.trialDays > 0 ? `Free for ${plan.trialDays} days, then ${priceLabel(plan, period)}, renews automatically. ` : `${priceLabel(plan, period)}, renews automatically. `}
-          Cancel any time in the App Store.
+          Renews automatically until you cancel. Cancel any time in the App Store, at least 24 hours before renewal.
         </Body>
         <View style={{ flexDirection: 'row', justifyContent: 'center', gap: Space.lg }}>
           <Pressable onPress={restore} accessibilityRole="button" hitSlop={8} testID="plan-restore">

@@ -3,7 +3,7 @@ import * as Haptics from 'expo-haptics';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Pressable, View } from 'react-native';
+import { Alert, Linking, Pressable, View } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -11,7 +11,7 @@ import { Button } from '@/components/button';
 import { LimitSheet } from '@/components/limit-sheet';
 import { JobChipStrip } from '@/components/job-chip-strip';
 import { Stamp } from '@/components/stamp';
-import { Heading, Mono } from '@/components/text';
+import { Body, Heading, Mono } from '@/components/text';
 import { Colors, Space } from '@/constants/theme';
 import { useCompany, useMember } from '@/lib/company';
 import { consumeCameraJob } from '@/lib/handoff';
@@ -193,7 +193,13 @@ export default function Camera() {
     return (
       <View style={{ flex: 1, backgroundColor: Colors.camera, padding: Space.lg, paddingTop: insets.top + Space.lg, gap: Space.md, justifyContent: 'center' }}>
         <Heading size={30} color={Colors.onCamera}>Camera access is off.</Heading>
-        <Button title="Allow camera" onPress={() => requestPermission()} />
+        <Body color={Colors.onCamera}>Crew Lens needs the camera to take job photos.</Body>
+        {/* iOS asks only once; after a no, the switch lives in Settings. */}
+        {permission.canAskAgain ? (
+          <Button title="Continue" onPress={() => requestPermission()} />
+        ) : (
+          <Button title="Open Settings" onPress={() => Linking.openSettings()} />
+        )}
         <Button title="Close" variant="ghost" onPress={() => router.back()} style={{ borderColor: 'rgba(247,246,242,0.3)' }} />
       </View>
     );

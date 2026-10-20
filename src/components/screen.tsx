@@ -20,6 +20,8 @@ export function Screen({ children, scroll = true, footer, padded = true }: Props
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: Colors.canvas }}>
       {body}
+      {/* Content scrolling up under the clock and battery reads as a glitch; a strip of canvas keeps that area clean. */}
+      {scroll ? <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: insets.top, backgroundColor: Colors.canvas }} /> : null}
       {footer ? <View style={{ padding: Space.md, paddingBottom: insets.bottom + Space.md, gap: Space.sm }}>{footer}</View> : null}
     </KeyboardAvoidingView>
   );

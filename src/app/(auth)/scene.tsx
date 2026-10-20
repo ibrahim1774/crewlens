@@ -53,12 +53,12 @@ export default function Scene() {
 
   useEffect(() => {
     AccessibilityInfo.isReduceMotionEnabled().then(setStill).catch(() => {});
-    Promise.all([meta.get('profile_moments'), meta.get('profile_crew')]).then(([saved, crew]) => {
+    meta.get('profile_moments').then((saved) => {
       const picked = (saved ? saved.split(',') : []) as MomentId[];
       const list = scenesFor(picked, SCENES_WITH_CLIP);
       setScenes(list);
       const scene = list[Math.min(index, list.length - 1)];
-      setQuote(quoteFor(scene, picked, { crew }));
+      setQuote(quoteFor(scene, picked));
       track('onboarding_step', { step: 'scene', scene, index });
     });
   }, [index]);

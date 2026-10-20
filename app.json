@@ -23,8 +23,12 @@
       "expo-font",
       "expo-image",
       "expo-sqlite",
-      "expo-secure-store",
-      "expo-background-task",
+      [
+        "expo-secure-store",
+        {
+          "faceIDPermission": false
+        }
+      ],
       "expo-web-browser",
       "expo-apple-authentication",
       [
@@ -38,14 +42,17 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Crew Lens uses the camera to take job-site photos.",
-          "microphonePermission": "Crew Lens uses the microphone when you record a video on a job."
+          "cameraPermission": "Crew Lens uses the camera to take job-site photos, for example before-and-after shots of a roof repair, stamped and filed to the job.",
+          "microphonePermission": "Crew Lens uses the microphone when you record a short video of a job, for example a walkthrough for the client."
         }
       ],
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Crew Lens uses your location to file photos to the nearest job and to stamp where they were taken."
+          "locationWhenInUsePermission": "Crew Lens uses your location to file each photo to the job you are standing at and to stamp where it was taken.",
+          "locationAlwaysAndWhenInUsePermission": false,
+          "locationAlwaysPermission": false,
+          "isIosBackgroundLocationEnabled": false
         }
       ],
       [

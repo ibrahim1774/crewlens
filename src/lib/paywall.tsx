@@ -7,6 +7,7 @@ import { useSession } from '@/lib/auth';
 import { paywallEnabled } from '@/lib/plan';
 import { notify } from '@/lib/store';
 import { supabase } from '@/lib/supabase';
+import { waitAtMost } from '@/lib/time';
 
 /** Placements configured in the Superwall dashboard (Crew Lens campaign). */
 export type Placement = 'onboarding_complete' | 'subscription_lapsed' | 'upgrade_tapped';
@@ -16,6 +17,11 @@ export const SUPERWALL_KEY = process.env.EXPO_PUBLIC_SUPERWALL_API_KEY ?? '';
 export const superwallActive = paywallEnabled && SUPERWALL_KEY.length > 0;
 
 let entitled = !paywallEnabled;
+/**
+ * Settles once Superwall knows this account's alias. Superwall keeps the first user id a purchase is made under,
+ * so a paywall shown before this would credit the purchase to an anonymous id the webhook can't match.
+ */
+let identified: Promise<unknown> = Promise.resolve();
 export function hasEntitlement(): boolean {
   return entitled;
 }
@@ -28,9 +34,9 @@ export function SubscriptionSync() {
   useEffect(() => {
     if (!session?.user.id) return;
     // Opaque alias from the server, so purchases can only ever be attributed to this account.
-    supabase.rpc('superwall_alias').then(
-      ({ data }) => {
-        if (typeof data === 'string') identify(data).catch(() => {});
+    identified = Promise.resolve(supabase.rpc('superwall_alias')).then(
+      async ({ data }) => {
+        if (typeof data === 'string') await identify(data).catch(() => {});
       },
       () => null,
     );
@@ -85,6 +91,7 @@ function useSuperwallPaywall() {
     lastRequest = now;
     track('placement_registered', { placement });
     try {
+      await waitAtMost(identified, 5000);
       await registerPlacement({ placement, params, feature: onAccess });
     } catch (e) {
       console.warn('Superwall register failed', e);

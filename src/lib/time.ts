@@ -15,3 +15,10 @@ export function timeAgo(iso: string | null, now: number = Date.now()): string {
 export function plural(n: number, one: string, many = `${one}s`): string {
   return `${n} ${n === 1 ? one : many}`;
 }
+
+/** Waits for `work`, but never longer than `ms`; resolves either way and never throws. */
+export async function waitAtMost(work: Promise<unknown>, ms: number): Promise<void> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  await Promise.race([work.catch(() => {}), new Promise<void>((r) => (timer = setTimeout(r, ms)))]);
+  clearTimeout(timer);
+}

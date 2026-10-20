@@ -135,7 +135,7 @@ export default function You() {
       </Section>
 
       <Mono size={11} color={Colors.ink2} style={{ textAlign: 'center' }}>
-        Crew lens {Application.nativeApplicationVersion ?? '1.0.0'} ({Application.nativeBuildVersion ?? '1'})
+        Crew Lens {Application.nativeApplicationVersion ?? '1.0.0'} ({Application.nativeBuildVersion ?? '1'})
       </Mono>
     </Screen>
   );

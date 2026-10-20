@@ -6,8 +6,8 @@ import { Button } from '@/components/button';
 import { Chips } from '@/components/chips';
 import { Field } from '@/components/field';
 import { Screen } from '@/components/screen';
-import { Body, Heading, Mono } from '@/components/text';
-import { registersAt, stepLabel } from '@/constants/onboarding';
+import { Body, Heading } from '@/components/text';
+import { registersAt } from '@/constants/onboarding';
 import { Colors, Space } from '@/constants/theme';
 import { track, trackRegistration } from '@/lib/analytics';
 import { getSession, isGuest, startGuest } from '@/lib/auth';
@@ -55,7 +55,6 @@ export default function CompanyScreen() {
     <Screen
       footer={<Button title="Continue" onPress={next} loading={busy} disabled={name.trim().length < 2 || !trade} />}>
       <View style={{ gap: Space.sm }}>
-        <Mono color={Colors.ink2} size={11}>{stepLabel('company')}</Mono>
         <Heading size={34} bold>Your company</Heading>
         <Body color={Colors.ink2}>Every job, photo and document lives under the company, not on one person&apos;s phone. Nothing walks off when someone leaves.</Body>
       </View>

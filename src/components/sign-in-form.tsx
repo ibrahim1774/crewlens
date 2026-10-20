@@ -7,7 +7,7 @@ import { Button } from '@/components/button';
 import { Field } from '@/components/field';
 import { Screen } from '@/components/screen';
 import { Body, Heading, Mono } from '@/components/text';
-import { registersAt, stepLabel } from '@/constants/onboarding';
+import { registersAt } from '@/constants/onboarding';
 import { Colors, Radius, Space } from '@/constants/theme';
 import { track, trackRegistration } from '@/lib/analytics';
 import { getMember } from '@/lib/company';
@@ -25,51 +25,62 @@ export function SignInForm({ save = false }: { save?: boolean }) {
   const [code, setCode] = useState('');
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
+  // Saving links the email or Apple ID to this guest account; if that one already has an account, they can switch to it.
+  const [linking, setLinking] = useState(save);
 
   useEffect(() => {
     track('onboarding_step', { step: save ? 'save_account' : 'sign_in' });
     AppleAuthentication.isAvailableAsync().then(setAppleAvailable).catch(() => setAppleAvailable(false));
   }, [save]);
 
-  const fail = (e: unknown) => {
+  const fail = (e: unknown, signInInstead?: () => void) => {
     if (e instanceof Error && e.message === 'account_exists') {
-      Alert.alert(
-        'That email already has an account',
-        save ? 'Use a different one to save this account. Signing in to the other account would leave the setup you just did behind.' : 'Try signing in with it instead.',
-      );
+      if (linking && signInInstead) {
+        Alert.alert('You already have an account', 'Use a different one to save this setup, or sign in to the account you have. Plans you bought restore from Plans in the You tab.', [
+          { text: 'Use a different one', style: 'cancel' },
+          {
+            text: 'Sign in to it',
+            onPress: () => {
+              track('account_switched');
+              setLinking(false);
+              signInInstead();
+            },
+          },
+        ]);
+      } else Alert.alert('That email already has an account', 'Try signing in with it instead.');
       return;
     }
-    Alert.alert(save ? 'Could not save your account' : 'Could not sign in', e instanceof Error ? e.message : 'Try again.');
+    Alert.alert(linking ? 'Could not save your account' : 'Could not sign in', e instanceof Error ? e.message : 'Try again.');
   };
 
-  const done = (how: string) => {
-    track(save ? 'account_saved' : 'sign_in', { method: how });
+  const done = (how: string, linked: boolean) => {
+    track(linked ? 'account_saved' : 'sign_in', { method: how });
     // The guest became a real account just now; this is the registration ad networks should count.
-    if (registersAt({ step: 'save', guest: save })) trackRegistration(getMember()?.role === 'member' ? 'join' : 'create');
+    if (registersAt({ step: 'save', guest: linked })) trackRegistration(getMember()?.role === 'member' ? 'join' : 'create');
     // Saving keeps going through onboarding; a sign-in goes back to the gate, which knows where this account belongs.
-    router.replace(save ? '/(auth)/permissions' : '/');
+    router.replace(linked ? '/(auth)/permissions' : '/');
   };
 
-  const apple = async () => {
+  const apple = async (link = linking) => {
     setBusy(true);
     try {
-      const { fullName } = await signInWithApple(save);
+      const { fullName } = await signInWithApple(link);
       if (fullName) await meta.set('pending_name', fullName);
-      done('apple');
+      done('apple', link);
     } catch (e) {
-      if (!(e instanceof Error && 'code' in e && (e as { code: string }).code === 'ERR_REQUEST_CANCELED')) fail(e);
+      if (!(e instanceof Error && 'code' in e && (e as { code: string }).code === 'ERR_REQUEST_CANCELED')) fail(e, () => void apple(false));
     } finally {
       setBusy(false);
     }
   };
 
-  const send = async () => {
+  const send = async (link = linking) => {
     setBusy(true);
     try {
-      await sendEmailCode(email, save);
+      await sendEmailCode(email, link);
       setSent(true);
     } catch (e) {
-      fail(e);
+      fail(e, () => void send(false));
     } finally {
       setBusy(false);
     }
@@ -79,8 +90,8 @@ export function SignInForm({ save = false }: { save?: boolean }) {
     if (busy) return;
     setBusy(true);
     try {
-      await verifyEmailCode(email, value, save);
-      done('email');
+      await verifyEmailCode(email, value, linking);
+      done('email', linking);
     } catch (e) {
       fail(e);
     } finally {
@@ -98,7 +109,6 @@ export function SignInForm({ save = false }: { save?: boolean }) {
   return (
     <Screen>
       <View style={{ gap: Space.sm }}>
-        {save ? <Mono color={Colors.ink2} size={11}>{stepLabel('save')}</Mono> : null}
         <Heading size={34} bold>{save ? 'Save your account' : 'Sign in'}</Heading>
         <Body color={Colors.ink2}>
           {save
@@ -142,11 +152,11 @@ export function SignInForm({ save = false }: { save?: boolean }) {
             testID="code"
           />
           <Button title="Verify code" onPress={() => void verify()} loading={busy} disabled={code.length < 6} testID="verify-code" />
-          <Button title="Send a new code" variant="ghost" onPress={send} disabled={busy} testID="resend-code" />
+          <Button title="Send a new code" variant="ghost" onPress={() => void send()} disabled={busy} testID="resend-code" />
           <Button title="Use a different email" variant="ghost" onPress={reset} />
         </View>
       ) : (
-        <Button title="Email me a code" onPress={send} loading={busy} disabled={!ready} testID="send-code" />
+        <Button title="Email me a code" onPress={() => void send()} loading={busy} disabled={!ready} testID="send-code" />
       )}
 
       {!sent && appleAvailable ? (
@@ -161,7 +171,7 @@ export function SignInForm({ save = false }: { save?: boolean }) {
             buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE_OUTLINE}
             cornerRadius={Radius.card}
             style={{ height: 52 }}
-            onPress={apple}
+            onPress={() => void apple()}
           />
         </>
       ) : null}

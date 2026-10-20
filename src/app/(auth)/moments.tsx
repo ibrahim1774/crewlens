@@ -7,9 +7,8 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { Button } from '@/components/button';
 import { Screen } from '@/components/screen';
-import { Body, Heading, Mono } from '@/components/text';
-import { momentsFor, type Moment, type MomentId } from '@/constants/moments';
-import { stepLabel } from '@/constants/onboarding';
+import { Body, Heading } from '@/components/text';
+import { MOMENTS, type Moment, type MomentId } from '@/constants/moments';
 import { Colors, Radius, Space } from '@/constants/theme';
 import { identify, track } from '@/lib/analytics';
 import { meta } from '@/lib/db';
@@ -27,7 +26,7 @@ function Row({ m, on, onPress, i }: { m: Moment; on: boolean; onPress: () => voi
           alignItems: 'center',
           gap: Space.md,
           paddingHorizontal: Space.md,
-          paddingVertical: 12,
+          paddingVertical: 18,
           borderRadius: Radius.card,
           borderWidth: on ? 2 : 1,
           borderColor: on ? Colors.ink : Colors.hairline,
@@ -35,7 +34,7 @@ function Row({ m, on, onPress, i }: { m: Moment; on: boolean; onPress: () => voi
           opacity: pressed ? 0.85 : 1,
         })}>
         <SymbolView name={m.icon as never} size={20} tintColor={Colors.ink} />
-        <Body size={15} bold style={{ flex: 1 }}>{m.label}</Body>
+        <Body size={16} bold style={{ flex: 1 }}>{m.label}</Body>
         <View
           style={{
             width: 26,
@@ -54,16 +53,15 @@ function Row({ m, on, onPress, i }: { m: Moment; on: boolean; onPress: () => voi
   );
 }
 
-/** "Has this happened to you?": everyday moments, picked in order. Each one gets a short scene of the fix next. */
+/** "What slows you down?": five everyday moments, picked in order. Each one gets a short scene of the fix next. */
 export default function Moments() {
-  const [list, setList] = useState<Moment[]>([]);
   const [picked, setPicked] = useState<MomentId[]>([]);
 
   useEffect(() => {
     track('onboarding_step', { step: 'moments' });
-    Promise.all([meta.get('profile_crew'), meta.get('profile_moments')]).then(([crew, saved]) => {
-      setList(momentsFor({ crew }));
-      if (saved) setPicked(saved.split(',') as MomentId[]);
+    meta.get('profile_moments').then((saved) => {
+      const known = new Set(MOMENTS.map((m) => m.id));
+      if (saved) setPicked((saved.split(',') as MomentId[]).filter((id) => known.has(id)));
     });
   }, []);
 
@@ -72,29 +70,24 @@ export default function Moments() {
     setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
   };
 
-  const next = async (none: boolean) => {
-    const chosen = none ? [] : picked;
-    await meta.set('profile_moments', chosen.join(','));
-    identify({ moments: chosen.join(',') || null });
-    track(none ? 'moments_none' : 'moments_saved', { moments: chosen.join(','), count: chosen.length });
+  const next = async () => {
+    await meta.set('profile_moments', picked.join(','));
+    identify({ moments: picked.join(',') });
+    track('moments_saved', { moments: picked.join(','), count: picked.length });
     router.push({ pathname: '/(auth)/scene', params: { i: '0' } });
   };
 
   return (
     <Screen
       footer={
-        <>
-          <Button title={picked.length ? `Show me how (${picked.length})` : 'Pick any that sound familiar'} onPress={() => next(false)} disabled={!picked.length} testID="moments-continue" />
-          <Button title="None of these" variant="ghost" onPress={() => next(true)} testID="moments-none" />
-        </>
+        <Button title="Continue" onPress={next} disabled={!picked.length} testID="moments-continue" />
       }>
       <View style={{ gap: Space.sm }}>
-        <Mono color={Colors.ink2} size={11}>{stepLabel('moments')}</Mono>
-        <Heading size={30} bold>Has this happened to you?</Heading>
-        <Body color={Colors.ink2}>Pick as many as you like. We&apos;ll show you how Crew Lens handles each one.</Body>
+        <Heading size={34} bold style={{ marginTop: Space.lg }}>What slows you down?</Heading>
+        <Body color={Colors.ink2}>Pick all that apply. We&apos;ll show you how Crew Lens fixes each one.</Body>
       </View>
-      <View style={{ gap: 6 }}>
-        {list.map((m, i) => (
+      <View style={{ gap: Space.sm }}>
+        {MOMENTS.map((m, i) => (
           <Row key={m.id} m={m} i={i} on={picked.includes(m.id)} onPress={() => toggle(m.id)} />
         ))}
       </View>

@@ -5,8 +5,7 @@ import { View } from 'react-native';
 import { Button } from '@/components/button';
 import { Chips } from '@/components/chips';
 import { Screen } from '@/components/screen';
-import { Body, Heading, Mono } from '@/components/text';
-import { stepLabel } from '@/constants/onboarding';
+import { Body, Heading } from '@/components/text';
 import { Colors, Space } from '@/constants/theme';
 import { identify, track } from '@/lib/analytics';
 import { meta } from '@/lib/db';
@@ -45,7 +44,6 @@ export default function Tailor() {
         </>
       }>
       <View style={{ gap: Space.sm }}>
-        <Mono color={Colors.ink2} size={11}>{stepLabel('tailor')}</Mono>
         <Heading size={34} bold>Set it up for how you work</Heading>
         <Body color={Colors.ink2}>Thirty seconds. Owner alone or a six-truck crew, the first steps change. Nothing here is shared or sold.</Body>
       </View>

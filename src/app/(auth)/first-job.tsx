@@ -7,7 +7,6 @@ import { Button } from '@/components/button';
 import { Screen } from '@/components/screen';
 import { Stamp } from '@/components/stamp';
 import { Body, Heading, Mono } from '@/components/text';
-import { stepLabel } from '@/constants/onboarding';
 import { Colors, Radius, Space } from '@/constants/theme';
 import { track } from '@/lib/analytics';
 import { initialsFor, useMember } from '@/lib/company';
@@ -70,7 +69,6 @@ export default function FirstJob() {
         )
       }>
       <View style={{ gap: Space.sm }}>
-        <Mono color={Colors.ink2} size={11}>{stepLabel('first-job')}</Mono>
         <Heading size={34} bold>Stamp a photo of the job you are on today.</Heading>
         <Body color={Colors.ink2}>It files to the job you are standing at with the time, place and your initials burned in. Backed up the moment it uploads. That photo is yours for good.</Body>
       </View>
