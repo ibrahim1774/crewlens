@@ -175,9 +175,12 @@ export default function Intro() {
           <Button title={replay === '1' ? 'Done' : 'Get started'} onPress={() => finish(true)} style={{ flex: 1 }} testID="intro-finish" />
         ) : (
           <>
-            <Pressable onPress={() => finish(false)} hitSlop={12} accessibilityRole="button" accessibilityLabel="Skip the tour" testID="intro-skip" style={{ paddingVertical: Space.sm, paddingRight: Space.md }}>
-              <Mono size={13} color={Colors.ink} bold>Skip</Mono>
-            </Pressable>
+            {/* Replaying from the You tab, someone may just want to leave; the first run goes through every screen. */}
+            {replay === '1' ? (
+              <Pressable onPress={() => finish(false)} hitSlop={12} accessibilityRole="button" accessibilityLabel="Close the tour" testID="intro-close" style={{ paddingVertical: Space.sm, paddingRight: Space.md }}>
+                <Mono size={13} color={Colors.ink} bold>Close</Mono>
+              </Pressable>
+            ) : null}
             <Button title="Next" onPress={() => goTo(index + 1)} style={{ flex: 1 }} testID="intro-next" />
           </>
         )}

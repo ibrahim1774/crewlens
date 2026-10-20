@@ -14,7 +14,7 @@ export const ROLES = ['Owner', 'Field', 'Office', 'Project manager', 'Other'] as
 export const CREW_SIZES = ['Just me', '2–5', '6–15', '16+'] as const;
 export const SOURCES = ['App Store', 'Google', 'A friend', 'Facebook or Instagram', 'TikTok or YouTube', 'Other'] as const;
 
-/** Three quick answers that shape the first-run tips and the acquisition report. Skippable. */
+/** Three quick answers that shape the first-run tips and the acquisition report. */
 export default function Tailor() {
   const [role, setRole] = useState<(typeof ROLES)[number] | ''>('');
   const [crew, setCrew] = useState<(typeof CREW_SIZES)[number] | ''>('');
@@ -24,24 +24,19 @@ export default function Tailor() {
     track('onboarding_step', { step: 'tailor' });
   }, []);
 
-  const next = async (skipped: boolean) => {
-    if (!skipped) {
-      await meta.set('profile_role', role || null);
-      await meta.set('profile_crew', crew || null);
-      await meta.set('profile_source', source || null);
-      identify({ role: role || null, crew_size: crew || null, heard_from: source || null });
-    }
-    track(skipped ? 'tailor_skipped' : 'tailor_saved', { role: role || null, crew: crew || null, source: source || null });
+  const next = async () => {
+    await meta.set('profile_role', role || null);
+    await meta.set('profile_crew', crew || null);
+    await meta.set('profile_source', source || null);
+    identify({ role: role || null, crew_size: crew || null, heard_from: source || null });
+    track('tailor_saved', { role: role || null, crew: crew || null, source: source || null });
     router.push('/(auth)/moments');
   };
 
   return (
     <Screen
       footer={
-        <>
-          <Button title="Continue" onPress={() => next(false)} disabled={!role || !crew} testID="tailor-continue" />
-          <Button title="Skip" variant="ghost" onPress={() => next(true)} testID="tailor-skip" />
-        </>
+        <Button title="Continue" onPress={next} disabled={!role || !crew} testID="tailor-continue" />
       }>
       <View style={{ gap: Space.sm }}>
         <Heading size={34} bold>Set it up for how you work</Heading>

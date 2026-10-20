@@ -1,3 +1,4 @@
+import { useCameraPermissions } from 'expo-camera';
 import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useEffect, useState } from 'react';
@@ -9,7 +10,7 @@ import { Stamp } from '@/components/stamp';
 import { Body, Heading, Mono } from '@/components/text';
 import { Colors, Radius, Space } from '@/constants/theme';
 import { track } from '@/lib/analytics';
-import { initialsFor, useMember } from '@/lib/company';
+import { initialsFor, useCompany, useMember } from '@/lib/company';
 import { addressFor, createJob, getLastFix, refreshFix, useJobs } from '@/lib/jobs';
 import { LimitError } from '@/lib/supabase';
 
@@ -20,6 +21,8 @@ import { LimitError } from '@/lib/supabase';
 export default function FirstJob() {
   const jobs = useJobs();
   const member = useMember();
+  const company = useCompany();
+  const [camera] = useCameraPermissions();
   const [busy, setBusy] = useState(false);
   const [now, setNow] = useState(() => new Date().toISOString());
   const job = jobs.find((j) => j.status === 'active') ?? jobs[0] ?? null;
@@ -51,21 +54,21 @@ export default function FirstJob() {
     }
   };
 
-  const next = (skipped: boolean) => {
-    track(skipped ? 'first_job_skipped' : 'first_job_done', { photos: job?.photoCount ?? 0 });
-    router.push('/(auth)/crew');
+  const next = () => {
+    track(shot ? 'first_job_done' : 'first_job_no_camera', { photos: job?.photoCount ?? 0 });
+    // The crew step is for plans with seats to fill; a one-seat plan has no one to invite yet.
+    router.push((company?.seats ?? 1) > 1 ? '/(auth)/crew' : '/(auth)/share-docs');
   };
+  // Camera access was declined: the camera can't open, so this step moves on instead of looping back here.
+  const noCamera = camera ? !camera.granted && !camera.canAskAgain : false;
 
   return (
     <Screen
       footer={
-        shot ? (
-          <Button title="Continue" onPress={() => next(false)} testID="first-job-continue" />
+        shot || noCamera ? (
+          <Button title="Continue" onPress={next} testID="first-job-continue" />
         ) : (
-          <>
-            <Button title={job ? `Open the camera on ${job.name}` : 'Open the camera'} onPress={open} loading={busy} testID="first-job-camera" />
-            <Button title="Skip for now" variant="ghost" onPress={() => next(true)} testID="first-job-skip" />
-          </>
+          <Button title={job ? `Open the camera on ${job.name}` : 'Open the camera'} onPress={open} loading={busy} testID="first-job-camera" />
         )
       }>
       <View style={{ gap: Space.sm }}>

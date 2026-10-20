@@ -23,9 +23,13 @@ export default function Crew() {
     track('onboarding_step', { step: 'crew' });
   }, []);
 
+  // Once the composer has opened (sent or not), the step can move on.
+  const [tried, setTried] = useState(false);
+
   const invite = async () => {
     track('crew_invite_tapped');
     setBusy(true);
+    setTried(true);
     try {
       const inv = await createInvite();
       const message = inviteText(company?.name, inv.code);
@@ -56,10 +60,7 @@ export default function Crew() {
   return (
     <Screen
       footer={
-        <>
-          <Button title={sent ? 'Continue' : 'Invite by text'} onPress={sent ? next : invite} loading={busy} testID="crew-invite" />
-          {!sent ? <Button title="Just me for now" variant="ghost" onPress={next} testID="crew-skip" /> : null}
-        </>
+        <Button title={sent || tried ? 'Continue' : 'Invite by text'} onPress={sent || tried ? next : invite} loading={busy} testID="crew-invite" />
       }>
       <View style={{ gap: Space.sm }}>
         <Heading size={34} bold>Who is on the job with you?</Heading>
