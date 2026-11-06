@@ -11,20 +11,23 @@ import { registersAt } from '@/constants/onboarding';
 import { Colors, Radius, Space } from '@/constants/theme';
 import { track, trackRegistration } from '@/lib/analytics';
 import { getMember } from '@/lib/company';
-import { normalizeCode, sendEmailCode, signInWithApple, verifyEmailCode } from '@/lib/auth';
+import { GOOGLE_CANCELLED, normalizeCode, passwordProblem, sendEmailCode, setNewPassword, signInWithApple, signInWithGoogle, signInWithPassword, signUpWithPassword, verifyEmailCode } from '@/lib/auth';
 import { meta } from '@/lib/db';
 
 /**
- * Email code first, then Apple.
+ * Email and password, then Apple and Google. Forgot password uses an emailed code, then asks for a new password.
  * `save` is the onboarding step after the plan: it attaches the email or Apple ID to the guest account that
  * already holds the company and the purchase. Without it, this is Sign in for an existing account.
  */
 export function SignInForm({ save = false }: { save?: boolean }) {
   const [appleAvailable, setAppleAvailable] = useState(false);
   const [email, setEmail] = useState('');
-  const [code, setCode] = useState('');
-  const [sent, setSent] = useState(false);
+  const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
+  // Forgot password: emailed code -> signed in -> choose a new password.
+  const [forgot, setForgot] = useState<'off' | 'code' | 'new'>('off');
+  const [code, setCode] = useState('');
+  const [newPassword, setNewPasswordValue] = useState('');
   // Saving links the email or Apple ID to this guest account; if that one already has an account, they can switch to it.
   const [linking, setLinking] = useState(save);
 
@@ -47,7 +50,7 @@ export function SignInForm({ save = false }: { save?: boolean }) {
             },
           },
         ]);
-      } else Alert.alert('That email already has an account', 'Try signing in with it instead.');
+      } else Alert.alert('That email already has an account', 'Sign in with it instead.');
       return;
     }
     Alert.alert(linking ? 'Could not save your account' : 'Could not sign in', e instanceof Error ? e.message : 'Try again.');
@@ -74,13 +77,49 @@ export function SignInForm({ save = false }: { save?: boolean }) {
     }
   };
 
-  const send = async (link = linking) => {
+  const google = async (link = linking) => {
     setBusy(true);
     try {
-      await sendEmailCode(email, link);
-      setSent(true);
+      const { fullName } = await signInWithGoogle(link);
+      if (fullName) await meta.set('pending_name', fullName);
+      done('google', link);
     } catch (e) {
-      fail(e, () => void send(false));
+      if (!(e instanceof Error && e.message === GOOGLE_CANCELLED)) fail(e, () => void google(false));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /** Save mode creates the account; Sign in mode signs in. `create` forces a sign-up from the Sign in screen. */
+  const submit = async (create = save) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      if (create) {
+        await signUpWithPassword(email, password, linking);
+        done('password', linking);
+      } else {
+        await signInWithPassword(email, password);
+        done('password', false);
+      }
+    } catch (e) {
+      fail(e, () => {
+        // They said they already have the account: sign in with what they typed.
+        setBusy(false);
+        void submit(false);
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const sendCode = async () => {
+    setBusy(true);
+    try {
+      await sendEmailCode(email, false);
+      setForgot('code');
+    } catch (e) {
+      fail(e);
     } finally {
       setBusy(false);
     }
@@ -90,8 +129,8 @@ export function SignInForm({ save = false }: { save?: boolean }) {
     if (busy) return;
     setBusy(true);
     try {
-      await verifyEmailCode(email, value, linking);
-      done('email', linking);
+      await verifyEmailCode(email, value, false);
+      setForgot('new');
     } catch (e) {
       fail(e);
     } finally {
@@ -99,41 +138,63 @@ export function SignInForm({ save = false }: { save?: boolean }) {
     }
   };
 
-  const reset = () => {
-    setSent(false);
-    setCode('');
+  const saveNewPassword = async () => {
+    setBusy(true);
+    try {
+      await setNewPassword(newPassword);
+      done('password_reset', false);
+    } catch (e) {
+      fail(e);
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const ready = /^\S+@\S+\.\S+$/.test(email.trim());
+  const validEmail = /^\S+@\S+\.\S+$/.test(email.trim());
+  const passwordReady = passwordProblem(password) === null;
 
   return (
     <Screen>
       <View style={{ gap: Space.sm }}>
-        <Heading size={34} bold>{save ? 'Save your account' : 'Sign in'}</Heading>
+        <Heading size={34} bold>{forgot !== 'off' ? 'Reset your password' : save ? 'Save your account' : 'Sign in'}</Heading>
         <Body color={Colors.ink2}>
-          {save
-            ? 'Last step. Your jobs, photos and plan stay safe if you lose or switch phones.'
-            : 'Welcome back. Your jobs, photos and paperwork are waiting in your account.'}
+          {forgot !== 'off'
+            ? 'We email you a 6-digit code, then you choose a new password.'
+            : save
+              ? 'Last step. Create a password so your jobs, photos and plan stay safe if you lose or switch phones.'
+              : 'Welcome back. Your jobs, photos and paperwork are waiting in your account.'}
         </Body>
       </View>
 
-        <Field
-          label="Email"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          autoComplete="email"
-          keyboardType="email-address"
-          editable={!sent}
-          placeholder="you@company.com"
-          testID="email"
-        />
+      {forgot === 'off' ? (
+        <>
+          <Field label="Email" value={email} onChangeText={setEmail} autoCapitalize="none" autoCorrect={false} autoComplete="email" textContentType="username" keyboardType="email-address" placeholder="you@company.com" testID="email" />
+          <Field
+            label="Password"
+            value={password}
+            onChangeText={setPassword}
+            autoCapitalize="none"
+            autoCorrect={false}
+            secureTextEntry
+            autoComplete={save ? 'new-password' : 'current-password'}
+            textContentType={save ? 'newPassword' : 'password'}
+            placeholder={save ? 'At least 8 characters' : 'Your password'}
+            onSubmitEditing={() => void submit()}
+            testID="password"
+          />
+          <Button title={save ? 'Create account' : 'Sign in'} onPress={() => void submit()} loading={busy} disabled={!validEmail || (save ? !passwordReady : password.length === 0)} testID="password-submit" />
+          {!save ? (
+            <Button title="Create an account" variant="ghost" onPress={() => void submit(true)} disabled={busy || !validEmail || !passwordReady} testID="password-create" />
+          ) : null}
+          {!linking ? <Button title="Forgot password?" variant="ghost" onPress={() => void sendCode()} disabled={busy || !validEmail} testID="forgot-password" /> : null}
+        </>
+      ) : null}
 
-      {sent ? (
+      {forgot === 'code' ? (
         <View style={{ gap: Space.sm }}>
           <View style={{ borderWidth: 1, borderColor: Colors.hairline, borderRadius: Radius.card, backgroundColor: Colors.surface, padding: Space.md, gap: 4 }}>
             <Heading size={18}>Check your email</Heading>
-            <Body size={13} color={Colors.ink2}>{`We sent a 6-digit code to ${email.trim()}. Enter it below and you're in as soon as the sixth digit is typed.`}</Body>
+            <Body size={13} color={Colors.ink2}>{`We sent a 6-digit code to ${email.trim()}. Enter it below.`}</Body>
           </View>
           <Field
             label="6-digit code"
@@ -152,27 +213,35 @@ export function SignInForm({ save = false }: { save?: boolean }) {
             testID="code"
           />
           <Button title="Verify code" onPress={() => void verify()} loading={busy} disabled={code.length < 6} testID="verify-code" />
-          <Button title="Send a new code" variant="ghost" onPress={() => void send()} disabled={busy} testID="resend-code" />
-          <Button title="Use a different email" variant="ghost" onPress={reset} />
+          <Button title="Send a new code" variant="ghost" onPress={() => void sendCode()} disabled={busy} testID="resend-code" />
+          <Button title="Back to sign in" variant="ghost" onPress={() => { setForgot('off'); setCode(''); }} />
         </View>
-      ) : (
-        <Button title="Email me a code" onPress={() => void send()} loading={busy} disabled={!ready} testID="send-code" />
-      )}
+      ) : null}
 
-      {!sent && appleAvailable ? (
+      {forgot === 'new' ? (
+        <View style={{ gap: Space.sm }}>
+          <Field label="New password" value={newPassword} onChangeText={setNewPasswordValue} autoCapitalize="none" autoCorrect={false} secureTextEntry autoComplete="new-password" textContentType="newPassword" placeholder="At least 8 characters" testID="new-password" />
+          <Button title="Save new password" onPress={() => void saveNewPassword()} loading={busy} disabled={passwordProblem(newPassword) !== null} testID="save-new-password" />
+        </View>
+      ) : null}
+
+      {forgot === 'off' ? (
         <>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: Space.sm }}>
             <View style={{ flex: 1, height: 1, backgroundColor: Colors.hairline }} />
             <Mono color={Colors.ink2} size={11}>Or</Mono>
             <View style={{ flex: 1, height: 1, backgroundColor: Colors.hairline }} />
           </View>
-          <AppleAuthentication.AppleAuthenticationButton
-            buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
-            buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE_OUTLINE}
-            cornerRadius={Radius.card}
-            style={{ height: 52 }}
-            onPress={() => void apple()}
-          />
+          {appleAvailable ? (
+            <AppleAuthentication.AppleAuthenticationButton
+              buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+              buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE_OUTLINE}
+              cornerRadius={Radius.card}
+              style={{ height: 52 }}
+              onPress={() => void apple()}
+            />
+          ) : null}
+          <Button title="Continue with Google" variant="ghost" onPress={() => void google()} disabled={busy} testID="google-sign-in" style={{ height: 52, borderRadius: Radius.card }} />
         </>
       ) : null}
     </Screen>

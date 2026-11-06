@@ -25,8 +25,8 @@ export default function Benefits() {
     try {
       await startGuest();
       router.push('/(auth)/name');
-    } catch {
-      Alert.alert('No connection', 'Crew Lens needs the internet to set up your account. Check your connection and try again.');
+    } catch (e) {
+      Alert.alert('Could not set up your account', e instanceof Error ? e.message : 'Check your connection and try again.');
     } finally {
       setBusy(false);
     }

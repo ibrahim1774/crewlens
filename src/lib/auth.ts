@@ -1,5 +1,6 @@
 import type { Session } from '@supabase/supabase-js';
 import * as AppleAuthentication from 'expo-apple-authentication';
+import * as WebBrowser from 'expo-web-browser';
 import { useSyncExternalStore } from 'react';
 
 import { clearCompany, fetchMembership, getMember, setMembershipChecked } from '@/lib/company';
@@ -81,11 +82,43 @@ export function isGuest(s: Session | null = session): boolean {
   return s?.user.is_anonymous === true;
 }
 
+/** Network failures and 5xx responses are worth another try; a 4xx (anonymous sign-ins off, bad key) is not. */
+export function isRetryableAuthError(e: { status?: number; name?: string; message?: string }): boolean {
+  if (typeof e.status === 'number' && e.status >= 400 && e.status < 500 && e.status !== 408 && e.status !== 429) return false;
+  return true;
+}
+
+/** Runs `fn` up to `attempts` times, waiting `delays[i]` ms between tries, while the error is retryable. */
+export async function withRetry<T>(fn: () => Promise<T>, attempts = 3, delays: number[] = [1500, 3000]): Promise<T> {
+  let last: unknown;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn();
+    } catch (e) {
+      last = e;
+      if (!isRetryableAuthError((e ?? {}) as { status?: number }) || i === attempts - 1) break;
+      await new Promise((r) => setTimeout(r, delays[Math.min(i, delays.length - 1)]));
+    }
+  }
+  throw last;
+}
+
+export const SERVER_UNREACHABLE = 'Crew Lens can’t reach its server right now. Check your connection and try again in a minute.';
+
 export async function startGuest(): Promise<void> {
   if (!supabaseConfigured) throw new Error(NOT_CONFIGURED);
   if (session) return;
-  const { error } = await supabase.auth.signInAnonymously();
-  if (error) throw error;
+  try {
+    await withRetry(async () => {
+      const { error } = await supabase.auth.signInAnonymously();
+      if (error) throw error;
+    });
+  } catch (e) {
+    const status = (e as { status?: number } | null)?.status;
+    // Keep a precise reason for 4xx (a configuration problem); everything else reads as "server unreachable".
+    if (typeof status === 'number' && status >= 400 && status < 500) throw e;
+    throw new Error(SERVER_UNREACHABLE);
+  }
 }
 
 /**
@@ -109,11 +142,13 @@ async function prepare(save: boolean): Promise<'link' | 'sign-in'> {
  * 'account_exists', which the form turns into its own message.
  */
 export function friendlyAuthError(e: { code?: string; message: string }): Error {
-  if (e.code === 'phone_exists' || e.code === 'email_exists' || e.code === 'identity_already_exists' || /already (been )?(registered|linked|exists)/i.test(e.message)) {
+  if (e.code === 'phone_exists' || e.code === 'email_exists' || e.code === 'user_already_exists' ||e.code === 'identity_already_exists' || /already (been )?(registered|linked|exists)/i.test(e.message)) {
     return new Error('account_exists');
   }
   if (e.code === 'otp_expired' || /expired or is invalid/i.test(e.message)) return new Error("That code didn't work. Check the 6 digits, or send a new code.");
   if (e.code?.startsWith('over_') || /rate limit/i.test(e.message)) return new Error('Too many codes in a row. Wait a minute and try again.');
+  if (e.code === 'invalid_credentials' || /invalid login credentials/i.test(e.message)) return new Error('That email and password don’t match. Check them, or tap Forgot password.');
+  if (e.code === 'weak_password' || /password.*(at least|weak|short)/i.test(e.message)) return new Error(PASSWORD_HINT);
   return e instanceof Error ? e : new Error(e.message);
 }
 
@@ -140,6 +175,88 @@ export async function signInWithApple(save = false): Promise<{ fullName: string 
 
 /** Where the email's link lands: the app itself. Must be in the Supabase redirect allow-list. */
 export const AUTH_CALLBACK_URL = 'crewlens://auth/callback';
+
+/** The user closed the Google sheet without finishing. Callers treat this as a quiet cancel. */
+export const GOOGLE_CANCELLED = 'google_cancelled';
+
+/**
+ * Sign in with Google, or attach Google to the guest account when saving it (keeps its company and plan).
+ * Runs Supabase's OAuth flow in the system browser sheet and finishes with the PKCE code it returns.
+ * Returns the name Google shares, if any.
+ */
+export async function signInWithGoogle(save = false): Promise<{ fullName: string | null }> {
+  if (!supabaseConfigured) throw new Error(NOT_CONFIGURED);
+  const mode = await prepare(save);
+  const options = { redirectTo: AUTH_CALLBACK_URL, skipBrowserRedirect: true };
+  const { data, error } =
+    mode === 'link'
+      ? await supabase.auth.linkIdentity({ provider: 'google', options })
+      : await supabase.auth.signInWithOAuth({ provider: 'google', options });
+  if (error) throw friendlyAuthError(error);
+  if (!data.url) throw new Error('Could not reach Google. Check your connection and try again.');
+  const result = await WebBrowser.openAuthSessionAsync(data.url, AUTH_CALLBACK_URL);
+  if (result.type !== 'success') throw new Error(GOOGLE_CANCELLED);
+  try {
+    await handleAuthUrl(result.url);
+  } catch (e) {
+    // "Identity is already linked to another user" comes back in the callback URL, not from linkIdentity.
+    throw friendlyAuthError(e instanceof Error ? { message: e.message } : { message: 'Could not sign in with Google.' });
+  }
+  const { data: u } = await supabase.auth.getUser();
+  const name = u.user?.user_metadata?.full_name ?? u.user?.user_metadata?.name;
+  return { fullName: typeof name === 'string' && name.trim() ? name.trim() : null };
+}
+
+export const MIN_PASSWORD = 8;
+export const PASSWORD_HINT = `Use at least ${MIN_PASSWORD} characters for your password.`;
+
+/** Null when the password is acceptable, else the sentence to show. Pure, so it is unit-tested. */
+export function passwordProblem(password: string): string | null {
+  return password.length >= MIN_PASSWORD ? null : PASSWORD_HINT;
+}
+
+/**
+ * Creates the account with an email and password.
+ * save: the guest account gets the email and password, keeping its company and plan.
+ * Otherwise a plain sign-up (a guest who taps through from Sign in leaves the guest account first).
+ * Confirm-email is off in Supabase, so there is no confirmation step: the account is usable at once.
+ */
+export async function signUpWithPassword(email: string, password: string, save = false): Promise<void> {
+  if (!supabaseConfigured) throw new Error(NOT_CONFIGURED);
+  const problem = passwordProblem(password);
+  if (problem) throw new Error(problem);
+  const address = email.trim().toLowerCase();
+  const mode = await prepare(save);
+  if (mode === 'link') {
+    const { error } = await supabase.auth.updateUser({ email: address, password });
+    if (error) throw friendlyAuthError(error);
+  } else {
+    const { data, error } = await supabase.auth.signUp({ email: address, password });
+    if (error) throw friendlyAuthError(error);
+    // With email already registered and confirmations off, Supabase may return a user with no identities.
+    if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) throw new Error('account_exists');
+  }
+  const { data: u } = await supabase.auth.getUser();
+  if (u.user) await ensureMembershipChecked(u.user.id);
+}
+
+/** Signs in to an existing account. A guest leaves the guest account first. */
+export async function signInWithPassword(email: string, password: string): Promise<void> {
+  if (!supabaseConfigured) throw new Error(NOT_CONFIGURED);
+  // A guest who found they already have an account lands here with save=false after the prompt.
+  if (isGuest()) await supabase.auth.signOut();
+  const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
+  if (error) throw friendlyAuthError(error);
+  if (data.user) await ensureMembershipChecked(data.user.id);
+}
+
+/** After the emailed code signed them in (Forgot password), set the new password. */
+export async function setNewPassword(password: string): Promise<void> {
+  const problem = passwordProblem(password);
+  if (problem) throw new Error(problem);
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) throw friendlyAuthError(error);
+}
 
 export async function sendEmailCode(email: string, save = false): Promise<void> {
   if (!supabaseConfigured) throw new Error(NOT_CONFIGURED);

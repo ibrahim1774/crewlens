@@ -1,3 +1,4 @@
+import { AppState } from 'react-native';
 import { getTrackingPermissionsAsync, requestTrackingPermissionsAsync } from 'expo-tracking-transparency';
 import PostHog from 'posthog-react-native';
 import AppsFlyer from 'react-native-appsflyer';
@@ -80,13 +81,34 @@ export function pendingAttributionEvents(): number {
   return pending.length;
 }
 
+/** Resolves once the app is in the foreground. iOS silently skips the ATT dialog if it is asked for while inactive. */
+export function whenActive(timeoutMs = 4000): Promise<void> {
+  if (AppState.currentState === 'active') return Promise.resolve();
+  return new Promise((resolve) => {
+    const done = () => {
+      sub.remove();
+      clearTimeout(timer);
+      resolve();
+    };
+    const sub = AppState.addEventListener('change', (st) => st === 'active' && done());
+    const timer = setTimeout(done, timeoutMs);
+  });
+}
+
 /** Asks for App Tracking Transparency consent (once), then starts attribution either way. */
 export async function requestTrackingThenStart() {
   try {
     const { status } = await getTrackingPermissionsAsync();
-    if (status === 'undetermined') await requestTrackingPermissionsAsync();
-  } catch {
+    if (status === 'undetermined') {
+      // The dialog only appears while the app is active, and a beat after the screen settles.
+      await whenActive();
+      await new Promise((r) => setTimeout(r, 500));
+      const res = await requestTrackingPermissionsAsync();
+      posthog?.capture('att_prompt_result', { status: res.status });
+    }
+  } catch (e) {
     // Permission API unavailable: attribution still runs without the IDFA.
+    console.warn('ATT request failed', e);
   }
   consentSettled = true;
   await startAttribution();
