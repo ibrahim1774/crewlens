@@ -17,7 +17,7 @@
         "ITSAppUsesNonExemptEncryption": false,
         "NSAdvertisingAttributionReportEndpoint": "https://appsflyer-skadnetwork.com/"
       },
-      "buildNumber": "3"
+      "buildNumber": "4"
     },
     "plugins": [
       "expo-router",

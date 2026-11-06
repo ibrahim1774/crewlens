@@ -91,7 +91,8 @@ export default function You() {
   const pct = Math.min(1, active / limits.activeJobs);
 
   return (
-    <Screen>
+    // The floating tab bar sits over the bottom of the screen; leave room so Delete account and the version stay visible.
+    <Screen bottomSpace={130}>
       <Heading size={30} bold>You</Heading>
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: Space.md, padding: Space.md, backgroundColor: Colors.ink, borderRadius: Radius.card }}>

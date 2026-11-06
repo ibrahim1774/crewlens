@@ -4,14 +4,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors, Space } from '@/constants/theme';
 
-type Props = PropsWithChildren<{ scroll?: boolean; footer?: React.ReactNode; padded?: boolean }>;
+type Props = PropsWithChildren<{ scroll?: boolean; footer?: React.ReactNode; padded?: boolean; /** Extra room at the end of the scroll, e.g. for the floating tab bar. */ bottomSpace?: number }>;
 
 /** Canvas background, safe-area padding, optional pinned footer. */
-export function Screen({ children, scroll = true, footer, padded = true }: Props) {
+export function Screen({ children, scroll = true, footer, padded = true, bottomSpace = 0 }: Props) {
   const insets = useSafeAreaInsets();
   const pad = padded ? Space.md : 0;
   const body = scroll ? (
-    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: pad, paddingTop: insets.top + Space.md, gap: Space.md, flexGrow: 1 }}>
+    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: pad, paddingTop: insets.top + Space.md, paddingBottom: pad + bottomSpace, gap: Space.md, flexGrow: 1 }}>
       {children}
     </ScrollView>
   ) : (
