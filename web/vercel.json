@@ -24,6 +24,15 @@
           "value": "noindex, nofollow"
         }
       ]
+    },
+    {
+      "source": "/review/(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
     }
   ]
 }
