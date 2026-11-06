@@ -16,7 +16,8 @@
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSAdvertisingAttributionReportEndpoint": "https://appsflyer-skadnetwork.com/"
-      }
+      },
+      "buildNumber": "3"
     },
     "plugins": [
       "expo-router",
@@ -80,7 +81,8 @@
       "expo-asset",
       "expo-sharing",
       "expo-mail-composer",
-      "expo-video"
+      "expo-video",
+      "./plugins/with-superwall-onone"
     ],
     "experiments": {
       "typedRoutes": true,
