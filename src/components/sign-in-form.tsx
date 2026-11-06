@@ -1,7 +1,7 @@
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Alert, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Alert, Keyboard, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Field } from '@/components/field';
@@ -22,7 +22,14 @@ import { meta } from '@/lib/db';
 export function SignInForm({ save = false }: { save?: boolean }) {
   const [appleAvailable, setAppleAvailable] = useState(false);
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [password, setPasswordState] = useState('');
+  // iOS can fill the field itself (Automatic Strong Password) without firing onChangeText, so the latest
+  // value is also taken from onEndEditing, which reports the field's real text, and read from a ref.
+  const passwordRef = useRef('');
+  const setPassword = (t: string) => {
+    passwordRef.current = t;
+    setPasswordState(t);
+  };
   const [busy, setBusy] = useState(false);
   // Forgot password: emailed code -> signed in -> choose a new password.
   const [forgot, setForgot] = useState<'off' | 'code' | 'new'>('off');
@@ -94,6 +101,10 @@ export function SignInForm({ save = false }: { save?: boolean }) {
   const submit = async (create = save) => {
     if (busy) return;
     setBusy(true);
+    // Ending the edit makes iOS report a filled-in password through onEndEditing.
+    Keyboard.dismiss();
+    await new Promise((r) => setTimeout(r, 120));
+    const password = passwordRef.current;
     try {
       if (create) {
         await signUpWithPassword(email, password, linking);
@@ -151,7 +162,6 @@ export function SignInForm({ save = false }: { save?: boolean }) {
   };
 
   const validEmail = /^\S+@\S+\.\S+$/.test(email.trim());
-  const passwordReady = passwordProblem(password) === null;
 
   return (
     <Screen>
@@ -176,15 +186,19 @@ export function SignInForm({ save = false }: { save?: boolean }) {
             autoCapitalize="none"
             autoCorrect={false}
             secureTextEntry
-            autoComplete={save ? 'new-password' : 'current-password'}
-            textContentType={save ? 'newPassword' : 'password'}
+            onEndEditing={(e) => setPassword(e.nativeEvent.text)}
+            // Creating a password: iOS's Automatic Strong Password took over this field and swallowed the
+            // typing, so autofill is off here ("oneTimeCode" is the documented switch). Signing in keeps
+            // normal password autofill and iOS's "Save Password?" offer.
+            autoComplete={save ? 'off' : 'current-password'}
+            textContentType={save ? 'oneTimeCode' : 'password'}
             placeholder={save ? 'At least 8 characters' : 'Your password'}
             onSubmitEditing={() => void submit()}
             testID="password"
           />
-          <Button title={save ? 'Create account' : 'Sign in'} onPress={() => void submit()} loading={busy} disabled={!validEmail || (save ? !passwordReady : password.length === 0)} testID="password-submit" />
+          <Button title={save ? 'Create account' : 'Sign in'} onPress={() => void submit()} loading={busy} disabled={!validEmail || (!save && password.length === 0)} testID="password-submit" />
           {!save ? (
-            <Button title="Create an account" variant="ghost" onPress={() => void submit(true)} disabled={busy || !validEmail || !passwordReady} testID="password-create" />
+            <Button title="Create an account" variant="ghost" onPress={() => void submit(true)} disabled={busy || !validEmail} testID="password-create" />
           ) : null}
           {!linking ? <Button title="Forgot password?" variant="ghost" onPress={() => void sendCode()} disabled={busy || !validEmail} testID="forgot-password" /> : null}
         </>
@@ -220,7 +234,7 @@ export function SignInForm({ save = false }: { save?: boolean }) {
 
       {forgot === 'new' ? (
         <View style={{ gap: Space.sm }}>
-          <Field label="New password" value={newPassword} onChangeText={setNewPasswordValue} autoCapitalize="none" autoCorrect={false} secureTextEntry autoComplete="new-password" textContentType="newPassword" placeholder="At least 8 characters" testID="new-password" />
+          <Field label="New password" value={newPassword} onChangeText={setNewPasswordValue} autoCapitalize="none" autoCorrect={false} secureTextEntry autoComplete="off" textContentType="oneTimeCode" placeholder="At least 8 characters" testID="new-password" />
           <Button title="Save new password" onPress={() => void saveNewPassword()} loading={busy} disabled={passwordProblem(newPassword) !== null} testID="save-new-password" />
         </View>
       ) : null}

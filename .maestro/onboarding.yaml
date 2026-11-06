@@ -5,6 +5,9 @@ env:
 ---
 - launchApp:
     clearState: true
+    # Maestro grants every permission by default, which hides the tracking prompt. Start like a fresh install.
+    permissions:
+      all: unset
 # Development-client builds land on the launcher; open the project and dismiss the first-run menu.
 - openLink: ${DEV_URL}
 - extendedWaitUntil:
@@ -94,9 +97,12 @@ env:
 - tapOn:
     id: "setup-continue"
 # The tracking prompt comes before the plan; camera and location wait until after it.
-- tapOn:
-    text: "Ask App Not to Track"
-    optional: true
+# App Review 2.1: this prompt must appear on a fresh install, so the flow fails without it.
+- extendedWaitUntil:
+    visible: "Ask App Not to Track"
+    timeout: 10000
+- takeScreenshot: 04-att-prompt
+- tapOn: "Ask App Not to Track"
 # With Superwall off, the plan table shows; a crew of 6-15 starts on the Crew plan.
 - extendedWaitUntil:
     visible: "Continue with Crew"
