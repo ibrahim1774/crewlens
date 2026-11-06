@@ -4,7 +4,9 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Crew Lens</title>
-<meta name="robots" content="noindex, nofollow" />
+<meta name="description" content="Crew Lens is a job-site photo app for contractors: every photo filed to the job, stamped with time and place, backed up and shared with the client in one link." />
+<script>if (/^\/s\//.test(location.pathname) || /[?&]token=/.test(location.search)) document.documentElement.classList.add("share");</script>
+<style>html.share #home{display:none!important} html:not(.share) #loading{display:none}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="/styles.css" />
@@ -12,6 +14,19 @@
 </head>
 <body>
 <div class="wrap">
+  <main id="home" class="state">
+    <h1>Crew Lens</h1>
+    <p>Job-site photos for contractors. Every photo is filed to the job, stamped with the date, time and place, backed up, and shared with the client in one link.</p>
+    <ul>
+      <li>A job camera that files each photo to the job you&rsquo;re on</li>
+      <li>Photos grouped by day, with your crew&rsquo;s photos in the same job</li>
+      <li>One live link per job for the client, or a gallery of chosen photos</li>
+      <li>Invoices and contracts marked up, signed and sent from your phone</li>
+    </ul>
+    <p><a href="https://apps.apple.com/us/app/id6823989964" rel="noopener">Crew Lens for iPhone on the App Store</a></p>
+    <p class="mono"><a href="/privacy">Privacy Policy</a> · <a href="/terms">Terms of Use</a> · <a href="/support">Support</a></p>
+  </main>
+
   <div id="loading" class="state"><span class="mono">LOADING…</span></div>
 
   <div id="expired" class="state hidden">
@@ -34,7 +49,7 @@
     <div id="days"></div>
     <footer>
       <span class="mono">SHARED WITH CREW LENS</span>
-      <a class="mono" href="https://apps.apple.com/us/app/id0000000000" rel="noopener">GET THE APP</a>
+      <a class="mono" href="https://apps.apple.com/us/app/id6823989964" rel="noopener">GET THE APP</a>
     </footer>
   </div>
 </div>

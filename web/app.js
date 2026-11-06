@@ -15,7 +15,7 @@
   function dayKey(iso) { const d = new Date(iso); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
   function dayLabel(iso, n) { const d = new Date(iso); return `${DAYS[d.getDay()]} ${MONTHS[d.getMonth()]} ${pad(d.getDate())} · ${n} ${n === 1 ? 'PHOTO' : 'PHOTOS'}`; }
 
-  function show(id) { for (const s of ['loading','expired','error','job']) $('#'+s).classList.toggle('hidden', s !== id); }
+  function show(id) { for (const s of ['home','loading','expired','error','job']) $('#'+s).classList.toggle('hidden', s !== id); }
 
   function render(data) {
     $('#name').textContent = data.name;
@@ -54,7 +54,8 @@
     const m = location.pathname.match(/\/s\/([A-Za-z0-9_-]+)/);
     const token = m ? m[1] : new URLSearchParams(location.search).get('token');
     const endpoint = window.CREWLENS_SHARE_ENDPOINT;
-    if (!token || !endpoint) { show('expired'); return; }
+    if (!token) { show('home'); return; }
+    if (!endpoint) { show('expired'); return; }
     try {
       const res = await fetch(`${endpoint}?token=${encodeURIComponent(token)}`, { headers: { Accept: 'application/json' } });
       const data = await res.json().catch(() => ({ status: 'error' }));
