@@ -7,6 +7,7 @@ module.exports = {
     "^expo-secure-store$": "<rootDir>/test/mocks/secure-store.ts",
     "^expo-sqlite$": "<rootDir>/test/mocks/sqlite.ts",
     "^@/lib/analytics$": "<rootDir>/test/mocks/analytics.ts",
+    "^@/lib/revenuecat$": "<rootDir>/test/mocks/revenuecat.ts",
     "^expo-location$": "<rootDir>/test/mocks/location.ts",
     "^expo-crypto$": "<rootDir>/test/mocks/crypto.ts",
     "^expo-superwall$": "<rootDir>/test/mocks/superwall.ts",

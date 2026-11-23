@@ -5,6 +5,7 @@ import { Alert } from 'react-native';
 import { track, trackConversion } from '@/lib/analytics';
 import { useSession } from '@/lib/auth';
 import { paywallEnabled } from '@/lib/plan';
+import { syncRevenueCatPurchases } from '@/lib/revenuecat';
 import { notify } from '@/lib/store';
 import { supabase } from '@/lib/supabase';
 import { waitAtMost } from '@/lib/time';
@@ -56,6 +57,7 @@ export function SubscriptionSync() {
       if (event.event !== 'freeTrialStart' && event.event !== 'subscriptionStart') return;
       const product = event.product;
       trackConversion(event.event === 'freeTrialStart' ? 'trial' : 'subscribe', product.productIdentifier, product.price, product.currencyCode ?? 'USD');
+      void syncRevenueCatPurchases();
     },
   });
 
@@ -116,6 +118,7 @@ function useSuperwallRestore() {
   return async () => {
     try {
       const result = await restorePurchases();
+      void syncRevenueCatPurchases();
       track('restore_tapped', { result: JSON.stringify(result).slice(0, 80) });
       Alert.alert('Restore purchases', 'If this Apple ID has an active Crew Lens subscription, it has been restored.');
     } catch {

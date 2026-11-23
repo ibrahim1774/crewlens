@@ -3,6 +3,8 @@ import { getTrackingPermissionsAsync, requestTrackingPermissionsAsync } from 'ex
 import PostHog from 'posthog-react-native';
 import AppsFlyer from 'react-native-appsflyer';
 
+import { startRevenueCat } from '@/lib/revenuecat';
+
 /**
  * One place for analytics. Events go to PostHog (product analytics) and
  * AppsFlyer (install attribution). Keys are public client keys from .env.
@@ -70,6 +72,8 @@ async function startAttribution() {
   try {
     await AppsFlyer.start();
     for (const e of pending.splice(0)) AppsFlyer.logEvent(e).catch(() => {});
+    // Purchase observer for renewals and trial conversions; needs the AppsFlyer id, so it starts here.
+    startRevenueCat();
   } catch (e) {
     appsFlyerStarted = false;
     console.warn('AppsFlyer start failed', e);

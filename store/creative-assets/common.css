@@ -1,0 +1,12 @@
+@font-face{font-family:Figtree;font-weight:800;src:url('file:///Users/ibrahim/CrewLens/crewlens/node_modules/@expo-google-fonts/figtree/800ExtraBold/Figtree_800ExtraBold.ttf')}
+@font-face{font-family:Figtree;font-weight:600;src:url('file:///Users/ibrahim/CrewLens/crewlens/node_modules/@expo-google-fonts/figtree/600SemiBold/Figtree_600SemiBold.ttf')}
+*{margin:0;box-sizing:border-box}
+body{background:#07080A;position:relative;overflow:hidden;font-family:Figtree,sans-serif;color:#F5F4F1}
+.grid{position:absolute;inset:0;opacity:.10;background-image:linear-gradient(#F5F4F1 2px,transparent 2px),linear-gradient(90deg,#F5F4F1 2px,transparent 2px);background-size:160px 160px}
+.glow{position:absolute;border-radius:50%;background:radial-gradient(closest-side,rgba(236,77,17,.28),transparent)}
+.or{color:#EC4D11}
+.icon{position:absolute;border-radius:22.4%;box-shadow:0 0 0 3px rgba(236,77,17,.6),0 30px 70px rgba(0,0,0,.6)}
+.ph{position:absolute;border-radius:12.5%/5.8%;border:14px solid #2A2926;background:#0B0B0D;overflow:hidden;box-shadow:0 60px 110px rgba(0,0,0,.75),0 0 0 3px #3A3935}
+.ph img{display:block;width:100%;height:auto}
+.t div{font-weight:800;line-height:1.0;letter-spacing:-.02em}
+.s{font-weight:600;color:#A9A6A0}
