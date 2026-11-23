@@ -3,7 +3,7 @@ import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Dimensions, Pressable, SectionList, Share, View } from 'react-native';
+import { Alert, Dimensions, Pressable, SectionList, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
@@ -22,6 +22,7 @@ import { groupByDay, pullPhotos, useJobPhotos } from '@/lib/photos';
 import { effectiveTier, limitsFor } from '@/lib/plan';
 import { LimitError } from '@/lib/supabase';
 import { retryFailed } from '@/lib/uploader';
+import { presentShare } from '@/lib/share-sheet';
 import type { Photo } from '@/types/models';
 
 const COLS = 3;
@@ -79,19 +80,22 @@ export default function JobScreen() {
   const liveLink = async () => {
     if (!job) return;
     setLinking(true);
+    let url: string;
     try {
       const link = await getOrCreateLiveLink(job.id);
-      const url = linkUrl(link.token);
+      url = linkUrl(link.token);
       await Clipboard.setStringAsync(url);
-      setShare(false);
       setCopied(true);
       track('link_created', { type: 'live' });
-      await Share.share({ message: `${job.name} — live photos from ${company?.name ?? 'Crew Lens'}: ${url}`, url });
     } catch (e) {
       Alert.alert('Could not create link', e instanceof Error ? e.message : 'Check your connection and try again.');
+      return;
     } finally {
+      setShare(false);
       setLinking(false);
     }
+    // The "Share this job" sheet is sliding away; present only once it is gone.
+    presentShare({ message: `${job.name} — live photos from ${company?.name ?? 'Crew Lens'}: ${url}`, url }, true);
   };
 
   const toggleSelect = (pid: string) =>
@@ -115,19 +119,22 @@ export default function JobScreen() {
   const galleryLink = async () => {
     if (!job || !selected.size) return;
     setLinking(true);
+    const count = selected.size;
+    let url: string;
     try {
       const link = await createGalleryLink(job.id, photos.filter((p) => selected.has(p.id)).map((p) => p.id));
-      const url = linkUrl(link.token);
+      url = linkUrl(link.token);
       await Clipboard.setStringAsync(url);
       setCopied(true);
-      track('link_created', { type: 'gallery', photos: selected.size });
+      track('link_created', { type: 'gallery', photos: count });
       cancelPicking();
-      await Share.share({ message: `${job.name} — ${selected.size} photos from ${company?.name ?? 'Crew Lens'}: ${url}`, url });
     } catch (e) {
       Alert.alert('Could not create link', e instanceof Error ? e.message : 'Check your connection and try again.');
+      return;
     } finally {
       setLinking(false);
     }
+    presentShare({ message: `${job.name} — ${count} photos from ${company?.name ?? 'Crew Lens'}: ${url}`, url });
   };
 
   const toggleArchive = async () => {

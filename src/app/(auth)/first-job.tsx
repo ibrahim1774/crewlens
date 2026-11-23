@@ -11,7 +11,7 @@ import { Body, Heading, Mono } from '@/components/text';
 import { Colors, Radius, Space } from '@/constants/theme';
 import { track } from '@/lib/analytics';
 import { initialsFor, useCompany, useMember } from '@/lib/company';
-import { addressFor, createJob, getLastFix, refreshFix, useJobs } from '@/lib/jobs';
+import { addressFor, createJob, getLastFix, useFix, useJobs } from '@/lib/jobs';
 import { LimitError } from '@/lib/supabase';
 
 /**
@@ -26,12 +26,12 @@ export default function FirstJob() {
   const [busy, setBusy] = useState(false);
   const [now, setNow] = useState(() => new Date().toISOString());
   const job = jobs.find((j) => j.status === 'active') ?? jobs[0] ?? null;
-  const fix = getLastFix();
+  // Live: the card shows the place as soon as the first fix lands, not on the next 30-second tick.
+  const fix = useFix();
   const shot = (job?.photoCount ?? 0) > 0;
 
   useEffect(() => {
     track('onboarding_step', { step: 'first_job' });
-    refreshFix().catch(() => {});
     const t = setInterval(() => setNow(new Date().toISOString()), 30000);
     return () => clearInterval(t);
   }, []);

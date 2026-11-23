@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 
+import { getCompany } from '@/lib/company';
 import { meta } from '@/lib/db';
 import { countAllDocuments } from '@/lib/documents';
 import { useJobs } from '@/lib/jobs';
 import { notify, useVersion } from '@/lib/store';
+import { supabase, supabaseConfigured } from '@/lib/supabase';
 
 /** The four things a new account does in its first week, shown as a card at the top of Jobs. */
 export interface StartHereState {
@@ -39,8 +41,15 @@ export function useStartHere(): StartHereState & ReturnType<typeof startHereProg
   const [extra, setExtra] = useState({ linkShared: false, documents: 0, dismissed: true });
   useEffect(() => {
     let alive = true;
-    Promise.all([meta.get('link_shared'), countAllDocuments(), meta.get('start_here_dismissed')]).then(([l, d, x]) => {
-      if (alive) setExtra({ linkShared: l === '1', documents: d, dismissed: x === '1' });
+    Promise.all([meta.get('link_shared'), countAllDocuments(), meta.get('start_here_dismissed')]).then(async ([l, d, x]) => {
+      const local = { linkShared: l === '1', documents: d, dismissed: x === '1' };
+      if (alive) setExtra(local);
+      // The local flags are empty after signing in again or on a new phone; the server remembers.
+      if (local.dismissed || (local.linkShared && local.documents > 0)) return;
+      const server = await serverStartFacts().catch(() => null);
+      if (!server || !alive) return;
+      if (server.linkShared && !local.linkShared) void meta.set('link_shared', '1');
+      setExtra({ ...local, linkShared: local.linkShared || server.linkShared, documents: Math.max(local.documents, server.documents) });
     });
     return () => {
       alive = false;
@@ -48,6 +57,17 @@ export function useStartHere(): StartHereState & ReturnType<typeof startHereProg
   }, [v]);
   const state: StartHereState = { jobs: jobs.length, photos: jobs.reduce((n, j) => n + j.photoCount, 0), ...extra };
   return { ...state, ...startHereProgress(state) };
+}
+
+/** Whether this company ever made a share link, and how many documents it has, from the server. */
+export async function serverStartFacts(): Promise<{ linkShared: boolean; documents: number }> {
+  const company = getCompany();
+  if (!company || !supabaseConfigured) return { linkShared: false, documents: 0 };
+  const [links, docs] = await Promise.all([
+    supabase.from('share_links').select('id', { count: 'exact', head: true }).eq('company_id', company.id),
+    supabase.from('documents').select('id', { count: 'exact', head: true }).eq('company_id', company.id),
+  ]);
+  return { linkShared: (links.count ?? 0) > 0, documents: docs.count ?? 0 };
 }
 
 export async function dismissStartHere(): Promise<void> {

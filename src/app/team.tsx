@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 import * as SMS from 'expo-sms';
 import { SymbolView } from 'expo-symbols';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Pressable, Share, View } from 'react-native';
+import { Alert, Pressable, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Screen } from '@/components/screen';
@@ -12,6 +12,7 @@ import { inviteText } from '@/constants/invite';
 import { Colors, Radius, Space } from '@/constants/theme';
 import { track } from '@/lib/analytics';
 import { createInvite, deleteInvite, listInvites, listMembers, removeMember, useCompany, useMember, type Invite } from '@/lib/company';
+import { presentShare } from '@/lib/share-sheet';
 import type { Member } from '@/types/models';
 
 /** Members, open invite codes, and the seat count. Owners invite and remove; members see the list. */
@@ -45,7 +46,7 @@ export default function Team() {
       await load();
       const message = inviteText(company?.name, inv.code);
       if (await SMS.isAvailableAsync()) await SMS.sendSMSAsync([], message);
-      else await Share.share({ message });
+      else presentShare({ message });
     } catch (e) {
       const msg = e instanceof Error ? e.message : '';
       if (msg === 'limit:seats') Alert.alert('All seats are taken', `Your plan includes ${seats} ${seats === 1 ? 'seat' : 'seats'}. Crew includes three.`, [{ text: 'Not now', style: 'cancel' }, { text: 'See plans', onPress: () => router.push({ pathname: '/(auth)/paywall', params: { upgrade: '1' } }) }]);

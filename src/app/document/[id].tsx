@@ -1,5 +1,6 @@
 import { Asset } from 'expo-asset';
 import { File } from 'expo-file-system';
+import { readAsStringAsync } from 'expo-file-system/legacy';
 import * as MailComposer from 'expo-mail-composer';
 import * as Print from 'expo-print';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -28,7 +29,12 @@ const PDFJS_LIB = require('@/assets/pdfjs/pdf.min.pdfjs');
 const PDFJS_WORKER = require('@/assets/pdfjs/pdf.worker.min.pdfjs');
 
 let pdfjsCache: Promise<{ pdfjs: string; worker: string }> | null = null;
-/** pdf.js ships inside the app under a private extension; read once, inlined into the editor page. */
+/**
+ * pdf.js ships inside the app under a private extension; read once, inlined into the editor page.
+ * In store builds the asset lives in the read-only app bundle, and expo-file-system 55's File.text()
+ * demands write permission there ("Missing permission for uri"), so read it with the legacy reader,
+ * which only needs read access. A failed load is not cached, so opening the document again retries.
+ */
 function loadPdfjs() {
   if (!pdfjsCache) {
     pdfjsCache = (async () => {
@@ -36,8 +42,12 @@ function loadPdfjs() {
         Asset.fromModule(PDFJS_LIB).downloadAsync(),
         Asset.fromModule(PDFJS_WORKER).downloadAsync(),
       ]);
-      return { pdfjs: await new File(a.localUri!).text(), worker: await new File(b.localUri!).text() };
+      const [pdfjs, worker] = await Promise.all([readAsStringAsync(a.localUri!), readAsStringAsync(b.localUri!)]);
+      return { pdfjs, worker };
     })();
+    pdfjsCache.catch(() => {
+      pdfjsCache = null;
+    });
   }
   return pdfjsCache;
 }

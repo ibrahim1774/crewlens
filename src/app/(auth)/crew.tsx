@@ -2,7 +2,7 @@ import * as SMS from 'expo-sms';
 import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useEffect, useState } from 'react';
-import { Alert, Share, View } from 'react-native';
+import { Alert, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Screen } from '@/components/screen';
@@ -11,6 +11,7 @@ import { inviteText } from '@/constants/invite';
 import { Colors, Radius, Space } from '@/constants/theme';
 import { track } from '@/lib/analytics';
 import { createInvite, useCompany } from '@/lib/company';
+import { presentShare } from '@/lib/share-sheet';
 
 /** Invite the crew: a one-time code and the download link by text. Seats come with the plan. */
 export default function Crew() {
@@ -38,7 +39,7 @@ export default function Crew() {
         if (result === 'sent') setSent(true);
         return;
       }
-      await Share.share({ message });
+      presentShare({ message });
       setSent(true);
     } catch (e) {
       const msg = e instanceof Error ? e.message : '';

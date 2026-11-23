@@ -11,7 +11,7 @@ import { registersAt } from '@/constants/onboarding';
 import { Colors, Radius, Space } from '@/constants/theme';
 import { track, trackRegistration } from '@/lib/analytics';
 import { getMember } from '@/lib/company';
-import { GOOGLE_CANCELLED, normalizeCode, passwordProblem, sendEmailCode, setNewPassword, signInWithApple, signInWithGoogle, signInWithPassword, signUpWithPassword, verifyEmailCode } from '@/lib/auth';
+import { appleSignInError, GOOGLE_CANCELLED, normalizeCode, passwordProblem, sendEmailCode, setNewPassword, signInWithApple, signInWithGoogle, signInWithPassword, signUpWithPassword, verifyEmailCode } from '@/lib/auth';
 import { meta } from '@/lib/db';
 
 /**
@@ -78,7 +78,8 @@ export function SignInForm({ save = false }: { save?: boolean }) {
       if (fullName) await meta.set('pending_name', fullName);
       done('apple', link);
     } catch (e) {
-      if (!(e instanceof Error && 'code' in e && (e as { code: string }).code === 'ERR_REQUEST_CANCELED')) fail(e, () => void apple(false));
+      const shown = appleSignInError(e);
+      if (shown) fail(shown, () => void apple(false));
     } finally {
       setBusy(false);
     }

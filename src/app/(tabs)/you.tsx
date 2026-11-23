@@ -15,6 +15,7 @@ import { useCompany, useMember } from '@/lib/company';
 import * as db from '@/lib/db';
 import { effectiveTier, limitsFor, paywallEnabled } from '@/lib/plan';
 import { useVersion } from '@/lib/store';
+import { useFix } from '@/lib/jobs';
 
 function Row({ title, value, onPress, destructive, icon }: { title: string; value?: string; onPress?: () => void; destructive?: boolean; icon?: string }) {
   return (
@@ -44,6 +45,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export default function You() {
   const company = useCompany();
   const member = useMember();
+  const fix = useFix();
   const v = useVersion();
   const [active, setActive] = useState(0);
   const [sync, setSync] = useState({ pending: 0, failed: 0 });
@@ -100,7 +102,7 @@ export default function You() {
           <Heading size={22} color={Colors.surface}>{member?.displayName ?? ''}</Heading>
           <Body size={13} color="rgba(247,246,242,0.7)">{company?.name ?? ''}{company?.trade ? ` · ${company.trade}` : ''}</Body>
         </View>
-        <Stamp photo={{ takenAt: new Date().toISOString(), lat: null, lng: null }} initials={member?.initials ?? '???'} tone="dark" size={11} />
+        <Stamp photo={{ takenAt: new Date().toISOString(), lat: fix?.lat ?? null, lng: fix?.lng ?? null }} initials={member?.initials ?? '???'} tone="dark" size={11} />
       </View>
 
       <Section title="Plan">

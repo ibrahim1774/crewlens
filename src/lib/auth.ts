@@ -152,6 +152,18 @@ export function friendlyAuthError(e: { code?: string; message: string }): Error 
   return e instanceof Error ? e : new Error(e.message);
 }
 
+/**
+ * What the sign-in form should show for a failed Apple sign-in. Null means stay quiet (the person
+ * closed the sheet). ERR_REQUEST_UNKNOWN is what iOS returns when no Apple Account is signed in on
+ * the phone; its own text ("failed for an unknown reason") tells them nothing.
+ */
+export function appleSignInError(e: unknown): unknown {
+  const code = typeof e === 'object' && e && 'code' in e ? String((e as { code: unknown }).code) : '';
+  if (code === 'ERR_REQUEST_CANCELED') return null;
+  if (code === 'ERR_REQUEST_UNKNOWN') return new Error('Apple sign-in did not finish. Check you are signed in to your Apple Account in Settings, or use email and password instead.');
+  return e;
+}
+
 /** Sign in with Apple, or attach Apple to the guest account when saving it. Returns the full name Apple shares on first sign-in, if any. */
 
 export async function signInWithApple(save = false): Promise<{ fullName: string | null }> {
@@ -194,7 +206,9 @@ export async function signInWithGoogle(save = false): Promise<{ fullName: string
       : await supabase.auth.signInWithOAuth({ provider: 'google', options });
   if (error) throw friendlyAuthError(error);
   if (!data.url) throw new Error('Could not reach Google. Check your connection and try again.');
-  const result = await WebBrowser.openAuthSessionAsync(data.url, AUTH_CALLBACK_URL);
+  // A private session skips iOS's "Crew Lens wants to use supabase.co to sign in" alert, which named
+  // the auth host instead of us. Cost: no shared Safari cookies, so Google asks which account once.
+  const result = await WebBrowser.openAuthSessionAsync(data.url, AUTH_CALLBACK_URL, { preferEphemeralSession: true });
   if (result.type !== 'success') throw new Error(GOOGLE_CANCELLED);
   try {
     await handleAuthUrl(result.url);
