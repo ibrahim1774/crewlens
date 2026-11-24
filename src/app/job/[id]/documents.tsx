@@ -10,7 +10,7 @@ import { Sheet, SheetRow } from '@/components/sheet';
 import { Body, Heading, Mono } from '@/components/text';
 import { Colors, Radius, Space } from '@/constants/theme';
 import { track } from '@/lib/analytics';
-import { deleteDocument, docsAllowed, DocumentsNotAllowed, formatSize, pickAndImport, pullDocuments, rename, useDocuments } from '@/lib/documents';
+import { deleteDocument, docsAllowed, DocumentsNotAllowed, formatSize, pickAndImport, pullDocuments, rename, uploadErrorMessage, useDocuments } from '@/lib/documents';
 import { useJob } from '@/lib/jobs';
 import { createSampleInvoice } from '@/lib/sample-invoice';
 import { getCompany } from '@/lib/company';
@@ -80,7 +80,7 @@ export default function Documents() {
       }
     } catch (e) {
       if (e instanceof DocumentsNotAllowed) Alert.alert('Documents are on Pro', 'Upgrade to upload, edit and send paperwork.');
-      else Alert.alert('Could not add that file', e instanceof Error && e.message === 'unsupported_type' ? 'Use a PDF, JPEG or PNG.' : 'Try again.');
+      else Alert.alert('Could not add that file', uploadErrorMessage(e));
     } finally {
       setBusy(false);
     }

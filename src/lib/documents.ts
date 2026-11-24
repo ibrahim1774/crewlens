@@ -11,6 +11,7 @@ import { effectiveTier } from '@/lib/plan';
 import { notify, useVersion } from '@/lib/store';
 import { supabase, supabaseConfigured } from '@/lib/supabase';
 import type { Doc, DocKind, SentVia } from '@/types/models';
+import { convertWordToPdf, DOC_MIME, DOCX_MIME, pdfName, wordKind } from '@/lib/word';
 
 /**
  * Documents: the invoice, proposal or contract that belongs next to a job's photos.
@@ -130,12 +131,32 @@ export class DocumentsNotAllowed extends Error {
   }
 }
 
-/** Opens the system picker for a PDF or image and files it under the job. Returns null if cancelled. */
+/** Plain words for a failed upload. */
+export function uploadErrorMessage(e: unknown): string {
+  const code = e instanceof Error ? e.message : '';
+  if (code === 'unsupported_type') return 'Use a PDF, Word file (.docx), JPEG or PNG.';
+  if (code === 'word_legacy') return 'This is an older Word file (.doc). In Word, choose File > Save As and pick PDF or Word Document (.docx), then upload that.';
+  if (code === 'word_unreadable') return "We couldn't read this Word file. In Word, choose File > Save As > PDF, then upload the PDF.";
+  return 'Try again.';
+}
+
+/**
+ * Opens the system picker for a PDF, Word file or image and files it under the job. Returns null if cancelled.
+ * A .docx is converted to a PDF first; an old .doc throws 'word_legacy' (it can't be read on the phone).
+ */
 export async function pickAndImport(jobId: string): Promise<Doc | null> {
   if (!docsAllowed()) throw new DocumentsNotAllowed();
-  const res = await DocumentPicker.getDocumentAsync({ type: ['application/pdf', 'image/jpeg', 'image/png'], copyToCacheDirectory: true, multiple: false });
+  const res = await DocumentPicker.getDocumentAsync({ type: ['application/pdf', DOCX_MIME, DOC_MIME, 'image/jpeg', 'image/png'], copyToCacheDirectory: true, multiple: false });
   if (res.canceled || !res.assets?.length) return null;
   const a = res.assets[0];
+  const word = wordKind(a.mimeType, a.name);
+  if (word === 'doc') throw new Error('word_legacy');
+  if (word === 'docx') {
+    const pdf = await convertWordToPdf(a.uri);
+    const doc = await importFile(jobId, { uri: pdf.uri, name: pdfName(a.name), mimeType: 'application/pdf', size: null });
+    if (pdf.pages) await setPages(doc.id, pdf.pages);
+    return doc;
+  }
   return importFile(jobId, { uri: a.uri, name: a.name, mimeType: a.mimeType ?? null, size: a.size ?? null });
 }
 

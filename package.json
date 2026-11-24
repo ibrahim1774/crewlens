@@ -54,6 +54,7 @@
     "expo-video": "~55.0.21",
     "expo-video-thumbnails": "~55.0.19",
     "expo-web-browser": "~55.0.20",
+    "mammoth": "1.13.0",
     "pdfjs-dist": "^4.10.38",
     "posthog-react-native": "^4.81.2",
     "react": "19.2.0",

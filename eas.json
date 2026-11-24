@@ -33,6 +33,11 @@
       "autoIncrement": true,
       "environment": "production",
       "credentialsSource": "local"
+    },
+    "adhoc": {
+      "extends": "production",
+      "distribution": "internal",
+      "autoIncrement": false
     }
   },
   "submit": {
