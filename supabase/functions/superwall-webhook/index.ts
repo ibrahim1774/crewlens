@@ -1,4 +1,5 @@
-// Superwall → Crew Lens. Superwall posts subscription events here; we turn them into the company's
+// Superwall → Crew Lens. Superwall posts subscription events here; we record them as an 'apple' row in
+// billing_subscriptions and let apply_billing() turn all of the owner's rows (Apple + Stripe) into the company's
 // billing facts (tier, seats), which only the service role may write. The app never sets its own tier.
 // Auth: Superwall sends the shared secret in the Authorization header configured on the webhook.
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
@@ -6,7 +7,6 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 type Tier = 'solo' | 'pro' | 'crew';
 
-const SEATS: Record<Tier, number> = { solo: 1, pro: 1, crew: 3 };
 const GRANT = new Set(['initial_purchase', 'renewal', 'uncancellation', 'product_change']);
 const REVOKE = new Set(['expiration']);
 
@@ -14,6 +14,11 @@ const REVOKE = new Set(['expiration']);
 export function tierFor(productId: string | null | undefined): Tier | null {
   const m = /^com\.ibrahim1774\.crewlens\.(solo|pro|crew)\.(monthly|yearly)$/.exec(productId ?? '');
   return m ? (m[1] as Tier) : null;
+}
+
+export function periodFor(productId: string | null | undefined): 'monthly' | 'yearly' | null {
+  const m = /^com\.ibrahim1774\.crewlens\.(solo|pro|crew)\.(monthly|yearly)$/.exec(productId ?? '');
+  return m ? (m[2] as 'monthly' | 'yearly') : null;
 }
 
 function timingSafeEqual(a: string, b: string): boolean {
@@ -50,15 +55,34 @@ Deno.serve(async (req) => {
   const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
   const { data: who } = await supabase.from('superwall_aliases').select('user_id').eq('alias', alias).maybeSingle();
   if (!who) return Response.json({ ok: true, skipped: 'unknown_alias' });
-  // The purchaser must own the company; a crew member's purchase never changes someone else's plan.
-  const { data: m } = await supabase.from('members').select('company_id, companies(tier)').eq('user_id', who.user_id).eq('role', 'owner').maybeSingle();
-  if (!m) return Response.json({ ok: true, skipped: 'not_owner' });
-  const current = (m as unknown as { companies: { tier: Tier } | null }).companies?.tier ?? 'solo';
-  let next: Tier;
-  if (GRANT.has(name)) next = tier;
-  else if (current === tier) next = 'solo'; // an expiration only lowers the plan it was for
-  else return Response.json({ ok: true, skipped: 'stale_expiration' });
-  const { error } = await supabase.from('companies').update({ tier: next, seats: SEATS[next] }).eq('id', m.company_id);
+  const uid = who.user_id as string;
+  const live = data.environment !== 'SANDBOX';
+  const { data: existing } = await supabase.from('billing_subscriptions').select('tier').eq('source', 'apple').eq('external_id', alias).maybeSingle();
+
+  if (REVOKE.has(name)) {
+    // An expiration only lowers the plan it was for.
+    if (existing) {
+      if (existing.tier !== tier) return Response.json({ ok: true, skipped: 'stale_expiration' });
+    } else {
+      // Payer from before this table existed: no row yet, so compare with the owner's company tier as before.
+      const { data: m } = await supabase.from('members').select('companies(tier)').eq('user_id', uid).eq('role', 'owner').maybeSingle();
+      const current = (m as unknown as { companies: { tier: Tier } | null } | null)?.companies?.tier;
+      if (current !== tier) return Response.json({ ok: true, skipped: 'stale_expiration' });
+    }
+  }
+
+  const { error } = await supabase.from('billing_subscriptions').upsert({
+    source: 'apple',
+    external_id: alias,
+    user_id: uid,
+    tier,
+    period: periodFor(productId),
+    status: GRANT.has(name) ? 'active' : 'expired',
+    livemode: live,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'source,external_id' });
   if (error) return new Response('db', { status: 500 });
-  return Response.json({ ok: true, company: m.company_id, tier: next });
+  const { error: applyErr } = await supabase.rpc('apply_billing', { p_user: uid });
+  if (applyErr) return new Response('db', { status: 500 });
+  return Response.json({ ok: true, user: uid, tier, status: GRANT.has(name) ? 'active' : 'expired' });
 });

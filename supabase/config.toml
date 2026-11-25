@@ -10,3 +10,23 @@ verify_jwt = false
 [functions.delete-account]
 # The function verifies the caller's session itself (auth.getUser) and deletes only that user.
 verify_jwt = false
+
+[functions.stripe-checkout]
+# Public buy button: a bearer token is optional. The function reads it itself and takes the price id from env only.
+verify_jwt = false
+
+[functions.stripe-session]
+# The welcome page asks what a Checkout session bought. The unguessable session id is the key; nothing sensitive returns.
+verify_jwt = false
+
+[functions.stripe-claim]
+# The function verifies the caller's session itself (auth.getUser) and links the payment to that user only.
+verify_jwt = false
+
+[functions.stripe-portal]
+# The function verifies the caller's session itself (auth.getUser) and opens the portal for that user's customer only.
+verify_jwt = false
+
+[functions.stripe-webhook]
+# Stripe calls this with a signature header (stripe-signature), not a user JWT; the function verifies it.
+verify_jwt = false

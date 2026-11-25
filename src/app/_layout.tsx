@@ -14,6 +14,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Colors } from '@/constants/theme';
 import { posthog, screen, track } from '@/lib/analytics';
 import { handleAuthUrl } from '@/lib/auth';
+import { BillingSync } from '@/lib/billing-sync';
 import { useBoot } from '@/lib/boot';
 import { SubscriptionSync, SUPERWALL_KEY, superwallActive } from '@/lib/paywall';
 import { startUploader } from '@/lib/uploader';
@@ -88,6 +89,7 @@ export default function RootLayout() {
       <ThemeProvider value={theme}>
         <StatusBar style="dark" />
         <ScreenTracker />
+        <BillingSync />
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: Colors.canvas } }}>
           <Stack.Screen name="index" />
           <Stack.Screen name="(auth)" options={{ gestureEnabled: false }} />

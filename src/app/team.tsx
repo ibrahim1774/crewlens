@@ -11,6 +11,7 @@ import { Body, Heading, Mono } from '@/components/text';
 import { inviteText } from '@/constants/invite';
 import { Colors, Radius, Space } from '@/constants/theme';
 import { track } from '@/lib/analytics';
+import { openUpgrade } from '@/lib/billing';
 import { createInvite, deleteInvite, listInvites, listMembers, removeMember, useCompany, useMember, type Invite } from '@/lib/company';
 import { presentShare } from '@/lib/share-sheet';
 import type { Member } from '@/types/models';
@@ -49,7 +50,7 @@ export default function Team() {
       else presentShare({ message });
     } catch (e) {
       const msg = e instanceof Error ? e.message : '';
-      if (msg === 'limit:seats') Alert.alert('All seats are taken', `Your plan includes ${seats} ${seats === 1 ? 'seat' : 'seats'}. Crew includes three.`, [{ text: 'Not now', style: 'cancel' }, { text: 'See plans', onPress: () => router.push({ pathname: '/(auth)/paywall', params: { upgrade: '1' } }) }]);
+      if (msg === 'limit:seats') Alert.alert('All seats are taken', `Your plan includes ${seats} ${seats === 1 ? 'seat' : 'seats'}. Crew includes three.`, [{ text: 'Not now', style: 'cancel' }, { text: 'See plans', onPress: () => openUpgrade(() => router.push({ pathname: '/(auth)/paywall', params: { upgrade: '1' } })) }]);
       else if (msg !== 'not_owner') Alert.alert('Could not create an invite', 'Check your connection and try again.');
     } finally {
       setBusy(false);
@@ -71,7 +72,7 @@ export default function Team() {
     <Screen
       footer={
         owner ? (
-          <Button title={full ? 'Add seats' : 'Invite by text'} onPress={full ? () => router.push({ pathname: '/(auth)/paywall', params: { upgrade: '1' } }) : invite} loading={busy} testID="team-invite" />
+          <Button title={full ? 'Add seats' : 'Invite by text'} onPress={full ? () => openUpgrade(() => router.push({ pathname: '/(auth)/paywall', params: { upgrade: '1' } })) : invite} loading={busy} testID="team-invite" />
         ) : undefined
       }>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: Space.sm }}>

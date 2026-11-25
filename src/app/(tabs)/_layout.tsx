@@ -8,6 +8,7 @@ import { Colors, Radius } from '@/constants/theme';
 import { isGuest, useSession } from '@/lib/auth';
 import { useCompany, useMember, useMembershipChecked } from '@/lib/company';
 import { routeFor } from '@/lib/gate';
+import { useEntitled } from '@/lib/paywall';
 
 const TABS: Record<string, { label: string; icon: SFSymbol; active: SFSymbol; testID: string }> = {
   index: { label: 'Jobs', icon: 'square.grid.2x2', active: 'square.grid.2x2.fill', testID: 'tab-jobs' },
@@ -91,7 +92,8 @@ export default function TabsLayout() {
   const company = useCompany();
   const member = useMember();
   const checked = useMembershipChecked();
-  const route = routeFor({ session: !!session, membershipChecked: checked, guest: isGuest(session), company: !!company, owner: member ? member.role === 'owner' : undefined });
+  const entitled = useEntitled();
+  const route = routeFor({ session: !!session, membershipChecked: checked, guest: isGuest(session), company: !!company, owner: member ? member.role === 'owner' : undefined, entitled });
   if (route && route !== '/(tabs)') return <Redirect href={route} />;
   return (
     <Tabs tabBar={(props) => <FloatingTabBar {...props} />} screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: Colors.canvas } }}>

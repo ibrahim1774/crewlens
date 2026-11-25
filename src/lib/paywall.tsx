@@ -1,12 +1,14 @@
 import { usePlacement, useSuperwall, useSuperwallEvents, useUser } from 'expo-superwall';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 
 import { track, trackConversion } from '@/lib/analytics';
 import { useSession } from '@/lib/auth';
+import { awaitBilling, billingAnswer, webEntitled } from '@/lib/billing';
+import { decideEntitled } from '@/lib/gate';
 import { paywallEnabled } from '@/lib/plan';
 import { syncRevenueCatPurchases } from '@/lib/revenuecat';
-import { notify } from '@/lib/store';
+import { notify, useVersion } from '@/lib/store';
 import { supabase } from '@/lib/supabase';
 import { waitAtMost } from '@/lib/time';
 
@@ -23,8 +25,37 @@ let entitled = !paywallEnabled;
  * so a paywall shown before this would credit the purchase to an anonymous id the webhook can't match.
  */
 let identified: Promise<unknown> = Promise.resolve();
+/** True once Superwall has reported ACTIVE or INACTIVE at least once this launch. */
+let statusReported = false;
+/** Paid through Superwall (the App Store) or on the web. */
 export function hasEntitlement(): boolean {
-  return entitled;
+  return entitled || webEntitled();
+}
+
+/**
+ * Whether the signed-in owner has paid, for the launch gate. null = not known: Superwall has not reported its
+ * status or the server has not answered. Never false on a guess, so an App Store payer is not sent to the paywall.
+ */
+export function useEntitledState(): { entitled: boolean | null; waiting: boolean } {
+  useVersion();
+  const { session } = useSession();
+  const [timedOut, setTimedOut] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setTimedOut(true), 3000);
+    return () => clearTimeout(t);
+  }, []);
+  return decideEntitled({
+    paywallEnabled,
+    superwallActive,
+    superwall: entitled ? 'active' : statusReported ? 'inactive' : 'unknown',
+    server: billingAnswer(session?.user.id ?? null),
+    web: webEntitled(),
+    timedOut,
+  });
+}
+
+export function useEntitled(): boolean | null {
+  return useEntitledState().entitled;
 }
 
 /** Mirrors Superwall's subscription status into app state and ties the Superwall user to the signed-in account. Render once under the provider. */
@@ -46,6 +77,7 @@ export function SubscriptionSync() {
   useEffect(() => {
     if (subscriptionStatus?.status === 'ACTIVE') entitled = true;
     if (subscriptionStatus?.status === 'INACTIVE') entitled = false;
+    if (subscriptionStatus?.status === 'ACTIVE' || subscriptionStatus?.status === 'INACTIVE') statusReported = true;
     notify();
   }, [subscriptionStatus?.status]);
 
@@ -76,6 +108,12 @@ export function usePaywall() {
 /** With the flag off there is no provider and no paywall: every placement grants access. */
 function useFlagOffPaywall() {
   return async (placement: Placement, onAccess?: () => void, _params?: Record<string, string>) => {
+    await waitAtMost(awaitBilling(), 3000);
+    if (webEntitled()) {
+      track('placement_registered', { placement, paywall: 'web' });
+      onAccess?.();
+      return;
+    }
     track('placement_registered', { placement, paywall: 'off' });
     onAccess?.();
   };
@@ -91,6 +129,13 @@ function useSuperwallPaywall() {
     const now = Date.now();
     if (now - lastRequest < 2000) return;
     lastRequest = now;
+    await waitAtMost(awaitBilling(), 3000);
+    // Paid on the web: the plan is already active, so Superwall is never opened.
+    if (webEntitled()) {
+      track('placement_registered', { placement, paywall: 'web' });
+      onAccess?.();
+      return;
+    }
     track('placement_registered', { placement });
     try {
       await waitAtMost(identified, 5000);

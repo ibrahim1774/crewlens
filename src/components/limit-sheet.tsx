@@ -5,6 +5,7 @@ import { Body } from '@/components/text';
 import { TIER_LABEL } from '@/constants/limits';
 import { Colors } from '@/constants/theme';
 import { track } from '@/lib/analytics';
+import { openUpgrade } from '@/lib/billing';
 import { paywallEnabled } from '@/lib/plan';
 import type { LimitError } from '@/lib/supabase';
 import type { Tier } from '@/types/models';
@@ -38,6 +39,7 @@ export function LimitSheet({ error, tier, onClose }: Props) {
         onPress={() => {
           track('upgrade_tapped', { from: error?.kind ?? 'unknown' });
           onClose();
+          openUpgrade(() => {});
         }}
       />
       <SheetRow title="Not now" onPress={onClose} />

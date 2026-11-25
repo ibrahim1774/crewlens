@@ -11,6 +11,7 @@ import { TIER_LABEL } from '@/constants/limits';
 import { Colors, Radius, Space } from '@/constants/theme';
 import { track } from '@/lib/analytics';
 import { deleteAccount, signOut } from '@/lib/auth';
+import { openUpgrade, useBillingSource, WEB_BILLED_MESSAGE } from '@/lib/billing';
 import { useCompany, useMember } from '@/lib/company';
 import * as db from '@/lib/db';
 import { effectiveTier, limitsFor, paywallEnabled } from '@/lib/plan';
@@ -45,6 +46,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export default function You() {
   const company = useCompany();
   const member = useMember();
+  const billedOn = useBillingSource();
   const fix = useFix();
   const v = useVersion();
   const [active, setActive] = useState(0);
@@ -67,7 +69,7 @@ export default function You() {
     Alert.alert(
       'Delete your account?',
       member?.role === 'owner'
-        ? 'This permanently deletes your company, every job, photo, document and share link. It cannot be undone. Cancel your subscription in the App Store separately.'
+        ? 'This permanently deletes your company, every job, photo, document and share link. It cannot be undone. Cancel an App Store subscription in the App Store separately. A web subscription is cancelled automatically when the account is deleted.'
         : 'This removes you from the company and deletes your login. The company keeps the photos you took.',
       [
         { text: 'Cancel', style: 'cancel' },
@@ -118,8 +120,8 @@ export default function You() {
             {limits.photosPerJob} photos per job · {limits.videosPerJob ? `${limits.videoMaxS}s video` : 'No video'} · Links {limits.linkDays ? `last ${limits.linkDays} days` : 'never expire'}
           </Mono>
         </View>
-        <Row title="Plans" value="Solo, Pro with documents, Crew" onPress={() => router.push({ pathname: '/(auth)/paywall', params: { upgrade: '1' } })} icon="chevron.right" />
-        <Row title="Manage subscription" value="Change or cancel in the App Store" onPress={() => Linking.openURL('itms-apps://apps.apple.com/account/subscriptions')} icon="arrow.up.right" />
+        <Row title="Plans" value="Solo, Pro with documents, Crew" onPress={() => openUpgrade(() => router.push({ pathname: '/(auth)/paywall', params: { upgrade: '1' } }))} icon="chevron.right" />
+        <Row title="Manage subscription" value={billedOn === 'stripe' ? 'Billed on the web' : 'Change or cancel in the App Store'} onPress={() => (billedOn === 'stripe' ? Alert.alert('Your plan', WEB_BILLED_MESSAGE) : Linking.openURL('itms-apps://apps.apple.com/account/subscriptions'))} icon={billedOn === 'stripe' ? undefined : 'arrow.up.right'} />
         <Row title="Sync" value={sync.failed ? `${sync.failed} failed, ${sync.pending} waiting` : sync.pending ? `${sync.pending} waiting to upload` : 'Everything is uploaded'} />
       </Section>
 

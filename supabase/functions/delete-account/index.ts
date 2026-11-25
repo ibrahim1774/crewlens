@@ -4,6 +4,7 @@
 // - An owner with other members: refused until the members are removed, so nobody loses a team's record by accident.
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import Stripe from 'npm:stripe@^17';
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 
@@ -42,6 +43,21 @@ Deno.serve(async (req) => {
     const { error } = await admin.from('companies').delete().eq('id', m.company_id);
     if (error) return json({ error: 'company_delete_failed' }, 500);
   }
+  // Web subscriptions: cancel at Stripe right away so a deleted account is never billed again, then drop the rows.
+  const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
+  if (stripeKey) {
+    const { data: subs } = await admin.from('billing_subscriptions').select('external_id, status').eq('user_id', uid).eq('source', 'stripe');
+    const stripe = new Stripe(stripeKey, { httpClient: Stripe.createFetchHttpClient() });
+    for (const s of subs ?? []) {
+      if (s.status === 'canceled' || s.status === 'incomplete_expired') continue;
+      try {
+        await stripe.subscriptions.cancel(s.external_id);
+      } catch (e) {
+        if ((e as { code?: string }).code !== 'resource_missing') return json({ error: 'subscription_cancel_failed' }, 502);
+      }
+    }
+  }
+  await admin.from('billing_subscriptions').delete().eq('user_id', uid);
   await admin.from('superwall_aliases').delete().eq('user_id', uid);
   const { error: delErr } = await admin.auth.admin.deleteUser(uid);
   if (delErr) return json({ error: 'user_delete_failed' }, 500);

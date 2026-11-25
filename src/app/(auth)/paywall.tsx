@@ -10,18 +10,26 @@ import { ctaLabel, FEATURES, PLANS, priceLabel, productId, suggestedTier, yearly
 import { Colors, Radius, Space } from '@/constants/theme';
 import { track } from '@/lib/analytics';
 import { isGuest } from '@/lib/auth';
+import { awaitBilling, serverEntitled, webEntitled } from '@/lib/billing';
 import { meta } from '@/lib/db';
-import { superwallActive, usePaywall, useRestorePurchases } from '@/lib/paywall';
+import { hasEntitlement, superwallActive, usePaywall, useRestorePurchases } from '@/lib/paywall';
+import { useVersion } from '@/lib/store';
+import { waitAtMost } from '@/lib/time';
 import type { Tier } from '@/types/models';
 
 const TERMS_URL = 'https://crewlens-share.vercel.app/terms';
 const PRIVACY_URL = 'https://crewlens-share.vercel.app/privacy';
 
-async function finish(tier: Tier, period: Period, upgrade: boolean) {
+async function finish(tier: Tier, period: Period, upgrade: boolean, gate = false) {
   await meta.set('plan_choice', productId(tier, period));
   if (upgrade) {
     if (router.canGoBack()) router.back();
     else router.replace('/(tabs)');
+    return;
+  }
+  // An owner the launch gate sent here (signed in, company set up, no active plan) is already onboarded.
+  if (gate && !isGuest()) {
+    router.replace('/(tabs)');
     return;
   }
   // The plan is bought on the guest account; saving it with an email or Apple comes next.
@@ -38,8 +46,9 @@ function cell(v: string): string {
  * Tap a column to pick it; the button at the bottom follows the choice.
  */
 export default function PaywallGate() {
-  const { upgrade } = useLocalSearchParams<{ upgrade?: string }>();
+  const { upgrade, gate } = useLocalSearchParams<{ upgrade?: string; gate?: string }>();
   const fromUpgrade = upgrade === '1';
+  const fromGate = gate === '1';
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
   const compact = height < 760;
@@ -68,19 +77,56 @@ export default function PaywallGate() {
   // With Superwall on, its paywall is the plan picker (all plans, both periods), so open it straight away.
   // Closing it leaves this table underneath, whose button opens it again.
   const opened = useRef(false);
+  // Paid on the web: skip the plan step. Superwall opens only after this check says no.
+  const [webChecked, setWebChecked] = useState(false);
+  const passed = useRef(false);
+  const tierRef = useRef(tier);
+  tierRef.current = tier;
   useEffect(() => {
-    if (!superwallActive || opened.current || !answers) return;
+    let alive = true;
+    void waitAtMost(awaitBilling(), 3000).then(() => {
+      if (!alive) return;
+      if (webEntitled() && !passed.current) {
+        passed.current = true;
+        track('plan_skipped', { reason: 'web' });
+        void finish(tierRef.current, 'monthly', fromUpgrade, fromGate);
+      }
+      setWebChecked(true);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [fromUpgrade, fromGate]);
+
+  // The launch gate sent them here; once a purchase or restore makes the plan active, let them in.
+  useVersion();
+  const active = hasEntitlement() || serverEntitled();
+  useEffect(() => {
+    if (!fromGate || !active || passed.current) return;
+    passed.current = true;
+    void finish(tierRef.current, 'monthly', false, true);
+  }, [fromGate, active]);
+
+  useEffect(() => {
+    if (!superwallActive || opened.current || !answers || !webChecked || passed.current) return;
     opened.current = true;
-    void show(fromUpgrade ? 'upgrade_tapped' : 'onboarding_complete', () => void finish(tier, 'monthly', fromUpgrade), answers);
-  }, [show, fromUpgrade, answers, tier]);
+    void show(fromUpgrade ? 'upgrade_tapped' : 'onboarding_complete', () => void finish(tier, 'monthly', fromUpgrade, fromGate), answers);
+  }, [show, fromUpgrade, fromGate, answers, tier, webChecked]);
 
   const choose = () => {
     track('plan_selected', { tier, period, product: productId(tier, period) });
-    if (superwallActive) {
-      void show(fromUpgrade ? 'upgrade_tapped' : 'onboarding_complete', () => void finish(tier, period, fromUpgrade), answers ?? undefined);
+    if (webEntitled()) {
+      if (!passed.current) {
+        passed.current = true;
+        void finish(tier, period, fromUpgrade, fromGate);
+      }
       return;
     }
-    void finish(tier, period, fromUpgrade);
+    if (superwallActive) {
+      void show(fromUpgrade ? 'upgrade_tapped' : 'onboarding_complete', () => void finish(tier, period, fromUpgrade, fromGate), answers ?? undefined);
+      return;
+    }
+    void finish(tier, period, fromUpgrade, fromGate);
   };
 
   const labelW = compact ? 92 : 104;

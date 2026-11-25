@@ -10,6 +10,7 @@ import { Sheet, SheetRow } from '@/components/sheet';
 import { Body, Heading, Mono } from '@/components/text';
 import { Colors, Radius, Space } from '@/constants/theme';
 import { track } from '@/lib/analytics';
+import { openUpgrade } from '@/lib/billing';
 import { deleteDocument, docsAllowed, DocumentsNotAllowed, formatSize, pickAndImport, pullDocuments, rename, uploadErrorMessage, useDocuments } from '@/lib/documents';
 import { useJob } from '@/lib/jobs';
 import { createSampleInvoice } from '@/lib/sample-invoice';
@@ -144,7 +145,7 @@ export default function Documents() {
           <Mono size={11} color={Colors.flag} bold>Pro feature</Mono>
           <Heading size={24} bold>Keep the paperwork with the photos.</Heading>
           <Body color={Colors.ink2}>Upload the invoice, proposal or contract for this job, edit and sign it on your phone, then text or email it to the client. Included in Pro and Crew.</Body>
-          <Button title="See plans" onPress={() => router.push({ pathname: '/(auth)/paywall', params: { upgrade: '1' } })} testID="docs-upgrade" />
+          <Button title="See plans" onPress={() => openUpgrade(() => router.push({ pathname: '/(auth)/paywall', params: { upgrade: '1' } }))} testID="docs-upgrade" />
         </View>
       ) : (
         <FlatList
