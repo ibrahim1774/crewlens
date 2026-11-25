@@ -42,7 +42,11 @@ Deno.serve(async (req) => {
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       line_items: [{ price, quantity: 1 }],
-      payment_method_types: ['card'],
+      // Crew Lens's own payment method configuration (cards + Apple/Google Pay; Link, bank, Cash App off) so the
+      // shared account's defaults never apply. Without it, cards only.
+      ...(Deno.env.get('STRIPE_PAYMENT_METHOD_CONFIG')
+        ? { payment_method_configuration: Deno.env.get('STRIPE_PAYMENT_METHOD_CONFIG')! }
+        : { payment_method_types: ['card' as const] }),
       allow_promotion_codes: false,
       subscription_data: { metadata: meta, ...(trial > 0 ? { trial_period_days: trial } : {}) },
       metadata: meta,
